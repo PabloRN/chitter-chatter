@@ -27,8 +27,8 @@ new Vue({
   vuetify,
   i18n,
   render: (h) => h(App),
-  created() {
-    firebase.initializeApp(
+  async created() {
+    await firebase.initializeApp(
       {
         apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
         authDomain: 'chitter-chatter-f762a.firebaseapp.com',
