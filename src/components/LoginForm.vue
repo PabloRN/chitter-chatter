@@ -1,6 +1,7 @@
 <template>
   <transition name="fade">
     <ValidationObserver ref="obs" v-slot="{ invalid }">
+      <v-col cols="4" class="mx-auto">
       <v-card class="elevation-0 login_card mb-1" transition="scale-transition">
         <v-card-text>
           <v-form>
@@ -8,7 +9,6 @@
             <Password
                label="Password" />
           </v-form>
-          ooo
         </v-card-text>
         <v-card-actions>
           <v-btn :loading="isLoading" :disabled="invalid" class="ma-0" color="primary" tile
@@ -16,6 +16,8 @@
           </v-btn>
         </v-card-actions>
       </v-card>
+        </v-col>
+
       <div class="" align="center" justify="center">
         <v-btn @click="$router.push({ name: 'forgotpassword'} )" class="text-capitalize" text small
           color="primary">

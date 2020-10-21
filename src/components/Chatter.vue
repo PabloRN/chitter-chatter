@@ -12,6 +12,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
 
@@ -33,7 +34,7 @@ export default {
     positionY: 0,
     talking: false,
     muted: false,
-    dialogText: '',
+    dialogs: '',
     status: '',
     visible: '',
     expresion: {
@@ -68,6 +69,7 @@ export default {
     ],
   }),
   mounted() {
+    console.log(this.getCurrentUser);
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
     console.log(windowWidth / 2);
@@ -105,6 +107,9 @@ export default {
         }
       }
     }, true);
+  },
+  computed: {
+    ...mapGetters('authorization', ['getCurrentUser']),
   },
   methods: {
     changeAvatar() {

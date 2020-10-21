@@ -40,7 +40,7 @@
         <v-btn class="grey lighten-1"
          :disabled="dialog.length === 0" @click="talk"  block elevation="2" large x-small
          style="border-radius: 0px 10px 10px 0px;height: 98.5%;">
-         <span class="text-caption ml-1 font-weight-medium"
+         <span class="text-caption font-weight-medium"
           style="color: #616161;
 text-shadow: 1px 1px 1px rgba(255,255,255,.5);">Talk</span></v-btn>
       </v-col>
