@@ -37,6 +37,8 @@ export default {
     dialogs: '',
     status: '',
     visible: '',
+    followingTo: [],
+    followedBy: [],
     expresion: {
       default: true,
       angry: false,

@@ -7,10 +7,10 @@
               class="white--text align-end"
               :height="innerHeight"
             >
-            <Chatter draggable
-             @dragstart='startDrag($event, id)' v-for="chatter in chatters"
+            <Chatter v-for="chatter in chatters"
               :id="chatter.id" :key="chatter.id" />
             </v-img>
+            {{$route.params.id}}
           </v-card>
   </div>
 </template>
@@ -33,7 +33,7 @@ export default {
   },
   data: () => ({
     innerHeight: '',
-    chatters: [{ id: '1111111' }],
+    chatters: [{ id: '1111111' }, { id: '1111112' }],
   }),
   methods: {
 
