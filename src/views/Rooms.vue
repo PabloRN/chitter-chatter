@@ -2,19 +2,19 @@
   <div class="home">
 <v-row dense>
         <v-col
-          v-for="card in cards"
-          :key="card.title"
-          :cols="card.flex"
+          v-for="room in getAllRooms"
+          :key="room.id"
+          :cols="2"
         >
           <v-card @click="$router.push({name: 'room',
-           params: {roomid: card.id, background: card.src}})">
+           params: {roomid: room.id, background: room.picture, maxusers: room.maxusers}})">
             <v-img
-              :src="card.src"
+              :src="room.picture"
               class="white--text align-end"
               gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
               height="200px"
             >
-              <v-card-title v-text="card.title"></v-card-title>
+              <v-card-title v-text="room.nombre"></v-card-title>
             </v-img>
 
             <v-card-actions>
@@ -40,6 +40,7 @@
 
 <script>
 // @ is an alias to /src
+import { mapActions, mapGetters } from 'vuex';
 
 export default {
   name: 'Home',
@@ -59,5 +60,17 @@ export default {
       },
     ],
   }),
+  computed: {
+    ...mapGetters('rooms', ['getAllRooms']),
+  },
+  methods: {
+    ...mapActions('rooms', ['getRooms']),
+  },
+  created() {
+    this.getRooms();
+  },
+  mounted() {
+    console.log(this.getAllRooms);
+  },
 };
 </script>

@@ -22,7 +22,7 @@
     <v-row v-if="!hideKeyboard" no-gutters class="pa-1 typebox mt-3">
       <v-col class="" cols="9"
        style="background: rgba(255,255,255,0.5);border-radius: 10px 0px 0px 10px;">
-        <v-textarea @keypress.enter.prevent="enterPress" @keypress="typing"
+        <v-textarea @keypress.enter.prevent="enterPress"
          @input="checkValue" class="text-area-input text-caption"
            no-resize
            hide-details
@@ -85,9 +85,8 @@ export default {
 
       // value = value.substring(0, value.length - 1);
     },
-    typing(e) {
-      console.log(e);
-    },
+    // typing(e) {
+    // },
   },
 };
 </script>
