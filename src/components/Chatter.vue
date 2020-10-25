@@ -7,7 +7,7 @@
   max-width="50"
   :src="avatar"
 ></v-img>
-<TypeBox />
+<TypeBox v-if="isCurrentUser" />
 </div>
 </template>
 
@@ -27,6 +27,10 @@ export default {
     avatar: String,
     nickname: String,
     rooms: Object,
+    isCurrentUser: {
+      type: Boolean,
+      default: false,
+    },
   },
   data: () => ({
     chatterManager: {},

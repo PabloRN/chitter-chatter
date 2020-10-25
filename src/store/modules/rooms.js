@@ -46,6 +46,7 @@ const actions = {
   },
   async pushUser({ commit }, { roomId, userId }) {
     commit('PUSH_USER');
+    console.log({ roomId, userId });
     try {
       const roomUsersKey = await firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
       const updates = {};
