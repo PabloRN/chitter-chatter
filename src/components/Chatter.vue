@@ -1,11 +1,11 @@
 <template>
-<div :id="id" :ref="id" @click="chatterClicked" heigth="200"
+<div :id="userId" :ref="userId" @click="chatterClicked" heigth="200"
  width="50" style="heigth:200px;width:50px;">
  <DialogBubble class="mb-7"/>
   <v-img
   height="200"
   max-width="50"
-  src="https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/avatars%2FLayer%2010.png?alt=media&token=14f69a60-6bab-448f-8747-67428bbcd4fc"
+  :src="avatar"
 ></v-img>
 <TypeBox />
 </div>
@@ -23,13 +23,15 @@ export default {
     DialogBubble,
   },
   props: {
-    id: String,
+    userId: String,
+    avatar: String,
+    nickname: String,
+    rooms: Object,
   },
   data: () => ({
     chatterManager: {},
     offset: [0, 0],
     isDown: false,
-    avatar: '',
     positionX: 0,
     positionY: 0,
     talking: false,
@@ -71,11 +73,10 @@ export default {
     ],
   }),
   mounted() {
-    console.log(this.getCurrentUser);
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
-    console.log(windowWidth / 2);
-    this.chatterManager = this.$refs[this.id];
+    this.chatterManager = this.$refs[this.userId];
+    // Object.assign(this.chatterManager)
     this.chatterManager.style.position = 'absolute';
     this.chatterManager.style.left = `${windowWidth / 2}px`;
     this.chatterManager.style.top = `${windowHeight / 2}px`;

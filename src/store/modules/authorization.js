@@ -5,11 +5,13 @@ const state = {
   avatarsList: [],
   email: '',
   getavatarsLoading: false,
+  userDataReady: false,
   isLoading: false,
   isReady: false,
   password: '',
   code: '',
-  user: '',
+  userData: {},
+  currentUser: {},
 };
 
 const getters = {
@@ -17,7 +19,7 @@ const getters = {
     return state.avatarsList;
   },
   getCurrentUser(state) {
-    return state.user;
+    return state.currentUser;
   },
 };
 const actions = {
@@ -25,12 +27,17 @@ const actions = {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         firebase.database().ref(`users/${user.uid}`).once('value').then((snapshot) => {
-          commit('setUser', snapshot.val());
+          commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
         });
       } else {
         // this.$router.push({ name: 'login' });// No user is signed in.
       }
     });
+  },
+  async getUserData({ commit }, userId) {
+    const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
+    commit('setUserData', await { ...snapshot.val(), userId });
+    return { ...snapshot.val(), userId };
   },
   setEmailAction: async ({ commit }, payload) => {
     commit('setEmail', payload);
@@ -43,7 +50,6 @@ const actions = {
     const { nickname, avatar, age } = data;
     firebase.auth().createUserWithEmailAndPassword(state.email, state.password)
       .then((credentials) => {
-        console.log(credentials);
         firebase.database().ref(`users/${credentials.user.uid}`).set({
           nickname,
           avatar,
@@ -55,7 +61,9 @@ const actions = {
             msg: `Created user ${nickname} successfully`,
           },
           { root: true });
-        commit('setUser', { nickname, avatar, age });
+        commit('setUser', {
+          nickname, avatar, age, userId: credentials.user.uid,
+        });
       })
       .catch(
         (error) => {
@@ -88,7 +96,6 @@ const actions = {
         .then((credentials) => {
           if (credentials) {
             firebase.database().ref(`users/${credentials.user.uid}`).once('value').then((snapshot) => {
-              console.log('snapshot', snapshot.val());
               commit('setUser', snapshot.val());
             });
           } else {
@@ -122,7 +129,20 @@ const actions = {
 const mutations = {
   setEmail(state, data) { state.email = data; },
   setPassword(state, data) { state.password = data; },
-  setUser(state, data) { state.user = data; },
+  setCurrentUser(state, data) {
+    if (state.currentUser[data.userId]) {
+      state.currentUser[data.userId] = data.data;
+    } else {
+      Object.assign(state.currentUser, { [data.userId]: data.data });
+    }
+  },
+  setUserData(state, data) {
+    if (state.userData[data.userId]) {
+      state.userData[data.userId] = data.data;
+    } else {
+      Object.assign(state.userData, { [data.userId]: data });
+    }
+  },
   GET_AVATARS(state) {
     state.getavatarsLoading = true;
   },
