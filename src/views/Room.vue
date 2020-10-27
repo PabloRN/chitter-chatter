@@ -66,6 +66,8 @@ export default {
     if (Object.keys(this.roomList).length === 0) {
       this.getRooms()
         .then(() => { this.background = this.roomList[this.$route.params.roomid].picture; });
+    } else {
+      this.background = this.roomList[this.$route.params.roomid].picture;
     }
   },
   mounted() {
