@@ -26,23 +26,25 @@ const actions = {
           .ref(`rooms/${singleRoom}/users/`)
           .on('child_added', async (userSnap) => { // Get the user that enter to the room
             if (userSnap.val() !== null) {
-              // roomUserKey is the key created after push an user into a room
-              // const roomUsersKey = await firebase.database()
-              //   .ref(`users/${userSnap.val().userId}/rooms/${singleRoom}`)
-              //   .once('value');
               commit('ENTER_ROOM', { roomId: singleRoom, userId: userSnap.val(), roomUsersKey: userSnap.key });
               console.log('child_added', { singleRoom, ...userSnap.val(), roomUsersKey: userSnap.key });
             }
           }));
-      Object.keys(snapshot.val()).map((singleRoom) => firebase.database().ref(`rooms/${singleRoom}/users`).on('child_removed', (roomSnap) => {
-        console.log('child_removed', { singleRoom, ...roomSnap.val() });
-      }));
+      Object.keys(snapshot.val())
+        .map((singleRoom) => firebase.database()
+          .ref(`rooms/${singleRoom}/users`)
+          .on('child_removed', (userSnap) => { // Get the user that exit to the room
+            commit('EXIT_ROOM', { roomId: singleRoom, userId: userSnap.val(), roomUsersKey: userSnap.key });
+            console.log('child_removed', { singleRoom, ...userSnap.val() });
+          }));
       // const singleRoom = firebase.database().ref()
       commit('SET_ROOMS', await snapshot.val());
+      return 'rooms ready';
     } catch (error) {
       commit('SET_ROOMS_FAIL');
       console.log(error);
     }
+    return 'ready';
   },
   async pushUser({ commit }, { roomId, userId }) {
     commit('PUSH_USER');
@@ -58,18 +60,18 @@ const actions = {
       console.log(error);
     }
   },
-  async removeUser({ commit }, { roomId, userId }) {
-    commit('EXIT_ROOM');
-    try {
-      const roomUsersKey = await firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
-      const updates = {};
-      updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
-      updates[`/users/${userId}/rooms/`] = null;
-      firebase.database().ref().update(updates);
-    } catch (error) {
-      console.log(error);
-    }
-  },
+  // async removeUser({ commit }, { roomId, userId, roomUsersKey }) {
+  //   commit('EXIT_ROOM');
+  //   try {
+  //     const updates = {};
+  //     updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
+  //     updates[`/users/${userId}/rooms/${roomId}`] = null;
+  //     await firebase.database().ref().update(updates);
+  //     commit('PUSH_USER_SUCCESS');
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // },
 };
 
 const mutations = {
@@ -99,6 +101,11 @@ const mutations = {
     }
     state.userAdded = { roomId, ...userId };
   },
+  // EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
+  //   delete state.roomList[roomId].users[roomUsersKey];
+
+  //   state.userExit = { roomId, ...userId };
+  // },
 };
 
 export default {

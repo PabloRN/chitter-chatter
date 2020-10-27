@@ -2,8 +2,8 @@
   <div class="home" @dragover.prevent
       @dragenter.prevent>
           <v-card>
-            <v-img
-              :src="background"
+            <v-img v-if="background !== ''"
+              :src="background !== '' ? background : ''"
               class="white--text align-end"
               :height="innerHeight"
             >
@@ -12,8 +12,7 @@
               :key="userId"
               :avatar="avatar"
               :nickname="nickname"
-              :rooms="rooms"
-              :isCurrentUser="isCurrentUser" />
+              :rooms="rooms"/>
             </v-img>
             {{$route.params.id}}
           </v-card>
@@ -32,7 +31,6 @@ export default {
   },
   props: {
     roomid: String,
-    background: String,
   },
   computed: {
     ...mapState('rooms', ['userAdded', 'roomList']),
@@ -44,16 +42,16 @@ export default {
     chatters: [],
     initialUsers: [],
     isCurrentUser: false,
+    background: '',
   }),
   methods: {
     ...mapActions('authorization', ['getUserData']),
-    ...mapActions('rooms', ['pushUser']),
+    ...mapActions('rooms', ['getRooms', 'pushUser']),
     async initUsers() {
-      if (Object.keys(this.roomList[this.roomid].users).length > 0) {
-        Object.keys(this.roomList[this.roomid].users).forEach(async (roomUserID) => {
-          const { userId } = this.roomList[this.roomid].users[roomUserID];
-          const current = Object.keys(this.currentUser);
-          this.isCurrentUser = userId === current[0];
+      if (Object.keys(this.roomList).length > 0
+       && Object.keys(this.roomList[this.$route.params.roomid].users).length > 0) {
+        Object.keys(this.roomList[this.$route.params.roomid].users).forEach(async (roomUserID) => {
+          const { userId } = this.roomList[this.$route.params.roomid].users[roomUserID];
           const userDataNew = await this.getUserData(userId);
           if (Object.keys(userDataNew).length > 0) {
             this.chatters.push(this.userData[userId]);
@@ -65,6 +63,10 @@ export default {
   created() {
     this.innerHeight = window.innerHeight;
     this.initUsers();
+    if (Object.keys(this.roomList).length === 0) {
+      this.getRooms()
+        .then(() => { this.background = this.roomList[this.$route.params.roomid].picture; });
+    }
   },
   mounted() {
     // const current = Object.keys(this.currentUser);

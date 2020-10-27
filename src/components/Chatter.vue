@@ -1,13 +1,16 @@
 <template>
-<div :id="userId" :ref="userId" @click="chatterClicked" heigth="200"
+<div  :id="userId" :ref="userId"
+ heigth="200"
+@keyboard-clicked="keyboardCLicked"
+
  width="50" style="heigth:200px;width:50px;">
- <DialogBubble class="mb-7"/>
-  <v-img
+ <DialogBubble ref="bubble" class="mb-7"/>
+  <v-img class="chatter"
   height="200"
   max-width="50"
   :src="avatar"
 ></v-img>
-<TypeBox v-if="isCurrentUser" />
+<TypeBox ref="keyboard" v-if="isCurrentUser" />
 </div>
 </template>
 
@@ -27,12 +30,10 @@ export default {
     avatar: String,
     nickname: String,
     rooms: Object,
-    isCurrentUser: {
-      type: Boolean,
-      default: false,
-    },
   },
   data: () => ({
+    keyboardClicked: false,
+    mouseMoved: false,
     chatterManager: {},
     offset: [0, 0],
     isDown: false,
@@ -85,23 +86,37 @@ export default {
     this.chatterManager.style.left = `${windowWidth / 2}px`;
     this.chatterManager.style.top = `${windowHeight / 2}px`;
     this.chatterManager.addEventListener('mousedown', (e) => {
+      e.preventDefault();
       this.isDown = true;
       this.offset = [
         this.chatterManager.offsetLeft - e.clientX,
         this.chatterManager.offsetTop - e.clientY,
       ];
     }, true);
-    document.addEventListener('mouseup', () => {
+    document.addEventListener('mouseup', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       this.isDown = false;
     }, true);
+    this.chatterManager.addEventListener('click', (e) => {
+      e.preventDefault();
+      // e.stopPropagation();
+      if (this.mouseMoved !== true && e.target.localName === 'div') {
+        console.log('clicked');
+      }
+      this.mouseMoved = false;
+      this.keyboardClicked = false;
+    }, true);
 
-    document.addEventListener('mousemove', (event) => {
-      event.preventDefault();
+    document.addEventListener('mousemove', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       if (this.isDown) {
+        this.mouseMoved = true;
         const mousePosition = {
 
-          x: event.clientX,
-          y: event.clientY,
+          x: e.clientX,
+          y: e.clientY,
 
         }; if (this.chatterManager.offsetLeft >= 0) {
           this.chatterManager.style.left = `${mousePosition.x + this.offset[0]}px`;
@@ -117,8 +132,17 @@ export default {
   },
   computed: {
     ...mapGetters('authorization', ['getCurrentUser']),
+    isCurrentUser() {
+      return this.userId === Object.keys(this.getCurrentUser)[0];
+    },
   },
   methods: {
+    keyboardCLicked(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('keyboardCLicked');
+      this.keyboardClicked = true;
+    },
     changeAvatar() {
 
     },
@@ -140,6 +164,7 @@ export default {
     chatterClicked() {
       if (this.id) {
         console.log(this.id);
+        console.log(this.$$refs[this.id]);
       }
     },
   },
@@ -147,5 +172,7 @@ export default {
 };
 </script>
 <style scoped>
-
+.chatter:hover{
+  cursor: pointer;
+}
 </style>

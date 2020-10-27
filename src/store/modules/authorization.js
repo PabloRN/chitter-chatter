@@ -26,11 +26,11 @@ const actions = {
   getUser({ commit }) {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        firebase.database().ref(`users/${user.uid}`).once('value').then((snapshot) => {
+        firebase.database().ref(`users/${user.uid}`).on('value', (snapshot) => {
           commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
         });
       } else {
-        // this.$router.push({ name: 'login' });// No user is signed in.
+        this.$router.push({ name: 'login' });// No user is signed in.
       }
     });
   },
