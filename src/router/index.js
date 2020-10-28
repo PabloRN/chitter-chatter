@@ -25,7 +25,6 @@ const routes = [
     path: '/rooms/:roomid',
     name: 'room',
     component: Room,
-    props: true,
   },
   {
     path: '/signup',
@@ -62,5 +61,8 @@ const router = new VueRouter({
   mode: 'history',
   routes,
 });
-
+// router.beforeEach((to, from, next) => {
+//   console.log({ to, from, next });
+//   next();
+// });
 export default router;

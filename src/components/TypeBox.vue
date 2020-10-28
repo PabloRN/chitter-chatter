@@ -5,7 +5,7 @@
       fab
       dark
       x-small
-      @click="toggleKeyBoard"
+      @click.prevent="toggleKeyBoard"
     >
       <v-icon v-if="hideKeyboard" dark>
         mdi-keyboard
@@ -75,8 +75,16 @@ export default {
       this.sendText(this.dialog);
       this.dialog = '';
     },
-    toggleKeyBoard() {
+    toggleKeyBoard(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.$emit('keyboard-clicked');
       this.hideKeyboard = !this.hideKeyboard;
+      this.$nextTick(() => {
+        if (this.$refs.refDialog) {
+          this.$refs.refDialog.focus();
+        }
+      });
     },
     checkValue(value) {
       if (value) {

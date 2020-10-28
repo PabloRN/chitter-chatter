@@ -2,12 +2,11 @@
   <div class="home">
 <v-row dense>
         <v-col
-          v-for="room in getAllRooms"
-          :key="room.id"
+          v-for="(room, key) in getAllRooms"
+          :key="key"
           :cols="2"
         >
-          <v-card @click="$router.push({name: 'room',
-           params: {roomid: room.id, background: room.picture, maxusers: room.maxusers}})">
+          <v-card @click="enterRoom(room, key)">
             <v-img
               :src="room.picture"
               class="white--text align-end"
@@ -40,7 +39,7 @@
 
 <script>
 // @ is an alias to /src
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 
 export default {
   name: 'Home',
@@ -48,29 +47,31 @@ export default {
 
   },
   data: () => ({
-    cards: [
-      {
-        title: 'Pre-fab homes', src: 'https://cdn.vuetifyjs.com/images/cards/house.jpg', flex: 2, id: '12345',
-      },
-      {
-        title: 'Favorite road trips', src: 'https://cdn.vuetifyjs.com/images/cards/road.jpg', flex: 2, id: '67890',
-      },
-      {
-        title: 'Best airlines', src: 'https://cdn.vuetifyjs.com/images/cards/plane.jpg', flex: 2, id: '102938',
-      },
-    ],
+
   }),
   computed: {
     ...mapGetters('rooms', ['getAllRooms']),
+    ...mapState('rooms', ['roomList']),
+    ...mapGetters('authorization', ['getCurrentUser']),
   },
   methods: {
-    ...mapActions('rooms', ['getRooms']),
+    ...mapActions('rooms', ['getRooms', 'pushUser']),
+    enterRoom(room, key) {
+      this.pushUser({ roomId: key, userId: Object.keys(this.getCurrentUser)[0] });
+      this.$router.push({
+        name: 'room',
+        params: { roomid: key, background: room.picture, maxusers: room.maxusers },
+      });
+    },
   },
   created() {
     this.getRooms();
   },
-  mounted() {
-    console.log(this.getAllRooms);
+  watch: {
+    roomList: {
+      deep: true,
+      handler(newval, oldval) { console.log({ newval, oldval }); },
+    },
   },
 };
 </script>
