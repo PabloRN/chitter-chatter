@@ -60,18 +60,18 @@ const actions = {
       console.log(error);
     }
   },
-  // async removeUser({ commit }, { roomId, userId, roomUsersKey }) {
-  //   commit('EXIT_ROOM');
-  //   try {
-  //     const updates = {};
-  //     updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
-  //     updates[`/users/${userId}/rooms/${roomId}`] = null;
-  //     await firebase.database().ref().update(updates);
-  //     commit('PUSH_USER_SUCCESS');
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // },
+  async removeUser({ commit }, { roomId, userId, roomUsersKey }) {
+    commit('EXIT_ROOM', { roomId, userId, roomUsersKey });
+    try {
+      const updates = {};
+      updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
+      updates[`/users/${userId}/rooms/${roomId}`] = null;
+      await firebase.database().ref().update(updates);
+      commit('PUSH_USER_SUCCESS');
+    } catch (error) {
+      console.log(error);
+    }
+  },
 };
 
 const mutations = {
@@ -101,11 +101,10 @@ const mutations = {
     }
     state.userAdded = { roomId, ...userId };
   },
-  // EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
-  //   delete state.roomList[roomId].users[roomUsersKey];
-
-  //   state.userExit = { roomId, ...userId };
-  // },
+  EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
+    delete state.roomList[roomId].users[roomUsersKey];
+    state.userExit = { roomId, ...userId };
+  },
 };
 
 export default {

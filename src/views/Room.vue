@@ -33,7 +33,7 @@ export default {
     roomid: String,
   },
   computed: {
-    ...mapState('rooms', ['userAdded', 'roomList']),
+    ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
     ...mapState('authorization', ['userData', 'currentUser']),
   },
 
@@ -46,7 +46,7 @@ export default {
   }),
   methods: {
     ...mapActions('authorization', ['getUserData']),
-    ...mapActions('rooms', ['getRooms', 'pushUser']),
+    ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser']),
     async initUsers() {
       if (Object.keys(this.roomList).length > 0
        && Object.keys(this.roomList[this.$route.params.roomid].users).length > 0) {
@@ -62,13 +62,13 @@ export default {
   },
   created() {
     this.innerHeight = window.innerHeight;
-    this.initUsers();
     if (Object.keys(this.roomList).length === 0) {
       this.getRooms()
         .then(() => { this.background = this.roomList[this.$route.params.roomid].picture; });
     } else {
       this.background = this.roomList[this.$route.params.roomid].picture;
     }
+    this.initUsers();
   },
   mounted() {
     // const current = Object.keys(this.currentUser);
@@ -79,9 +79,23 @@ export default {
     // this.chatters.push({ userId: current[0], ...currentData[0] });
     // console.log(this.chatters);
   },
+  beforeRouteLeave(from, to, next) {
+    const userVal = Object.values(this.currentUser)[0];
+    this.removeUser({
+      userId: Object.keys(this.currentUser)[0],
+      roomId: this.$route.params.roomid,
+      roomUsersKey: userVal.rooms[this.$route.params.roomid].roomUsersKey,
+    });
+    console.log({
+      userId: Object.keys(this.currentUser)[0],
+      roomId: this.$route.params.roomid,
+      roomUsersKey: userVal.rooms[this.$route.params.roomid].roomUsersKey,
+    });
+    next();
+  },
   watch: {
     async userAdded(newUser) {
-      if (newUser.roomId === this.roomid) {
+      if (newUser.roomId === this.$route.params.roomid) {
         const userDataNew = await this.getUserData(newUser.userId);
         console.log(await userDataNew);
         if (Object.keys(userDataNew).length > 0) {
@@ -89,6 +103,14 @@ export default {
           console.log(this.chatters);
         }
       }
+    },
+    async userExit(user) {
+      if (user.roomId === this.$route.params.roomid) {
+        const findUserIndex = (userId) => userId === user.userId;
+        const userIdIndex = this.chatters.findIndex(findUserIndex);
+        this.chatters.splice(userIdIndex, 1);
+      }
+      console.log(this.chatters);
     },
   },
 };
