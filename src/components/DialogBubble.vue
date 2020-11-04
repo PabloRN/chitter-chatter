@@ -1,17 +1,18 @@
 <template>
 <v-scroll-y-reverse-transition>
- <div v-if="showBubble" class="bubble bubble-bottom-left">
+ <div v-if="showBubble" class="bubble bubble-bottom-left text-overline">
    {{text}}</div>
 </v-scroll-y-reverse-transition>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+// import { mapGetters } from 'vuex';
 
 export default {
   name: 'dialogbubble',
   props: {
-
+    id: String,
+    message: String,
   },
   data: () => ({
     text: '',
@@ -22,7 +23,7 @@ export default {
 
   },
   computed: {
-    ...mapGetters('dialog', ['getText']),
+    // ...mapGetters('messages', ['getText']),
   },
   methods: {
     removeTimer() {
@@ -30,7 +31,7 @@ export default {
     },
   },
   watch: {
-    getText(value) {
+    message(value) {
       this.removeTimer();
       if (value && value.length > 0) {
         this.text = value;
@@ -49,16 +50,16 @@ export default {
 .bubble {
   position: absolute;
   font-family: sans-serif;
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 16px;
+  line-height: 1.2;
   width: 200px;
   background: #fff;
   border-radius: 10px;
-  padding: 18px;
-  text-align: center;
+  padding: 20px;
   color: #000;
-  top: -90px;
-  max-height: 72px;
+  top: -120px;
+  max-height: 92px;
+  text-align: justify;
 }
 
 .bubble-bottom-left:before {
