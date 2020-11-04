@@ -112,7 +112,7 @@ export default {
     document.addEventListener('mousemove', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (this.isDown) {
+      if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
         this.mouseMoved = true;
         const mousePosition = {
 
