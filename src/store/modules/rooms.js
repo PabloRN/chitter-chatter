@@ -66,6 +66,10 @@ const actions = {
       const updates = {};
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
       updates[`/users/${userId}/rooms/${roomId}`] = null;
+      updates[`/users/${userId}/messages/`] = null;
+      firebase.database()
+        .ref(`rooms/${roomId}/messages/`)
+        .off();
       await firebase.database().ref().update(updates);
       commit('PUSH_USER_SUCCESS');
     } catch (error) {
@@ -100,6 +104,7 @@ const mutations = {
       Object.assign(state.roomList[roomId], { users: { [roomUsersKey]: userId } });
     }
     state.userAdded = { roomId, ...userId };
+    console.log('ENTER_ROOM');
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
     delete state.roomList[roomId].users[roomUsersKey];

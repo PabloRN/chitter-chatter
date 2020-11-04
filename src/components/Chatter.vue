@@ -1,10 +1,10 @@
 <template>
-<div  :id="userId" :ref="userId"
+<div :id="userId" :ref="userId"
  heigth="200"
 @keyboard-clicked="keyboardCLicked"
 
  width="50" style="heigth:200px;width:50px;">
- <DialogBubble ref="bubble" class="mb-7"/>
+ <DialogBubble ref="bubble" class="mb-7" :id="`bb-${userId}`" :message="message" />
   <v-img class="chatter"
   height="200"
   max-width="50"
@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
 
@@ -54,6 +54,7 @@ export default {
       sorprise: false,
       inlove: false,
     },
+    message: '',
     expresionList: [
       {
         icon: 'img/icons/smily-smile',
@@ -132,6 +133,7 @@ export default {
   },
   computed: {
     ...mapGetters('authorization', ['getCurrentUser']),
+    ...mapState('messages', ['dialogText']),
     isCurrentUser() {
       return this.userId === Object.keys(this.getCurrentUser)[0];
     },
@@ -168,7 +170,14 @@ export default {
       }
     },
   },
-
+  watch: {
+    dialogText(newVal) {
+      if (newVal[newVal.length - 1].userId === this.userId) {
+        this.message = newVal[newVal.length - 1].text;
+      }
+      console.log(newVal);
+    },
+  },
 };
 </script>
 <style scoped>

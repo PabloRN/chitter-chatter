@@ -7,7 +7,7 @@ import Vuex from 'vuex';
 import main from './modules/store';
 import languageswitcher from './modules/languageswitcher';
 import authorization from './modules/authorization';
-import dialog from './modules/dialog';
+import messages from './modules/messages';
 import rooms from './modules/rooms';
 
 Vue.use(Vuex);
@@ -15,7 +15,7 @@ Vue.use(Vuex);
 // Create a new store
 const store = new Vuex.Store({
   modules: {
-    main, languageswitcher, authorization, dialog, rooms,
+    main, languageswitcher, authorization, messages, rooms,
   },
   strict: process.env.NODE_ENV !== 'production',
 });

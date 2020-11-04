@@ -23,22 +23,23 @@
       <v-col class="" cols="9"
        style="background: rgba(255,255,255,0.5);border-radius: 10px 0px 0px 10px;">
         <v-textarea @keypress.enter.prevent="enterPress"
-         @input="checkValue" class="text-area-input text-caption"
+         @input="checkValue" class="text-area-input text-body-2"
            no-resize
            hide-details
-           :rows="1"
-           row-height="5"
+           rows="1"
+           row-height="2"
            max="10"
+           :maxlength="61"
            counter
            ref="refDialog"
-           :value="dialog"
-           v-model="dialog" outlined style="border-radius: 10px 0px 0px 10px;line-height: 1.3;">
+           :value="message"
+           v-model="message" outlined style="border-radius: 10px 0px 0px 10px;line-height: 1.3;">
         </v-textarea>
       </v-col>
       <v-spacer></v-spacer>
       <v-col cols="3" style="background: rgba(255,255,255,0.5);border-radius: 0px 10px 10px 0px;">
         <v-btn class="grey lighten-1"
-         :disabled="dialog.length === 0" @click="talk"  block elevation="2" large x-small
+         :disabled="message.length === 0" @click="talk"  block elevation="2" large x-small
          style="border-radius: 0px 10px 10px 0px;height: 98.5%;">
          <span class="text-caption font-weight-medium"
           style="color: #616161;
@@ -50,7 +51,7 @@ text-shadow: 1px 1px 1px rgba(255,255,255,.5);">Talk</span></v-btn>
 </template>
 
 <script>
-import { mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 
 export default {
   name: 'typebox',
@@ -58,22 +59,31 @@ export default {
 
   },
   data: () => ({
-    dialog: '',
+    message: '',
     hideKeyboard: true,
   }),
   mounted() {
 
   },
+  computed: {
+    ...mapGetters('authorization', ['getCurrentUser']),
+  },
   methods: {
-    ...mapActions('dialog', ['sendText']),
+    ...mapActions('messages', ['sendMessage']),
     enterPress(e) {
       if (e.type === 'keypress' && e.key === 'Enter') {
         this.talk();
       }
     },
     talk() {
-      this.sendText(this.dialog);
-      this.dialog = '';
+      this.sendMessage(
+        {
+          message: this.message,
+          userId: Object.keys(this.getCurrentUser)[0],
+          roomId: this.$route.params.roomid,
+        },
+      );
+      this.message = '';
     },
     toggleKeyBoard(e) {
       e.preventDefault();
@@ -88,7 +98,7 @@ export default {
     },
     checkValue(value) {
       if (value) {
-        this.dialog = value.substring(0, 30);
+        this.dialog = value.substring(0, 61);
       }
 
       // value = value.substring(0, value.length - 1);
@@ -98,7 +108,7 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style lang="scss">
 
 .typebox {
   left: -120px;
@@ -109,14 +119,13 @@ export default {
   line-height: 1.3;
   width: 300px;
 }
-.text-area-input {
+.text-area-input textarea{
     line-height: 1.3rem!important;
-}
-.v-textarea textarea{
-  line-height: 1.3rem!important;
+    margin-top: 5px!important;
 }
 .keyboard-icon{
    z-index: 100;
    border: 2px solid white;
 }
+
 </style>

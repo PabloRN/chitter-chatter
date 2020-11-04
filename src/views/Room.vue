@@ -47,6 +47,7 @@ export default {
   methods: {
     ...mapActions('authorization', ['getUserData']),
     ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser']),
+    ...mapActions('messages', ['getDialogs']),
     async initUsers() {
       if (Object.keys(this.roomList).length > 0
        && Object.keys(this.roomList[this.$route.params.roomid].users).length > 0) {
@@ -71,6 +72,7 @@ export default {
     this.initUsers();
   },
   mounted() {
+    this.getDialogs(this.$route.params.roomid);
     // const current = Object.keys(this.currentUser);
     // const currentData = Object.values(this.currentUser);
 
@@ -86,20 +88,16 @@ export default {
       roomId: this.$route.params.roomid,
       roomUsersKey: userVal.rooms[this.$route.params.roomid].roomUsersKey,
     });
-    console.log({
-      userId: Object.keys(this.currentUser)[0],
-      roomId: this.$route.params.roomid,
-      roomUsersKey: userVal.rooms[this.$route.params.roomid].roomUsersKey,
-    });
     next();
   },
   watch: {
     async userAdded(newUser) {
+      console.log(newUser);
       if (newUser.roomId === this.$route.params.roomid) {
         const userDataNew = await this.getUserData(newUser.userId);
         console.log(await userDataNew);
-        if (Object.keys(userDataNew).length > 0) {
-          this.chatters.push(this.userData[newUser.userId]);
+        if (await Object.keys(userDataNew).length > 0) {
+          await this.chatters.push(this.userData[newUser.userId]);
           console.log(this.chatters);
         }
       }
