@@ -7,11 +7,12 @@
               class="white--text align-end"
               :height="innerHeight"
             >
-            <Chatter v-for="{userId, avatar, nickname, rooms} in chatters"
+            <Chatter v-for="{userId, avatar, nickname, rooms, position} in chatters"
               :userId="userId"
               :key="userId"
               :avatar="avatar"
               :nickname="nickname"
+              :position="position"
               :rooms="rooms"/>
             </v-img>
             {{$route.params.id}}
@@ -33,7 +34,7 @@ export default {
     roomid: String,
   },
   computed: {
-    ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
+    ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'usersPosition']),
     ...mapState('authorization', ['userData', 'currentUser']),
   },
 
@@ -46,7 +47,7 @@ export default {
   }),
   methods: {
     ...mapActions('authorization', ['getUserData']),
-    ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser']),
+    ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser', 'getPosition']),
     ...mapActions('messages', ['getDialogs']),
     async initUsers() {
       if (Object.keys(this.roomList).length > 0
@@ -54,14 +55,19 @@ export default {
         Object.keys(this.roomList[this.$route.params.roomid].users).forEach(async (roomUserID) => {
           const { userId } = this.roomList[this.$route.params.roomid].users[roomUserID];
           const userDataNew = await this.getUserData(userId);
+          console.log(await userDataNew);
           if (Object.keys(userDataNew).length > 0) {
-            this.chatters.push(this.userData[userId]);
+            const chatter = this.userData[userId];
+            console.log(this.usersPosition);
+            chatter.position = this.usersPosition[userId].position;
+            console.log(chatter);
+            this.chatters.push(chatter);
           }
         });
       }
     },
   },
-  created() {
+  mounted() {
     this.innerHeight = window.innerHeight;
     if (Object.keys(this.roomList).length === 0) {
       this.getRooms()
@@ -69,17 +75,9 @@ export default {
     } else {
       this.background = this.roomList[this.$route.params.roomid].picture;
     }
-    this.initUsers();
-  },
-  mounted() {
     this.getDialogs(this.$route.params.roomid);
-    // const current = Object.keys(this.currentUser);
-    // const currentData = Object.values(this.currentUser);
-
-    // console.log(this.currentUser);
-    // // eslint-disable-next-line max-len
-    // this.chatters.push({ userId: current[0], ...currentData[0] });
-    // console.log(this.chatters);
+    this.getPosition(this.$route.params.roomid);
+    this.initUsers();
   },
   beforeRouteLeave(from, to, next) {
     const userVal = Object.values(this.currentUser)[0];
@@ -92,13 +90,10 @@ export default {
   },
   watch: {
     async userAdded(newUser) {
-      console.log(newUser);
       if (newUser.roomId === this.$route.params.roomid) {
         const userDataNew = await this.getUserData(newUser.userId);
-        console.log(await userDataNew);
-        if (await Object.keys(userDataNew).length > 0) {
-          await this.chatters.push(this.userData[newUser.userId]);
-          console.log(this.chatters);
+        if (Object.keys(userDataNew).length > 0) {
+          this.chatters.push(await userDataNew);
         }
       }
     },
@@ -108,7 +103,6 @@ export default {
         const userIdIndex = this.chatters.findIndex(findUserIndex);
         this.chatters.splice(userIdIndex, 1);
       }
-      console.log(this.chatters);
     },
   },
 };

@@ -6,6 +6,7 @@ const state = {
   userAdded: {},
   userExit: {},
   getingRoomsLoading: false,
+  usersPosition: {},
 };
 
 const getters = {
@@ -76,6 +77,15 @@ const actions = {
       console.log(error);
     }
   },
+  async getPosition({ commit }, roomId) {
+    const snapshot = await firebase.database().ref(`rooms/${roomId}/users/`).once('value');
+    Object.values(snapshot.val()).forEach(({ userId }) => {
+      const userPosition = firebase.database().ref(`users/${userId}/position/`);
+      userPosition.on('value', (snapPosition) => {
+        commit('SET_USER_POSITION', { position: snapPosition.val(), userId });
+      });
+    });
+  },
 };
 
 const mutations = {
@@ -109,6 +119,10 @@ const mutations = {
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
     delete state.roomList[roomId].users[roomUsersKey];
     state.userExit = { roomId, ...userId };
+  },
+  SET_USER_POSITION(state, { position, userId }) {
+    Object.assign(state.usersPosition, { [userId]: { position } });
+    console.log(state.usersPosition);
   },
 };
 

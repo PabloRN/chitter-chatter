@@ -34,6 +34,18 @@ const actions = {
       }
     });
   },
+  initPosition(_, { left, top, userId }) {
+    firebase.database().ref(`users/${userId}/position`).set({
+      left,
+      top,
+    });
+  },
+  changePosition(_, { left, top, userId }) {
+    firebase.database().ref(`users/${userId}/position`).set({
+      left,
+      top,
+    });
+  },
   async getUserData({ commit }, userId) {
     const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
     commit('setUserData', await { ...snapshot.val(), userId });

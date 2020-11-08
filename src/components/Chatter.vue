@@ -4,7 +4,7 @@
 @keyboard-clicked="keyboardCLicked"
 
  width="50" style="heigth:200px;width:50px;">
- <DialogBubble ref="bubble" class="mb-7" :id="`bb-${userId}`" :message="message" />
+ <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
   <v-img class="chatter"
   height="200"
   max-width="50"
@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters, mapState, mapActions } from 'vuex';
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
 
@@ -30,6 +30,7 @@ export default {
     avatar: String,
     nickname: String,
     rooms: Object,
+    position: Object,
   },
   data: () => ({
     keyboardClicked: false,
@@ -82,10 +83,10 @@ export default {
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
     this.chatterManager = this.$refs[this.userId];
-    // Object.assign(this.chatterManager)
     this.chatterManager.style.position = 'absolute';
-    this.chatterManager.style.left = `${windowWidth / 2}px`;
-    this.chatterManager.style.top = `${windowHeight / 2}px`;
+    this.chatterManager.style.left = this.position !== undefined ? this.position.left : `${windowWidth / 2}px`;
+    this.chatterManager.style.top = this.position !== undefined ? this.position.top : `${windowHeight / 2}px`;
+    this.initPosition({ left: `${windowWidth / 2}px`, top: `${windowHeight / 2}px`, userId: this.userId });
     this.chatterManager.addEventListener('mousedown', (e) => {
       e.preventDefault();
       this.isDown = true;
@@ -115,18 +116,19 @@ export default {
       if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
         this.mouseMoved = true;
         const mousePosition = {
-
           x: e.clientX,
           y: e.clientY,
 
         }; if (this.chatterManager.offsetLeft >= 0) {
           this.chatterManager.style.left = `${mousePosition.x + this.offset[0]}px`;
+          this.changePosition({ left: `${mousePosition.x + this.offset[0]}px`, top: `${mousePosition.y + this.offset[0]}px`, userId: this.userId });
         } else {
           this.chatterManager.offsetLeft = 0;
           this.chatterManager.offsetLeft += 5;
         }
         if (this.chatterManager.offsetTop >= 0) {
           this.chatterManager.style.top = `${mousePosition.y + this.offset[1]}px`;
+          this.changePosition({ left: `${mousePosition.x + this.offset[0]}px`, top: `${mousePosition.y + this.offset[0]}px`, userId: this.userId });
         }
       }
     }, true);
@@ -139,6 +141,7 @@ export default {
     },
   },
   methods: {
+    ...mapActions('authorization', ['initPosition', 'changePosition']),
     keyboardCLicked(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -183,5 +186,8 @@ export default {
 <style scoped>
 .chatter:hover{
   cursor: pointer;
+}
+.chater{
+  position: absolute;
 }
 </style>
