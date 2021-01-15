@@ -4,7 +4,7 @@
 @keyboard-clicked="keyboardCLicked"
 
  width="50" style="heigth:200px;width:50px;">
- <DialogBubble ref="bubble" class="mb-7" :id="`bb-${userId}`" :message="message" />
+ <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
   <v-img class="chatter"
   height="200"
   max-width="50"
@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters, mapState, mapActions } from 'vuex';
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
 
@@ -77,72 +77,81 @@ export default {
         name: 'mad',
       },
     ],
+    windowHeight: 0,
+    windowWidth: 0,
   }),
-  mounted() {
-    const windowHeight = window.innerHeight;
-    const windowWidth = window.innerWidth;
-    this.chatterManager = this.$refs[this.userId];
-    // Object.assign(this.chatterManager)
-    this.chatterManager.style.position = 'absolute';
-    this.chatterManager.style.left = `${windowWidth / 2}px`;
-    this.chatterManager.style.top = `${windowHeight / 2}px`;
-    this.chatterManager.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      this.isDown = true;
-      this.offset = [
-        this.chatterManager.offsetLeft - e.clientX,
-        this.chatterManager.offsetTop - e.clientY,
-      ];
-    }, true);
-    document.addEventListener('mouseup', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.isDown = false;
-    }, true);
-    this.chatterManager.addEventListener('click', (e) => {
-      e.preventDefault();
-      // e.stopPropagation();
-      if (this.mouseMoved !== true && e.target.localName === 'div') {
-        console.log('clicked');
-      }
-      this.mouseMoved = false;
-      this.keyboardClicked = false;
-    }, true);
-
-    document.addEventListener('mousemove', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (this.isDown) {
-        this.mouseMoved = true;
-        const mousePosition = {
-
-          x: e.clientX,
-          y: e.clientY,
-
-        }; if (this.chatterManager.offsetLeft >= 0) {
-          this.chatterManager.style.left = `${mousePosition.x + this.offset[0]}px`;
-        } else {
-          this.chatterManager.offsetLeft = 0;
-          this.chatterManager.offsetLeft += 5;
+  created() {
+    this.windowHeight = window.outerHeight;
+    this.windowWidth = window.outerWidth;
+  },
+  async mounted() {
+    this.chatterManager = await this.$refs[this.userId];
+    if (this.chatterManager) {
+      this.initPosition({
+        left: this.usersPosition[this.userId] ? this.usersPosition[this.userId].position.left : `${this.windowWidth / 2}px`,
+        top: this.usersPosition[this.userId] ? this.usersPosition[this.userId].position.top : `${this.windowHeight / 2}px`,
+        userId: this.userId,
+      });
+      this.chatterManager.style.position = 'absolute';
+      this.chatterManager.style.left = `${this.windowWidth / 2}px`;
+      this.chatterManager.style.top = `${this.windowHeight / 2}px`;
+      this.chatterManager.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this.isDown = true;
+        this.offset = [
+          this.chatterManager.offsetLeft - e.clientX,
+          this.chatterManager.offsetTop - e.clientY,
+        ];
+      }, true);
+      document.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.isDown = false;
+      }, true);
+      this.chatterManager.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.mouseMoved !== true && e.target.localName === 'div') {
+          console.log('clicked');
         }
-        if (this.chatterManager.offsetTop >= 0) {
-          this.chatterManager.style.top = `${mousePosition.y + this.offset[1]}px`;
+        this.mouseMoved = false;
+        this.keyboardClicked = false;
+      }, true);
+
+      document.addEventListener('mousemove', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
+          this.mouseMoved = true;
+          const mousePosition = {
+            x: e.clientX,
+            y: e.clientY,
+
+          };
+          this.changePosition({
+            left: `${mousePosition.x + this.offset[0]}px`,
+            top: `${mousePosition.y + this.offset[1]}px`,
+            userId: this.userId,
+          });
         }
-      }
-    }, true);
+      }, true);
+    }
   },
   computed: {
-    ...mapGetters('authorization', ['getCurrentUser']),
+    ...mapGetters('authorization', ['getCurrentUser', 'getUserPosition']),
     ...mapState('messages', ['dialogText']),
+    ...mapState('authorization', ['usersPosition', 'userPositionmodified']),
     isCurrentUser() {
       return this.userId === Object.keys(this.getCurrentUser)[0];
     },
+    userposition() {
+      return this.usersPosition[this.userId].position;
+    },
   },
   methods: {
+    ...mapActions('authorization', ['initPosition', 'changePosition']),
     keyboardCLicked(e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log('keyboardCLicked');
       this.keyboardClicked = true;
     },
     changeAvatar() {
@@ -177,11 +186,24 @@ export default {
       }
       console.log(newVal);
     },
+    userPositionmodified() {
+      console.log(this.usersPosition[this.userId]);
+      console.log(this.userId);
+      if (this.usersPosition[this.userId]) {
+        console.log(this.usersPosition[this.userId]);
+        const { left, top } = this.usersPosition[this.userId].position;
+        this.chatterManager.style.left = left;
+        this.chatterManager.style.top = top;
+      }
+    },
   },
 };
 </script>
 <style scoped>
 .chatter:hover{
   cursor: pointer;
+}
+.chater{
+  position: absolute;
 }
 </style>

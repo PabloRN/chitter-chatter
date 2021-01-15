@@ -12,6 +12,8 @@ const state = {
   code: '',
   userData: {},
   currentUser: {},
+  usersPosition: {},
+  userPositionmodified: false,
 };
 
 const getters = {
@@ -34,9 +36,25 @@ const actions = {
       }
     });
   },
+  initPosition(_, { left, top, userId }) {
+    firebase.database().ref(`users/${userId}/position`).set({
+      left,
+      top,
+    });
+  },
+  changePosition(_, { left, top, userId }) {
+    firebase.database().ref(`users/${userId}/position`).set({
+      left,
+      top,
+    });
+  },
   async getUserData({ commit }, userId) {
     const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
     commit('setUserData', await { ...snapshot.val(), userId });
+    const userPosition = firebase.database().ref(`users/${userId}/position/`);
+    userPosition.on('value', (snapPosition) => {
+      commit('SET_USER_POSITION', { position: snapPosition.val(), userId });
+    });
     return { ...snapshot.val(), userId };
   },
   setEmailAction: async ({ commit }, payload) => {
@@ -152,6 +170,14 @@ const mutations = {
   },
   GET_AVATARS_FAILED(state) {
     state.getavatarsLoading = false;
+  },
+  SET_USER_POSITION(state, { position, userId }) {
+    if (state.usersPosition[userId]) {
+      state.usersPosition[userId].position = position;
+    } else {
+      Object.assign(state.usersPosition, { [userId]: { position } });
+    }
+    state.userPositionmodified = !state.userPositionmodified;
   },
 };
 

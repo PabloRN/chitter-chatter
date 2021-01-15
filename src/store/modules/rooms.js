@@ -12,6 +12,9 @@ const getters = {
   getAllRooms(state) {
     return state.roomList;
   },
+  getUserPosition(state) {
+    return state.usersPosition;
+  },
 };
 const actions = {
 

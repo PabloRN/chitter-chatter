@@ -1,6 +1,6 @@
 <template>
 <v-scroll-y-reverse-transition>
- <div v-if="showBubble" class="bubble bubble-bottom-left text-overline">
+ <div v-if="showBubble" class="bubble bubble-bottom-left text-body-2 pa-4">
    {{text}}</div>
 </v-scroll-y-reverse-transition>
 </template>
@@ -46,20 +46,21 @@ export default {
 };
 </script>
 <style scoped>
+@import url(https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic);
 
 .bubble {
   position: absolute;
-  font-family: sans-serif;
+  font-family: 'Courier New', Courier, monospace sans-serif!important;
   font-size: 16px;
   line-height: 1.2;
   width: 200px;
   background: #fff;
   border-radius: 10px;
-  padding: 20px;
   color: #000;
-  top: -120px;
+  bottom: 245px;
   max-height: 92px;
-  text-align: justify;
+  text-align: center;
+  box-shadow: 1px 1px 3px #424242;
 }
 
 .bubble-bottom-left:before {

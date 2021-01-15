@@ -121,7 +121,8 @@ export default {
 }
 .text-area-input textarea{
     line-height: 1.3rem!important;
-    margin-top: 5px!important;
+    margin-top: 3px!important;
+    padding-top: 5px!important;
 }
 .keyboard-icon{
    z-index: 100;
