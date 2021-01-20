@@ -1,9 +1,10 @@
 <template>
   <transition name="fade">
     <ValidationObserver ref="obs" v-slot="{ invalid }">
-      <v-row class="px-15 mx-15">
-        <v-col cols="6">
-          <v-card class="elevation-0 login_card mb-1 pa-10 px-10" transition="scale-transition">
+      <v-row class="px-lg-15 mx-lg-15 px-md-0 mx-md-0">
+        <v-col cols="6" xs="12" md="6">
+          <v-card class="elevation-0 login_card mb-1 pa-lg-10 pa-md-0 px-lg-10 px-md-0"
+           transition="scale-transition">
             <v-card-text>
               <v-form>
                 <ValidationProvider v-slot="{ errors }" rules="required">
@@ -24,8 +25,9 @@
         <v-col cols="6">
           <template>
             <v-carousel @change="checkAvatar" hide-delimiters>
-              <v-carousel-item v-for="(item,i) in getAllAvatars"
-               :key="i" :src="item.url" ></v-carousel-item>
+              <v-carousel-item style="height:auto;" v-for="(item,i) in getAllAvatars"
+               :key="i" ><v-img :src="item.url" :contain="true" height="auto">
+                 </v-img> </v-carousel-item>
             </v-carousel>
           </template>
         </v-col>

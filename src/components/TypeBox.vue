@@ -6,6 +6,7 @@
       dark
       x-small
       @click.prevent="toggleKeyBoard"
+      @touchstart.native.prevent="toggleKeyBoard"
     >
       <v-icon v-if="hideKeyboard" dark>
         mdi-keyboard
@@ -39,7 +40,8 @@
       <v-spacer></v-spacer>
       <v-col cols="3" style="background: rgba(255,255,255,0.5);border-radius: 0px 10px 10px 0px;">
         <v-btn class="grey lighten-1"
-         :disabled="message.length === 0" @click="talk"  block elevation="2" large x-small
+         :disabled="message.length === 0" @click="talk" @touchstart.native.prevent="talk"
+          block elevation="2" large x-small
          style="border-radius: 0px 10px 10px 0px;height: 98.5%;">
          <span class="text-caption font-weight-medium"
           style="color: #616161;
