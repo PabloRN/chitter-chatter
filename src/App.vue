@@ -37,11 +37,13 @@ export default Vue.extend({
   },
   created() {
     this.SET_LANG();
+    this.getUser();
     // this.checkLoggedIn();
     console.log('ENV:', process.env.NODE_ENV);
   },
   methods: {
     ...mapActions('languageswitcher', ['SET_LANG']),
+    ...mapActions('authorization', ['getUser']),
     // checkLoggedIn() {
     //   if (this.$ls.get('isLoggedIn') !== true) {
     //     this.$router.push({ name: 'login' });

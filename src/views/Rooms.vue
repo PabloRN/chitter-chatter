@@ -2,19 +2,18 @@
   <div class="home">
 <v-row dense>
         <v-col
-          v-for="card in cards"
-          :key="card.title"
-          :cols="card.flex"
+          v-for="(room, key) in getAllRooms"
+          :key="key"
+          :cols="2"
         >
-          <v-card @click="$router.push({name: 'room',
-           params: {roomid: card.id, background: card.src}})">
+          <v-card @click="enterRoom(room, key)">
             <v-img
-              :src="card.src"
+              :src="room.picture"
               class="white--text align-end"
               gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
               height="200px"
             >
-              <v-card-title v-text="card.title"></v-card-title>
+              <v-card-title v-text="room.nombre"></v-card-title>
             </v-img>
 
             <v-card-actions>
@@ -40,6 +39,7 @@
 
 <script>
 // @ is an alias to /src
+import { mapActions, mapGetters, mapState } from 'vuex';
 
 export default {
   name: 'Home',
@@ -47,17 +47,31 @@ export default {
 
   },
   data: () => ({
-    cards: [
-      {
-        title: 'Pre-fab homes', src: 'https://cdn.vuetifyjs.com/images/cards/house.jpg', flex: 2, id: '12345',
-      },
-      {
-        title: 'Favorite road trips', src: 'https://cdn.vuetifyjs.com/images/cards/road.jpg', flex: 2, id: '67890',
-      },
-      {
-        title: 'Best airlines', src: 'https://cdn.vuetifyjs.com/images/cards/plane.jpg', flex: 2, id: '102938',
-      },
-    ],
+
   }),
+  computed: {
+    ...mapGetters('rooms', ['getAllRooms']),
+    ...mapState('rooms', ['roomList']),
+    ...mapGetters('authorization', ['getCurrentUser']),
+  },
+  methods: {
+    ...mapActions('rooms', ['getRooms', 'pushUser']),
+    enterRoom(room, key) {
+      this.pushUser({ roomId: key, userId: Object.keys(this.getCurrentUser)[0] });
+      this.$router.push({
+        name: 'room',
+        params: { roomid: key, background: room.picture, maxusers: room.maxusers },
+      });
+    },
+  },
+  created() {
+    this.getRooms();
+  },
+  watch: {
+    roomList: {
+      deep: true,
+      handler(newval, oldval) { console.log({ newval, oldval }); },
+    },
+  },
 };
 </script>

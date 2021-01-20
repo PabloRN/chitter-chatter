@@ -1,17 +1,18 @@
 <template>
 <v-scroll-y-reverse-transition>
- <div v-if="showBubble" class="bubble bubble-bottom-left">
+ <div v-if="showBubble" class="bubble bubble-bottom-left text-body-2 pa-4">
    {{text}}</div>
 </v-scroll-y-reverse-transition>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+// import { mapGetters } from 'vuex';
 
 export default {
   name: 'dialogbubble',
   props: {
-
+    id: String,
+    message: String,
   },
   data: () => ({
     text: '',
@@ -22,7 +23,7 @@ export default {
 
   },
   computed: {
-    ...mapGetters('dialog', ['getText']),
+    // ...mapGetters('messages', ['getText']),
   },
   methods: {
     removeTimer() {
@@ -30,7 +31,7 @@ export default {
     },
   },
   watch: {
-    getText(value) {
+    message(value) {
       this.removeTimer();
       if (value && value.length > 0) {
         this.text = value;
@@ -45,20 +46,21 @@ export default {
 };
 </script>
 <style scoped>
+@import url(https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic);
 
 .bubble {
   position: absolute;
-  font-family: sans-serif;
-  font-size: 14px;
-  line-height: 18px;
+  font-family: 'Courier New', Courier, monospace sans-serif!important;
+  font-size: 16px;
+  line-height: 1.2;
   width: 200px;
   background: #fff;
   border-radius: 10px;
-  padding: 18px;
-  text-align: center;
   color: #000;
-  top: -90px;
-  max-height: 72px;
+  bottom: 245px;
+  max-height: 92px;
+  text-align: center;
+  box-shadow: 1px 1px 3px #424242;
 }
 
 .bubble-bottom-left:before {
