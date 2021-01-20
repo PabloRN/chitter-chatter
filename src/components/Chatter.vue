@@ -2,6 +2,8 @@
 <div :id="userId" :ref="userId"
  heigth="200"
 @keyboard-clicked="keyboardCLicked"
+@click="chatterClicked"
+@touchstart="chatterClicked"
 
  width="50" style="heigth:200px;width:50px;">
  <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
@@ -82,6 +84,8 @@ export default {
   }),
   created() {
     this.windowHeight = window.outerHeight;
+    console.log(window.outerHeight);
+    console.log(window.outerWidth);
     this.windowWidth = window.outerWidth;
   },
   async mounted() {
@@ -95,6 +99,8 @@ export default {
       this.chatterManager.style.position = 'absolute';
       this.chatterManager.style.left = `${this.windowWidth / 2}px`;
       this.chatterManager.style.top = `${this.windowHeight / 2}px`;
+
+      // Mouse events
       this.chatterManager.addEventListener('mousedown', (e) => {
         e.preventDefault();
         this.isDown = true;
@@ -103,20 +109,6 @@ export default {
           this.chatterManager.offsetTop - e.clientY,
         ];
       }, true);
-      document.addEventListener('mouseup', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.isDown = false;
-      }, true);
-      this.chatterManager.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (this.mouseMoved !== true && e.target.localName === 'div') {
-          console.log('clicked');
-        }
-        this.mouseMoved = false;
-        this.keyboardClicked = false;
-      }, true);
-
       document.addEventListener('mousemove', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -134,6 +126,49 @@ export default {
           });
         }
       }, true);
+
+      // Touch events
+      this.chatterManager.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.isDown = false;
+      }, true);
+      this.chatterManager.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        this.isDown = true;
+        this.offset = [
+          this.chatterManager.offsetLeft - e.changedTouches[0].clientX,
+          this.chatterManager.offsetTop - e.changedTouches[0].clientY,
+        ];
+      }, true);
+      this.chatterManager.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
+          this.mouseMoved = true;
+          const mousePosition = {
+            x: e.changedTouches[0].clientX,
+            y: e.changedTouches[0].clientY,
+          };
+          this.changePosition({
+            left: `${mousePosition.x + this.offset[0]}px`,
+            top: `${mousePosition.y + this.offset[1]}px`,
+            userId: this.userId,
+          });
+        }
+      });
+      this.chatterManager.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.isDown = false;
+      }, true);
+      // this.chatterManager.addEventListener('click', (e) => {
+      //   e.preventDefault();
+      //   if (this.mouseMoved !== true && e.target.localName === 'div') {
+      //     this.chatterClicked(e);
+      //   }
+      //   this.mouseMoved = false;
+      //   this.keyboardClicked = false;
+      // }, true);
     }
   },
   computed: {
@@ -166,17 +201,16 @@ export default {
     changeStatus() {
 
     },
-    toTalk() {
-
-    },
     leaveRoom() {
 
     },
-    chatterClicked() {
-      if (this.id) {
-        console.log(this.id);
-        console.log(this.$$refs[this.id]);
+    chatterClicked(e) {
+      e.preventDefault();
+      if (this.mouseMoved !== true) {
+        console.log('clicked', this.$refs);
       }
+      this.mouseMoved = false;
+      this.keyboardClicked = false;
     },
   },
   watch: {
@@ -184,13 +218,9 @@ export default {
       if (newVal[newVal.length - 1].userId === this.userId) {
         this.message = newVal[newVal.length - 1].text;
       }
-      console.log(newVal);
     },
     userPositionmodified() {
-      console.log(this.usersPosition[this.userId]);
-      console.log(this.userId);
       if (this.usersPosition[this.userId]) {
-        console.log(this.usersPosition[this.userId]);
         const { left, top } = this.usersPosition[this.userId].position;
         this.chatterManager.style.left = left;
         this.chatterManager.style.top = top;
