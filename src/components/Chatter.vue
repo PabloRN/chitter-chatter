@@ -1,31 +1,34 @@
 <template>
 <div :id="userId" :ref="userId"
- heigth="200"
-@keyboard-clicked="keyboardCLicked"
-@click="chatterClicked"
-@touchstart="chatterClicked"
-
- width="50" style="heigth:200px;width:50px;">
- <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
-  <v-img class="chatter"
-  height="200"
-  max-width="50"
-  :src="avatar"
-></v-img>
-<TypeBox ref="keyboard" v-if="isCurrentUser" />
+    heigth="200"
+    @keyboard-clicked="keyboardCLicked"
+    @click="chatterClicked"
+    @touchstart="chatterClicked"
+    width="50"
+    style="heigth:200px;width:50px;">
+    <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
+    <v-img class="chatter" height="200" max-width="50" :src="avatar"></v-img>
+    <TypeBox ref="keyboard" v-if="isCurrentUser" />
+    <RoundedMenu ref="roundedmenu" v-if="!isCurrentUser" />
 </div>
 </template>
 
 <script>
-import { mapGetters, mapState, mapActions } from 'vuex';
+import {
+  mapGetters,
+  mapState,
+  mapActions,
+} from 'vuex';
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
+import RoundedMenu from '@/components/RoundedMenu.vue';
 
 export default {
   name: 'chatter',
   components: {
     TypeBox,
     DialogBubble,
+    RoundedMenu,
   },
   props: {
     userId: String,
@@ -57,27 +60,26 @@ export default {
       inlove: false,
     },
     message: '',
-    expresionList: [
-      {
-        icon: 'img/icons/smily-smile',
-        name: 'smile',
-      },
-      {
-        icon: 'img/icons/smily-inlove',
-        name: 'inlove',
-      },
-      {
-        icon: 'img/icons/smily-shocked',
-        name: 'shocked',
-      },
-      {
-        icon: 'img/icons/smily-sad',
-        name: 'sad',
-      },
-      {
-        icon: 'img/icons/smily-mad',
-        name: 'mad',
-      },
+    expresionList: [{
+      icon: 'img/icons/smily-smile',
+      name: 'smile',
+    },
+    {
+      icon: 'img/icons/smily-inlove',
+      name: 'inlove',
+    },
+    {
+      icon: 'img/icons/smily-shocked',
+      name: 'shocked',
+    },
+    {
+      icon: 'img/icons/smily-sad',
+      name: 'sad',
+    },
+    {
+      icon: 'img/icons/smily-mad',
+      name: 'mad',
+    },
     ],
     windowHeight: 0,
     windowWidth: 0,
@@ -92,8 +94,8 @@ export default {
     this.chatterManager = await this.$refs[this.userId];
     if (this.chatterManager) {
       this.initPosition({
-        left: this.usersPosition[this.userId] ? this.usersPosition[this.userId].position.left : `${this.windowWidth / 2}px`,
-        top: this.usersPosition[this.userId] ? this.usersPosition[this.userId].position.top : `${this.windowHeight / 2}px`,
+        left: this.usersPosition[this.userId] && this.usersPosition[this.userId].position ? this.usersPosition[this.userId].position.left : `${this.windowWidth / 2}px`,
+        top: this.usersPosition[this.userId] && this.usersPosition[this.userId].position ? this.usersPosition[this.userId].position.top : `${this.windowHeight / 2}px`,
         userId: this.userId,
       });
       this.chatterManager.style.position = 'absolute';
@@ -204,10 +206,15 @@ export default {
     leaveRoom() {
 
     },
+    invitePrivate() {
+
+    },
     chatterClicked(e) {
       e.preventDefault();
       if (this.mouseMoved !== true) {
-        console.log('clicked', this.$refs);
+        if (!this.isCurrentUser) {
+          console.log(this.userId);
+        }
       }
       this.mouseMoved = false;
       this.keyboardClicked = false;
@@ -221,7 +228,10 @@ export default {
     },
     userPositionmodified() {
       if (this.usersPosition[this.userId]) {
-        const { left, top } = this.usersPosition[this.userId].position;
+        const {
+          left,
+          top,
+        } = this.usersPosition[this.userId].position;
         this.chatterManager.style.left = left;
         this.chatterManager.style.top = top;
       }
@@ -229,11 +239,13 @@ export default {
   },
 };
 </script>
+
 <style scoped>
-.chatter:hover{
-  cursor: pointer;
+.chatter:hover {
+    cursor: pointer;
 }
-.chater{
-  position: absolute;
+
+.chater {
+    position: absolute;
 }
 </style>
