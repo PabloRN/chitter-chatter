@@ -38,6 +38,25 @@ const actions = {
       console.log(error);
     }
   },
+  async sendPrivateMessageRequest({ commit }, { currentUser, userId }) {
+    console.log(userId);
+    const currentId = Object.keys(currentUser)[0];
+    commit('SEND_PRIVATE_MESSAGE_REQUEST');
+    try {
+      firebase.database().ref(`users/${userId}/privateMessage/`).set({
+        requestedBy: currentId,
+      });
+      commit('main/setSnackbar',
+        {
+          type: 'success',
+          msg: 'Private message resquest successfuly sent',
+        },
+        { root: true });
+      commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
+    } catch (error) {
+      console.log(error);
+    }
+  },
   async getDialogs({ commit }, roomId) {
     try {
       firebase.database()

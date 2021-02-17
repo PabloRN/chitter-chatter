@@ -57,12 +57,6 @@ const actions = {
     });
     return { ...snapshot.val(), userId };
   },
-  setEmailAction: async ({ commit }, payload) => {
-    commit('setEmail', payload);
-  },
-  setPasswordAction: async ({ commit }, payload) => {
-    commit('setPassword', payload);
-  },
   // eslint-disable-next-line no-empty-pattern
   signUserUp({ commit, state }, data) {
     const { nickname, avatar, age } = data;
@@ -145,8 +139,6 @@ const actions = {
 };
 
 const mutations = {
-  setEmail(state, data) { state.email = data; },
-  setPassword(state, data) { state.password = data; },
   setCurrentUser(state, data) {
     if (state.currentUser[data.userId]) {
       state.currentUser[data.userId] = data.data;

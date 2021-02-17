@@ -9,7 +9,8 @@
     <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
     <v-img class="chatter" height="200" max-width="50" :src="avatar"></v-img>
     <TypeBox ref="keyboard" v-if="isCurrentUser" />
-    <RoundedMenu ref="roundedmenu" v-if="!isCurrentUser" />
+    <RoundedMenu v-on="{['privateMessage']:invitePrivate}"
+     ref="roundedmenu" v-if="!isCurrentUser" />
 </div>
 </template>
 
@@ -186,6 +187,7 @@ export default {
   },
   methods: {
     ...mapActions('authorization', ['initPosition', 'changePosition']),
+    ...mapActions('messages', ['sendPrivateMessageRequest']),
     keyboardCLicked(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -207,10 +209,12 @@ export default {
 
     },
     invitePrivate() {
-
+      console.log('invited: ', this.userId);
+      this.sendPrivateMessageRequest({ currentUser: this.getCurrentUser, userId: this.userId });
     },
     chatterClicked(e) {
       e.preventDefault();
+      e.stopPropagation();
       if (this.mouseMoved !== true) {
         if (!this.isCurrentUser) {
           console.log(this.userId);

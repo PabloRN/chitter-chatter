@@ -1,46 +1,47 @@
 <template>
   <div style="text-align:center;postion:absolute;height:200">
     <v-btn height="200" class="mx-2 menu-activator" dark
-      @click.prevent="toggleMenu"
+      @click.prevent.stop="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
     </v-btn>
     <v-btn :class="hideMenu ? 'hidded' : 'nothidded' "
-    class="mx-2 menu-item" fab dark x-small @click.prevent="toggleMenu"
+    class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
-      mdi-alpha-a-circle-outline
+      mdi-account-plus
     </v-icon>
     </v-btn>
     <v-btn class="mx-2 menu-item"
-     :class="hideMenu ? 'hidded' : 'nothidded' " fab dark x-small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+     :class="hideMenu ? 'hidded' : 'nothidded' "
+      fab dark small @click.prevent.stop="emit('privateMessage')"
+      @touchstart.native.prevent.stop="toggleMenu">
       <v-icon >
-      mdi-alpha-b-circle-outline
+      mdi-forum-outline
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
-     class="mx-2 menu-item" fab dark x-small @click.prevent="toggleMenu"
+     class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
-      mdi-alpha-c-circle-outline
+      mdi-information
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
-     class="mx-2 menu-item" fab dark x-small @click.prevent="toggleMenu"
+     class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
-      mdi-alpha-d-circle-outline
+      mdi-volume-off
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
-     class="mx-2 menu-item" fab dark x-small @click.prevent="toggleMenu"
+     class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
       mdi-alpha-e-circle-outline
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
-     class="mx-2 menu-item" fab dark x-small @click.prevent="toggleMenu"
+     class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
       mdi-alpha-f-circle-outline
@@ -74,10 +75,21 @@ export default {
         this.talk();
       }
     },
-    toggleMenu(e) {
-      e.preventDefault();
-      e.stopPropagation();
+    toggleMenu() {
+      // e.preventDefault();
+      // e.stopPropagation();
       this.hideMenu = !this.hideMenu;
+    },
+    emit(item) {
+      switch (item) {
+        case 'privateMessage':
+          this.toggleMenu();
+          this.$emit('privateMessage');
+          break;
+
+        default:
+          break;
+      }
     },
   },
 };
@@ -133,7 +145,9 @@ export default {
    transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
    position: absolute;
    top: 50px;
-   left: 0;
+   left: -5px;
+   z-index: 100;
+   border: 2px solid white;
 }
 .nothidded:nth-child(2) {
    transition-duration: 180ms;

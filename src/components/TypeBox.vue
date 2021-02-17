@@ -5,6 +5,7 @@
       fab
       dark
       x-small
+      :ripple="false"
       @click.prevent="toggleKeyBoard"
       @touchstart.native.prevent="toggleKeyBoard"
     >
@@ -15,10 +16,6 @@
         mdi-keyboard-off
       </v-icon>
     </v-btn>
-  <!-- <v-icon class="keyboard-icon" v-if="hideKeyboard" @click="toggleKeyBoard"
-  color="white"
-  medium
->mdi-keyboard-outline</v-icon> -->
 <v-expand-transition>
     <v-row v-if="!hideKeyboard" no-gutters class="pa-1 typebox mt-3">
       <v-col class="" cols="9"
