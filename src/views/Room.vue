@@ -1,21 +1,35 @@
 <template>
-  <div class="home" @dragover.prevent
-      @dragenter.prevent>
-          <v-card>
-            <v-img v-if="background !== ''"
-              :src="background !== '' ? background : ''"
-              class="white--text align-end"
-              height="800"
-            >
-            <Chatter v-for="{userId, avatar, nickname, rooms} in chatters"
-              :userId="userId"
-              :key="userId"
-              :avatar="avatar"
-              :nickname="nickname"
-              :rooms="rooms"/>
-            </v-img>
-            {{$route.params.id}}
-          </v-card>
+  <div class="home" @dragover.prevent @dragenter.prevent>
+    <v-card>
+      <v-img v-if="background !== ''" :src="background !== '' ? background : ''"
+        class="white--text align-end" height="800">
+        <Chatter v-for="{userId, avatar, nickname, rooms} in chatters" :userId="userId"
+          :key="userId" :avatar="avatar" :nickname="nickname" :rooms="rooms" />
+      </v-img>
+      {{$route.params.id}}
+    </v-card>
+    <v-dialog v-if="privateRequestDialog" v-model="privateRequestDialog"
+     persistent width="600"
+      class="pa-5 ma-5 progress-dialog">
+        <v-card style="width:100%">
+          <v-card-title class="text-body-2">
+          </v-card-title>
+          <v-card-text style="height: 10vh;">
+            {{ `User ${privateRequestuser.nickname} wants to start a private chat with you` }}
+          </v-card-text>
+          <v-card-actions class=" text-body-2 pa-2 d-flex justify-center align-center">
+            <v-btn small class="px-10" color="primary darken-1" tile
+              @click="confirmPrivateRequest();privateRequestDialog = false">
+             Confirm</v-btn>
+            <v-btn small class="px-10" color="primary darken-1" tile outlined
+              @click="rejectPrivateRequest();privateRequestDialog = false">
+            Reject</v-btn>
+            <v-btn small class="px-10" color="primary darken-1" tile outlined
+              @click="privateRequestDialog = false">
+            Reject and block</v-btn>
+          </v-card-actions>
+        </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -34,7 +48,7 @@ export default {
   },
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
-    ...mapState('authorization', ['userData', 'currentUser']),
+    ...mapState('authorization', ['userData', 'currentUser', 'requestedBy']),
   },
 
   data: () => ({
@@ -43,6 +57,8 @@ export default {
     initialUsers: [],
     isCurrentUser: false,
     background: '',
+    privateRequestDialog: false,
+    privateRequestuser: {},
   }),
   methods: {
     ...mapActions('authorization', ['getUserData']),
@@ -96,6 +112,12 @@ export default {
         const findUserIndex = (userId) => userId === user.userId;
         const userIdIndex = this.chatters.findIndex(findUserIndex);
         this.chatters.splice(userIdIndex, 1);
+      }
+    },
+    requestedBy(user) {
+      if (user) {
+        this.privateRequestDialog = true;
+        this.privateRequestuser = user;
       }
     },
   },

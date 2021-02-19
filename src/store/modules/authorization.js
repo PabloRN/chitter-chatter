@@ -14,6 +14,7 @@ const state = {
   currentUser: {},
   usersPosition: {},
   userPositionmodified: false,
+  requestedBy: '',
 };
 
 const getters = {
@@ -48,12 +49,16 @@ const actions = {
       top,
     });
   },
-  async getUserData({ commit }, userId) {
+  async getUserData({ commit, state }, userId) {
     const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
     commit('setUserData', await { ...snapshot.val(), userId });
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
+    const privateMessage = firebase.database().ref(`users/${Object.keys(state.currentUser)[0]}/privateMessage/requestedBy`);
     userPosition.on('value', (snapPosition) => {
       commit('SET_USER_POSITION', { position: snapPosition.val(), userId });
+    });
+    privateMessage.on('value', (snapPrivate) => {
+      commit('PRIVATE_REQUESTED', { requestedBy: state.userData[snapPrivate.val()] });
     });
     return { ...snapshot.val(), userId };
   },
@@ -170,6 +175,9 @@ const mutations = {
       Object.assign(state.usersPosition, { [userId]: { position } });
     }
     state.userPositionmodified = !state.userPositionmodified;
+  },
+  PRIVATE_REQUESTED(state, { requestedBy }) {
+    state.requestedBy = requestedBy;
   },
 };
 

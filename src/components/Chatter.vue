@@ -87,8 +87,6 @@ export default {
   }),
   created() {
     this.windowHeight = window.outerHeight;
-    console.log(window.outerHeight);
-    console.log(window.outerWidth);
     this.windowWidth = window.outerWidth;
   },
   async mounted() {
@@ -164,14 +162,6 @@ export default {
         e.stopPropagation();
         this.isDown = false;
       }, true);
-      // this.chatterManager.addEventListener('click', (e) => {
-      //   e.preventDefault();
-      //   if (this.mouseMoved !== true && e.target.localName === 'div') {
-      //     this.chatterClicked(e);
-      //   }
-      //   this.mouseMoved = false;
-      //   this.keyboardClicked = false;
-      // }, true);
     }
   },
   computed: {
@@ -209,7 +199,6 @@ export default {
 
     },
     invitePrivate() {
-      console.log('invited: ', this.userId);
       this.sendPrivateMessageRequest({ currentUser: this.getCurrentUser, userId: this.userId });
     },
     chatterClicked(e) {

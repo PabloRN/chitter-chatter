@@ -39,7 +39,6 @@ const actions = {
     }
   },
   async sendPrivateMessageRequest({ commit }, { currentUser, userId }) {
-    console.log(userId);
     const currentId = Object.keys(currentUser)[0];
     commit('SEND_PRIVATE_MESSAGE_REQUEST');
     try {
