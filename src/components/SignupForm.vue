@@ -73,8 +73,8 @@ export default {
     },
   }),
   computed: {
-    ...mapState('authorization', ['email', 'password']),
-    ...mapGetters('authorization', ['getAllAvatars']),
+    ...mapState('user', ['email', 'password']),
+    ...mapGetters('user', ['getAllAvatars']),
   },
   created() {
 
@@ -84,7 +84,7 @@ export default {
   },
   methods: {
     ...mapMutations('store', ['setSnackbar']),
-    ...mapActions('authorization', ['signUserUp', 'getAvatars']),
+    ...mapActions('user', ['signUserUp', 'getAvatars']),
     setIsLoading(val) {
       this.isLoading = val;
     },

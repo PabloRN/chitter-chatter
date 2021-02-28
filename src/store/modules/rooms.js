@@ -70,6 +70,8 @@ const actions = {
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
       updates[`/users/${userId}/rooms/${roomId}`] = null;
       updates[`/users/${userId}/messages/`] = null;
+      updates[`/users/${userId}/privateMessage/`] = null;
+      updates[`/users/${userId}/position/`] = null;
       firebase.database()
         .ref(`rooms/${roomId}/messages/`)
         .off();

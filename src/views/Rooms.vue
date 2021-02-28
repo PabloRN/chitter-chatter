@@ -56,7 +56,7 @@ export default {
   computed: {
     ...mapGetters('rooms', ['getAllRooms']),
     ...mapState('rooms', ['roomList']),
-    ...mapGetters('authorization', ['getCurrentUser']),
+    ...mapGetters('user', ['getCurrentUser']),
   },
   methods: {
     ...mapActions('rooms', ['getRooms', 'pushUser']),

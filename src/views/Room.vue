@@ -48,7 +48,7 @@ export default {
   },
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
-    ...mapState('authorization', ['userData', 'currentUser', 'requestedBy']),
+    ...mapState('user', ['userData', 'currentUser', 'requestedBy']),
   },
 
   data: () => ({
@@ -61,9 +61,9 @@ export default {
     privateRequestuser: {},
   }),
   methods: {
-    ...mapActions('authorization', ['getUserData']),
+    ...mapActions('user', ['getUserData']),
     ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser']),
-    ...mapActions('messages', ['getDialogs']),
+    ...mapActions('messages', ['getDialogs', 'confirmPrivate']),
     async initUsers() {
       if (Object.keys(this.roomList).length > 0
        && Object.keys(this.roomList[this.$route.params.roomid].users).length > 0) {
@@ -76,6 +76,14 @@ export default {
           }
         });
       }
+    },
+    confirmPrivateRequest() {
+      this.confirmPrivate({
+        requestedBy: this.requestedBy.userId,
+        currentUser: Object.keys(this.currentUser)[0],
+      });
+      console.log(this.requestedBy);
+      console.log(this.currentUser);
     },
   },
   mounted() {

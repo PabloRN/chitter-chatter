@@ -38,13 +38,54 @@ const actions = {
       console.log(error);
     }
   },
+  async confirmPrivate({ commit }, { requestedBy, currentUser }) {
+    commit('CONFIRM_REQUEST');
+    try {
+      const privateMessagesKey = await firebase.database().ref().child(`privateMessages/${requestedBy}_${currentUser}`).push().key;
+      const updates = {};
+      updates[`privateMessages/${requestedBy}_${currentUser}/${privateMessagesKey}`] = {
+        userId: currentUser,
+        message: 'Hey let`s talk',
+      };
+      await firebase.database().ref().update(updates);
+      await firebase.database()
+        .ref(`privateMessages/${requestedBy}_${currentUser}`)
+        .on('child_added', async (messageSnap) => { // Get the private message sent
+          console.log('message added', messageSnap.val());
+          // if (messageSnap.val() !== null) {
+          //   commit('MESSAGE_ADDED_SUCCESS', {
+          //     roomId,
+          //     text: messageSnap.val().message,
+          //     userId: messageSnap.val().userId,
+          //     roomUsersKey: messageSnap.key,
+          //   });
+          // }
+        });
+      commit('SEND_MESSAGE_SUCCESS');
+    } catch (error) {
+      console.log(error);
+    }
+  },
   async sendPrivateMessageRequest({ commit }, { currentUser, userId }) {
     const currentId = Object.keys(currentUser)[0];
     commit('SEND_PRIVATE_MESSAGE_REQUEST');
     try {
-      firebase.database().ref(`users/${userId}/privateMessage/`).set({
+      await firebase.database().ref(`users/${userId}/privateMessage/`).set({
         requestedBy: currentId,
       });
+      await firebase.database()
+        .ref(`privateMessages/${currentId}_${userId}`)
+        .on('child_added', async (messageSnap) => { // Get the private message sent
+          console.log('message added', messageSnap.val());
+          // if (messageSnap.val() !== null) {
+          //   commit('MESSAGE_ADDED_SUCCESS', {
+          //     roomId,
+          //     text: messageSnap.val().message,
+          //     userId: messageSnap.val().userId,
+          //     roomUsersKey: messageSnap.key,
+          //   });
+          // }
+        });
       commit('main/setSnackbar',
         {
           type: 'success',

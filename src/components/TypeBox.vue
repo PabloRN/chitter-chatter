@@ -65,7 +65,7 @@ export default {
 
   },
   computed: {
-    ...mapGetters('authorization', ['getCurrentUser']),
+    ...mapGetters('user', ['getCurrentUser']),
   },
   methods: {
     ...mapActions('messages', ['sendMessage']),

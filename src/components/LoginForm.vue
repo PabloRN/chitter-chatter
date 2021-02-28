@@ -53,7 +53,7 @@ export default {
     // this.setDrawer(false);
   },
   methods: {
-    ...mapActions('authorization', ['signUserIn']),
+    ...mapActions('user', ['signUserIn']),
     setIsLoading(val) {
       this.isLoading = val;
     },

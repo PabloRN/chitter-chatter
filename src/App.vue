@@ -43,7 +43,7 @@ export default Vue.extend({
   },
   methods: {
     ...mapActions('languageswitcher', ['SET_LANG']),
-    ...mapActions('authorization', ['getUser']),
+    ...mapActions('user', ['getUser']),
     // checkLoggedIn() {
     //   if (this.$ls.get('isLoggedIn') !== true) {
     //     this.$router.push({ name: 'login' });

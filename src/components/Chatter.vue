@@ -165,9 +165,9 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('authorization', ['getCurrentUser', 'getUserPosition']),
+    ...mapGetters('user', ['getCurrentUser', 'getUserPosition']),
     ...mapState('messages', ['dialogText']),
-    ...mapState('authorization', ['usersPosition', 'userPositionmodified']),
+    ...mapState('user', ['usersPosition', 'userPositionmodified']),
     isCurrentUser() {
       return this.userId === Object.keys(this.getCurrentUser)[0];
     },
@@ -176,7 +176,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('authorization', ['initPosition', 'changePosition']),
+    ...mapActions('user', ['initPosition', 'changePosition']),
     ...mapActions('messages', ['sendPrivateMessageRequest']),
     keyboardCLicked(e) {
       e.preventDefault();
