@@ -30,18 +30,25 @@
           </v-card-actions>
         </v-card>
     </v-dialog>
+    <v-dialog v-if="showDialog" v-model="showDialog"
+     persistent width="600" min-height="80vh"
+      class="pa-5 ma-5 private-dialog">
+     <PrivateDialogBubble  :message="pMessage"/>
+    </v-dialog>
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
 import Chatter from '@/components/Chatter.vue';
+import PrivateDialogBubble from '@/components/PrivateDialogBubble.vue';
 import { mapState, mapActions } from 'vuex';
 
 export default {
   name: 'Home',
   components: {
     Chatter,
+    PrivateDialogBubble,
   },
   props: {
     roomid: String,
@@ -49,6 +56,7 @@ export default {
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
     ...mapState('user', ['userData', 'currentUser', 'requestedBy']),
+    ...mapState('messages', ['privateMessage']),
   },
 
   data: () => ({
@@ -59,6 +67,8 @@ export default {
     background: '',
     privateRequestDialog: false,
     privateRequestuser: {},
+    showDialog: false,
+    pMessage: [],
   }),
   methods: {
     ...mapActions('user', ['getUserData']),
@@ -82,8 +92,6 @@ export default {
         requestedBy: this.requestedBy.userId,
         currentUser: Object.keys(this.currentUser)[0],
       });
-      console.log(this.requestedBy);
-      console.log(this.currentUser);
     },
   },
   mounted() {
@@ -126,6 +134,12 @@ export default {
       if (user) {
         this.privateRequestDialog = true;
         this.privateRequestuser = user;
+      }
+    },
+    privateMessage(newVal) {
+      if (newVal) {
+        this.showDialog = true;
+        this.pMessage = [...newVal];
       }
     },
   },

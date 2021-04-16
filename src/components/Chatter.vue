@@ -38,20 +38,8 @@ export default {
     rooms: Object,
   },
   data: () => ({
-    keyboardClicked: false,
-    mouseMoved: false,
     chatterManager: {},
-    offset: [0, 0],
-    isDown: false,
-    positionX: 0,
-    positionY: 0,
-    talking: false,
-    muted: false,
     dialogs: '',
-    status: '',
-    visible: '',
-    followingTo: [],
-    followedBy: [],
     expresion: {
       default: true,
       angry: false,
@@ -60,7 +48,6 @@ export default {
       sorprise: false,
       inlove: false,
     },
-    message: '',
     expresionList: [{
       icon: 'img/icons/smily-smile',
       name: 'smile',
@@ -82,6 +69,20 @@ export default {
       name: 'mad',
     },
     ],
+    followedBy: [],
+    followingTo: [],
+    isDown: false,
+    keyboardClicked: false,
+    message: '',
+    mouseMoved: false,
+    muted: false,
+    offset: [0, 0],
+    positionX: 0,
+    positionY: 0,
+    status: '',
+    talking: false,
+    visible: '',
+    pMessage: {},
     windowHeight: 0,
     windowWidth: 0,
   }),
@@ -240,5 +241,8 @@ export default {
 
 .chater {
     position: absolute;
+}
+.private-dialog{
+  height:80vh;
 }
 </style>
