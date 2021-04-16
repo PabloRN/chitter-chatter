@@ -71,13 +71,19 @@ const actions = {
   },
   // eslint-disable-next-line no-empty-pattern
   signUserUp({ commit, state }, data) {
-    const { nickname, avatar, age } = data;
+    const {
+      nickname,
+      avatar,
+      age,
+      miniavatar,
+    } = data;
     firebase.auth().createUserWithEmailAndPassword(state.email, state.password)
       .then((credentials) => {
         firebase.database().ref(`users/${credentials.user.uid}`).set({
           nickname,
           avatar,
           age,
+          miniavatar,
         });
         commit('main/setSnackbar',
           {
@@ -106,8 +112,10 @@ const actions = {
       const tempRefs = await listRef.listAll();
       await Promise.all(tempRefs.items.map((async (ref, index) => {
         const starsRef = await storageRef.child(ref.location.path);
+        const miniavatarurl = await storageRef.child(`miniavatars/${ref.name}`);
+        // const metadata = await starsRef.getMetadata();
         const url = await starsRef.getDownloadURL();
-        urlList.push({ avatarId: index, url });
+        urlList.push({ avatarId: index, url, miniurl: await miniavatarurl.getDownloadURL() });
       })));
       commit('GET_AVATARS_SUCCESED', urlList);
     } catch (error) {
@@ -156,6 +164,7 @@ const mutations = {
   setCurrentUser(state, data) {
     if (state.currentUser[data.userId]) {
       state.currentUser[data.userId] = data.data;
+      state.currentUser[data.userId].userId = data.userId;
     } else {
       Object.assign(state.currentUser, { [data.userId]: data.data });
     }

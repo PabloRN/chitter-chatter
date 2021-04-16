@@ -96,8 +96,8 @@ export default {
       this.signUserUp(this.userData);
     },
     checkAvatar(index) {
-      console.log(index);
       this.userData.avatar = this.getAllAvatars[index].url;
+      this.userData.miniavatar = this.getAllAvatars[index].miniurl;
       // console.log(this.getAllAvatars[index]);
     },
   },
