@@ -3,6 +3,7 @@ import * as firebase from 'firebase';
 // State object
 const state = {
   dialogText: [],
+  privateMessage: [],
 };
 
 // Getter functions
@@ -38,6 +39,18 @@ const actions = {
       console.log(error);
     }
   },
+  async sendPrivateMessage({ commit, state }, { message, userId }) {
+    commit('SEND_MESSAGE');
+    try {
+      const roomMessagesKey = await firebase.database().ref().child(`privateMessages/${state.privateUsers}`).push().key;
+      const updates = {};
+      updates[`privateMessages/${state.privateUsers}/${roomMessagesKey}`] = { message, userId };
+      await firebase.database().ref().update(updates);
+      commit('SEND_MESSAGE_SUCCESS');
+    } catch (error) {
+      console.log(error);
+    }
+  },
   async confirmPrivate({ commit }, { requestedBy, currentUser }) {
     commit('CONFIRM_REQUEST');
     try {
@@ -52,6 +65,8 @@ const actions = {
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
         .on('child_added', async (messageSnap) => { // Get the private message sent
           console.log('message added', messageSnap.val());
+          commit('SET_PRIVATE_USERS', { users: `${requestedBy}_${currentUser}` });
+          commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
           // if (messageSnap.val() !== null) {
           //   commit('MESSAGE_ADDED_SUCCESS', {
           //     roomId,
@@ -61,7 +76,7 @@ const actions = {
           //   });
           // }
         });
-      commit('SEND_MESSAGE_SUCCESS');
+      commit('CONFIRM__REQUEST_SUCCESS');
     } catch (error) {
       console.log(error);
     }
@@ -73,10 +88,17 @@ const actions = {
       await firebase.database().ref(`users/${userId}/privateMessage/`).set({
         requestedBy: currentId,
       });
+      await firebase.database().ref(`users/${currentId}/privateMessage/`).set({
+        requestedTo: userId,
+      });
+      commit('SET_PRIVATE_USERS', { users: `${currentId}_${userId}` });
       await firebase.database()
         .ref(`privateMessages/${currentId}_${userId}`)
         .on('child_added', async (messageSnap) => { // Get the private message sent
+          // if (Object.keys(rootState.user.currentUser)[0] === currentId) {
+          commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
           console.log('message added', messageSnap.val());
+          // }
           // if (messageSnap.val() !== null) {
           //   commit('MESSAGE_ADDED_SUCCESS', {
           //     roomId,
@@ -86,6 +108,7 @@ const actions = {
           //   });
           // }
         });
+
       commit('main/setSnackbar',
         {
           type: 'success',
@@ -138,11 +161,17 @@ const mutations = {
   SEND_TEXT_SUCCESS(state, text) {
     state.dialogText = text;
   },
+  SEND_PRIVATE_MESSAGE(state, message) {
+    state.privateMessage.push(message);
+  },
   SEND_TEXT_ERROR() {
     console.log('Error sending text');
   },
   MESSAGE_ADDED_SUCCESS(state, message) {
     state.dialogText.push(message);
+  },
+  SET_PRIVATE_USERS(state, { users }) {
+    state.privateUsers = users;
   },
 };
 export default {
