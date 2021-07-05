@@ -4,6 +4,7 @@ import * as firebase from 'firebase';
 const state = {
   dialogText: [],
   privateMessage: [],
+  privateUsers: '',
 };
 
 // Getter functions
@@ -61,20 +62,21 @@ const actions = {
         message: 'Hey let`s talk',
       };
       await firebase.database().ref().update(updates);
+      await firebase.database().ref(`users/${currentUser}/privateMessage/`).set({
+        requestedBy: null,
+      });
       await firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
         .on('child_added', async (messageSnap) => { // Get the private message sent
           console.log('message added', messageSnap.val());
           commit('SET_PRIVATE_USERS', { users: `${requestedBy}_${currentUser}` });
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
-          // if (messageSnap.val() !== null) {
-          //   commit('MESSAGE_ADDED_SUCCESS', {
-          //     roomId,
-          //     text: messageSnap.val().message,
-          //     userId: messageSnap.val().userId,
-          //     roomUsersKey: messageSnap.key,
-          //   });
-          // }
+        });
+      await firebase.database()
+        .ref(`privateMessages/${requestedBy}_${currentUser}`)
+        .on('child_removed', async () => { // Get the private message sent
+          // commit('CLOSE_PRIVATE_MESSAGE_DIALOG', `${requestedBy}_${currentUser}`);
+          commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
         });
       commit('CONFIRM__REQUEST_SUCCESS');
     } catch (error) {
@@ -92,23 +94,6 @@ const actions = {
         requestedTo: userId,
       });
       commit('SET_PRIVATE_USERS', { users: `${currentId}_${userId}` });
-      await firebase.database()
-        .ref(`privateMessages/${currentId}_${userId}`)
-        .on('child_added', async (messageSnap) => { // Get the private message sent
-          // if (Object.keys(rootState.user.currentUser)[0] === currentId) {
-          commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
-          console.log('message added', messageSnap.val());
-          // }
-          // if (messageSnap.val() !== null) {
-          //   commit('MESSAGE_ADDED_SUCCESS', {
-          //     roomId,
-          //     text: messageSnap.val().message,
-          //     userId: messageSnap.val().userId,
-          //     roomUsersKey: messageSnap.key,
-          //   });
-          // }
-        });
-
       commit('main/setSnackbar',
         {
           type: 'success',
@@ -116,6 +101,23 @@ const actions = {
         },
         { root: true });
       commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
+      await firebase.database()
+        .ref(`privateMessages/${currentId}_${userId}`)
+        .on('child_added', async (messageSnap) => { // Get the private message sent
+          commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
+        });
+      await firebase.database()
+        .ref(`privateMessages/${currentId}_${userId}`)
+        .once('child_added', async () => { // Get the private message sent
+          await firebase.database().ref(`users/${currentId}/privateMessage/`).set({
+            requestedTo: null,
+          });
+        });
+      await firebase.database()
+        .ref(`privateMessages/${currentId}_${userId}`)
+        .on('child_removed', async () => { // Get the private message sent
+          commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
+        });
     } catch (error) {
       console.log(error);
     }
@@ -143,6 +145,8 @@ const actions = {
     }
   },
   removeDialogs({ commit }, roomId) {
+    const updates = {};
+    updates[`/rooms/${roomId}/messages/`] = null;
     try {
       firebase.database()
         .ref(`rooms/${roomId}/messages/`)
@@ -153,6 +157,31 @@ const actions = {
       commit('SET_ROOMS_FAIL');
       console.log(error);
     }
+  },
+  async closePrivate({ commit, state }) {
+    const updates = {};
+    updates[`privateMessages/${state.privateUsers}/`] = null;
+    try {
+      console.log('off', state.privateUsers);
+      await firebase.database()
+        .ref(`privateMessages/${state.privateUsers}`)
+        .off();
+      await firebase.database().ref().update(updates);
+      // const singleRoom = firebase.database().ref()
+      // commit('SET_ROOMS', await snapshot.val());
+    } catch (error) {
+      commit('SET_ROOMS_FAIL');
+      console.log(error);
+    }
+  },
+  cleanPrivateMessages({ commit }) {
+    commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
+    commit('main/setSnackbar',
+      {
+        type: 'info',
+        msg: 'The other user has close the dialog window',
+      },
+      { root: true });
   },
 };
 
@@ -172,6 +201,10 @@ const mutations = {
   },
   SET_PRIVATE_USERS(state, { users }) {
     state.privateUsers = users;
+  },
+  CLOSE_PRIVATE_MESSAGE_DIALOG(state) {
+    state.privateUsers = null;
+    state.privateMessage = [];
   },
 };
 export default {

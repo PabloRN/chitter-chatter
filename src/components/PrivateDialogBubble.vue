@@ -1,8 +1,18 @@
 <template>
   <v-scroll-y-reverse-transition>
     <div class="private-dialog text-body-2 pa-4" style="width:100%; height:80vh;">
+            <v-btn
+            @click="closedialogprivate"
+            class="closedialog"
+              color="grey lighten-2"
+              fab
+              small
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
       <v-card id="dialogPrivate" class="pa-4" style="width:100%; height:65vh; overflow-y: scroll">
         <v-card-title class="text-body-2">
+
         </v-card-title>
         <v-card-text v-for="(t, idx) in text" :key="idx" style="height: 10vh;"
          :class="t.userId === Object.values(getCurrentUser)[0].userId
@@ -48,8 +58,13 @@ export default {
   },
   methods: {
     gotoBottom(element) {
+      console.log(element);
       // eslint-disable-next-line no-param-reassign
-      element.scrollTop = element.scrollHeight + 100;
+      element.scrollTop = element.scrollHeight;
+    },
+    closedialogprivate() {
+      this.$emit('privateMessageClosed');
+      console.log('close');
     },
   },
   watch: {
@@ -69,5 +84,13 @@ export default {
 @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic);
 .private-dialog{
   height:100%;
+  position: relative;
+}
+.closedialog{
+  position: absolute;
+    right: 1px;
+    top: 1px;
+    z-index: 1;
+
 }
 </style>

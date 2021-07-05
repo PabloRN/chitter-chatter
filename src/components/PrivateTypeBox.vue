@@ -2,7 +2,7 @@
 <v-expand-transition>
     <v-row no-gutters class="pa-1 typebox mt-3">
       <v-col class="" cols="9"
-       style="background: rgba(255,255,255, );border-radius: 3px 0px 0px 3px;line-height: 1.3;">
+       style="background: rgba(255,255,255, 1);border-radius: 3px 0px 0px 3px;line-height: 1.3;">
         <v-textarea @keypress.enter.prevent="enterPress"
          @input="checkValue" class="text-area-input text-body-2"
            no-resize

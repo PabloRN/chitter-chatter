@@ -63,19 +63,25 @@ const actions = {
       console.log(error);
     }
   },
-  async removeUser({ commit }, { roomId, userId, roomUsersKey }) {
+  async removeUser({ commit, rootState }, { roomId, userId, roomUsersKey }) {
     commit('EXIT_ROOM', { roomId, userId, roomUsersKey });
     try {
       const updates = {};
+      console.log(rootState);
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
       updates[`/users/${userId}/rooms/${roomId}`] = null;
       updates[`/users/${userId}/messages/`] = null;
       updates[`/users/${userId}/privateMessage/`] = null;
       updates[`/users/${userId}/position/`] = null;
-      firebase.database()
+      updates[`privateMessages/${rootState.messages.privateUsers}/`] = null;
+      await firebase.database()
         .ref(`rooms/${roomId}/messages/`)
         .off();
+      await firebase.database()
+        .ref(`privateMessages/${state.privateUsers}`)
+        .off();
       await firebase.database().ref().update(updates);
+
       commit('PUSH_USER_SUCCESS');
     } catch (error) {
       console.log(error);
@@ -109,7 +115,6 @@ const mutations = {
       Object.assign(state.roomList[roomId], { users: { [roomUsersKey]: userId } });
     }
     state.userAdded = { roomId, ...userId };
-    console.log('ENTER_ROOM');
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
     delete state.roomList[roomId].users[roomUsersKey];

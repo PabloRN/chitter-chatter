@@ -30,10 +30,10 @@
           </v-card-actions>
         </v-card>
     </v-dialog>
-    <v-dialog v-if="showDialog" v-model="showDialog"
-     persistent width="600" min-height="80vh"
+    <v-dialog scrollable v-if="showDialog" v-model="showDialog"
+      width="600" min-height="80vh"
       class="pa-5 ma-5 private-dialog">
-     <PrivateDialogBubble  :message="pMessage"/>
+     <PrivateDialogBubble  @privateMessageClosed="privateMessageClosed" :message="pMessage"/>
     </v-dialog>
   </div>
 </template>
@@ -56,7 +56,7 @@ export default {
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
     ...mapState('user', ['userData', 'currentUser', 'requestedBy']),
-    ...mapState('messages', ['privateMessage']),
+    ...mapState('messages', ['privateMessage', 'privateUsers']),
   },
 
   data: () => ({
@@ -73,7 +73,7 @@ export default {
   methods: {
     ...mapActions('user', ['getUserData']),
     ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser']),
-    ...mapActions('messages', ['getDialogs', 'confirmPrivate']),
+    ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages']),
     async initUsers() {
       if (Object.keys(this.roomList).length > 0
        && Object.keys(this.roomList[this.$route.params.roomid].users).length > 0) {
@@ -92,6 +92,10 @@ export default {
         requestedBy: this.requestedBy.userId,
         currentUser: Object.keys(this.currentUser)[0],
       });
+    },
+    privateMessageClosed() {
+      this.showDialog = false;
+      this.closePrivate();
     },
   },
   mounted() {
@@ -142,6 +146,22 @@ export default {
         this.pMessage = [...newVal];
       }
     },
+    async privateUsers(newVal) {
+      if (newVal === null) {
+        this.$nextTick(() => {
+          this.showDialog = false;
+        });
+        this.cleanPrivateMessages();
+        this.pMessage = [];
+      }
+    },
   },
 };
 </script>
+<style scoped>
+.closedialog {
+  position: relative;
+    top: 60px;
+    left: 629px;
+}
+</style>
