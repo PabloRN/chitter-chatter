@@ -1,40 +1,62 @@
 <template>
-  <div class="home" @dragover.prevent
-      @dragenter.prevent>
-          <v-card>
-            <v-img v-if="background !== ''"
-              :src="background !== '' ? background : ''"
-              class="white--text align-end"
-              height="800"
-            >
-            <Chatter v-for="{userId, avatar, nickname, rooms} in chatters"
-              :userId="userId"
-              :key="userId"
-              :avatar="avatar"
-              :nickname="nickname"
-              :rooms="rooms"/>
-            </v-img>
-            {{$route.params.id}}
-          </v-card>
+  <div class="home" @dragover.prevent @dragenter.prevent>
+    <v-card>
+      <v-img v-if="background !== ''" :src="background !== '' ? background : ''"
+        class="white--text align-end" height="800">
+        <Chatter v-for="{userId, avatar, nickname, rooms} in chatters" :userId="userId"
+          :key="userId" :avatar="avatar" :nickname="nickname" :rooms="rooms" />
+      </v-img>
+      {{$route.params.id}}
+    </v-card>
+    <v-dialog v-if="privateRequestDialog" v-model="privateRequestDialog"
+     persistent width="600"
+      class="pa-5 ma-5 progress-dialog">
+        <v-card style="width:100%">
+          <v-card-title class="text-body-2">
+          </v-card-title>
+          <v-card-text style="height: 10vh;">
+            {{ `User ${privateRequestuser.nickname} wants to start a private chat with you` }}
+          </v-card-text>
+          <v-card-actions class=" text-body-2 pa-2 d-flex justify-center align-center">
+            <v-btn small class="px-10" color="primary darken-1" tile
+              @click="confirmPrivateRequest();privateRequestDialog = false">
+             Confirm</v-btn>
+            <v-btn small class="px-10" color="primary darken-1" tile outlined
+              @click="rejectPrivateRequest();privateRequestDialog = false">
+            Reject</v-btn>
+            <v-btn small class="px-10" color="primary darken-1" tile outlined
+              @click="privateRequestDialog = false">
+            Reject and block</v-btn>
+          </v-card-actions>
+        </v-card>
+    </v-dialog>
+    <v-dialog scrollable v-if="showDialog" v-model="showDialog"
+      width="600" min-height="80vh"
+      class="pa-5 ma-5 private-dialog">
+     <PrivateDialogBubble  @privateMessageClosed="privateMessageClosed" :message="pMessage"/>
+    </v-dialog>
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
 import Chatter from '@/components/Chatter.vue';
+import PrivateDialogBubble from '@/components/PrivateDialogBubble.vue';
 import { mapState, mapActions } from 'vuex';
 
 export default {
   name: 'Home',
   components: {
     Chatter,
+    PrivateDialogBubble,
   },
   props: {
     roomid: String,
   },
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
-    ...mapState('authorization', ['userData', 'currentUser']),
+    ...mapState('user', ['userData', 'currentUser', 'requestedBy']),
+    ...mapState('messages', ['privateMessage', 'privateUsers']),
   },
 
   data: () => ({
@@ -43,11 +65,15 @@ export default {
     initialUsers: [],
     isCurrentUser: false,
     background: '',
+    privateRequestDialog: false,
+    privateRequestuser: {},
+    showDialog: false,
+    pMessage: [],
   }),
   methods: {
-    ...mapActions('authorization', ['getUserData']),
+    ...mapActions('user', ['getUserData']),
     ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser']),
-    ...mapActions('messages', ['getDialogs']),
+    ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages']),
     async initUsers() {
       if (Object.keys(this.roomList).length > 0
        && Object.keys(this.roomList[this.$route.params.roomid].users).length > 0) {
@@ -60,6 +86,16 @@ export default {
           }
         });
       }
+    },
+    confirmPrivateRequest() {
+      this.confirmPrivate({
+        requestedBy: this.requestedBy.userId,
+        currentUser: Object.keys(this.currentUser)[0],
+      });
+    },
+    privateMessageClosed() {
+      this.showDialog = false;
+      this.closePrivate();
     },
   },
   mounted() {
@@ -98,6 +134,34 @@ export default {
         this.chatters.splice(userIdIndex, 1);
       }
     },
+    requestedBy(user) {
+      if (user) {
+        this.privateRequestDialog = true;
+        this.privateRequestuser = user;
+      }
+    },
+    privateMessage(newVal) {
+      if (newVal) {
+        this.showDialog = true;
+        this.pMessage = [...newVal];
+      }
+    },
+    async privateUsers(newVal) {
+      if (newVal === null) {
+        this.$nextTick(() => {
+          this.showDialog = false;
+        });
+        this.cleanPrivateMessages();
+        this.pMessage = [];
+      }
+    },
   },
 };
 </script>
+<style scoped>
+.closedialog {
+  position: relative;
+    top: 60px;
+    left: 629px;
+}
+</style>

@@ -45,7 +45,7 @@ export default {
 
   },
   methods: {
-    ...mapActions('authorization', ['setPasswordAction']),
+    ...mapActions('user', ['setPasswordAction']),
   },
 };
 </script>

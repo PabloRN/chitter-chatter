@@ -1,25 +1,8 @@
 <template>
-  <div style="text-align:center">
-    <v-btn
-      class="mx-2 keyboard-icon"
-      fab
-      dark
-      x-small
-      :ripple="false"
-      @click.prevent="toggleKeyBoard"
-      @touchstart.native.prevent="toggleKeyBoard"
-    >
-      <v-icon v-if="hideKeyboard" dark>
-        mdi-keyboard
-      </v-icon>
-      <v-icon v-else dark>
-        mdi-keyboard-off
-      </v-icon>
-    </v-btn>
 <v-expand-transition>
-    <v-row v-if="!hideKeyboard" no-gutters class="pa-1 typebox mt-3">
+    <v-row no-gutters class="pa-1 typebox mt-3">
       <v-col class="" cols="9"
-       style="background: rgba(255,255,255,0.5);border-radius: 10px 0px 0px 10px;">
+       style="background: rgba(255,255,255, 1);border-radius: 3px 0px 0px 3px;line-height: 1.3;">
         <v-textarea @keypress.enter.prevent="enterPress"
          @input="checkValue" class="text-area-input text-body-2"
            no-resize
@@ -31,22 +14,22 @@
            counter
            ref="refDialog"
            :value="message"
-           v-model="message" outlined style="border-radius: 10px 0px 0px 10px;line-height: 1.3;">
+           v-model="message" outlined>
         </v-textarea>
       </v-col>
       <v-spacer></v-spacer>
-      <v-col cols="3" style="background: rgba(255,255,255,0.5);border-radius: 0px 10px 10px 0px;">
-        <v-btn class="grey lighten-1"
+      <v-col cols="3" class="pl-1"
+       style="background: rgba(255,255,255,1);border-radius: 0px 3px 3px 0px;">
+        <v-btn class="grey lighten-5"
          :disabled="message.length === 0" @click="talk" @touchstart.native.prevent="talk"
           block elevation="2" large x-small
-         style="border-radius: 0px 10px 10px 0px;height: 98.5%;">
+         style="border-radius: 0px 3px 3px 0px;height: 98.5%;">
          <span class="text-caption font-weight-medium"
           style="color: #616161;
-text-shadow: 1px 1px 1px rgba(255,255,255,.5);">Talk</span></v-btn>
+text-shadow: 1px 1px 1px rgba(255,255,255,1);">Talk</span></v-btn>
       </v-col>
     </v-row>
     </v-expand-transition>
-  </div>
 </template>
 
 <script>
@@ -68,18 +51,17 @@ export default {
     ...mapGetters('user', ['getCurrentUser']),
   },
   methods: {
-    ...mapActions('messages', ['sendMessage']),
+    ...mapActions('messages', ['sendPrivateMessage']),
     enterPress(e) {
       if (e.type === 'keypress' && e.key === 'Enter') {
         this.talk();
       }
     },
     talk() {
-      this.sendMessage(
+      this.sendPrivateMessage(
         {
           message: this.message,
           userId: Object.keys(this.getCurrentUser)[0],
-          roomId: this.$route.params.roomid,
         },
       );
       this.message = '';
@@ -107,16 +89,16 @@ export default {
   },
 };
 </script>
-<style lang="scss">
+<style scoped lang="scss">
 
 .typebox {
-  left: -120px;
-  bottom: -60px;
-  position: absolute;
+  left: 0;
+  bottom: 0;
+  position: relative;
   background-color: rgba(255,255,255, 0.3);
-  border-radius: 10px;
+  border-radius: 3px;
   line-height: 1.3;
-  width: 300px;
+  width: 100%;
 }
 .text-area-input textarea{
     line-height: 1.3rem!important;
@@ -125,7 +107,7 @@ export default {
 }
 .keyboard-icon{
    z-index: 100;
-   border: 2px solid white;
+   border: 3px solid white;
 }
 
 </style>

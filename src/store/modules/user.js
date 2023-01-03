@@ -1,5 +1,6 @@
 /* eslint-disable no-shadow */
 import * as firebase from 'firebase';
+import router from '@/router/index';
 
 const state = {
   avatarsList: [],
@@ -14,6 +15,7 @@ const state = {
   currentUser: {},
   usersPosition: {},
   userPositionmodified: false,
+  requestedBy: '',
 };
 
 const getters = {
@@ -32,7 +34,7 @@ const actions = {
           commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
         });
       } else {
-        this.$router.push({ name: 'login' });// No user is signed in.
+        router.push({ name: 'login' });// No user is signed in.
       }
     });
   },
@@ -48,12 +50,16 @@ const actions = {
       top,
     });
   },
-  async getUserData({ commit }, userId) {
+  async getUserData({ commit, state }, userId) {
     const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
     commit('setUserData', await { ...snapshot.val(), userId });
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
+    const privateMessage = firebase.database().ref(`users/${Object.keys(state.currentUser)[0]}/privateMessage/requestedBy`);
     userPosition.on('value', (snapPosition) => {
       commit('SET_USER_POSITION', { position: snapPosition.val(), userId });
+    });
+    privateMessage.on('value', (snapPrivate) => {
+      commit('PRIVATE_REQUESTED', { requestedBy: state.userData[snapPrivate.val()], userId: snapPrivate.val() });
     });
     return { ...snapshot.val(), userId };
   },
@@ -65,13 +71,19 @@ const actions = {
   },
   // eslint-disable-next-line no-empty-pattern
   signUserUp({ commit, state }, data) {
-    const { nickname, avatar, age } = data;
+    const {
+      nickname,
+      avatar,
+      age,
+      miniavatar,
+    } = data;
     firebase.auth().createUserWithEmailAndPassword(state.email, state.password)
       .then((credentials) => {
         firebase.database().ref(`users/${credentials.user.uid}`).set({
           nickname,
           avatar,
           age,
+          miniavatar,
         });
         commit('main/setSnackbar',
           {
@@ -100,8 +112,10 @@ const actions = {
       const tempRefs = await listRef.listAll();
       await Promise.all(tempRefs.items.map((async (ref, index) => {
         const starsRef = await storageRef.child(ref.location.path);
+        const miniavatarurl = await storageRef.child(`miniavatars/${ref.name}`);
+        // const metadata = await starsRef.getMetadata();
         const url = await starsRef.getDownloadURL();
-        urlList.push({ avatarId: index, url });
+        urlList.push({ avatarId: index, url, miniurl: await miniavatarurl.getDownloadURL() });
       })));
       commit('GET_AVATARS_SUCCESED', urlList);
     } catch (error) {
@@ -116,17 +130,17 @@ const actions = {
             firebase.database().ref(`users/${credentials.user.uid}`).once('value').then((snapshot) => {
               commit('setUser', snapshot.val());
             });
+            commit('main/setSnackbar',
+              {
+                type: 'success',
+                msg: `Created user ${credentials.user.email} successfully`,
+              },
+              { root: true });
+            router.push({ name: 'rooms' });
           } else {
             // No user is signed in.
           }
           // console.log(user);
-
-          commit('main/setSnackbar',
-            {
-              type: 'success',
-              msg: `Created user ${credentials.user.email} successfully`,
-            },
-            { root: true });
           // commit('setUser', newUser);
         })
         .catch(
@@ -150,6 +164,7 @@ const mutations = {
   setCurrentUser(state, data) {
     if (state.currentUser[data.userId]) {
       state.currentUser[data.userId] = data.data;
+      state.currentUser[data.userId].userId = data.userId;
     } else {
       Object.assign(state.currentUser, { [data.userId]: data.data });
     }
@@ -178,6 +193,13 @@ const mutations = {
       Object.assign(state.usersPosition, { [userId]: { position } });
     }
     state.userPositionmodified = !state.userPositionmodified;
+  },
+  PRIVATE_REQUESTED(state, { requestedBy, userId }) {
+    state.requestedBy = requestedBy;
+    if (requestedBy) {
+      state.requestedBy.userId = '';
+      state.requestedBy.userId = userId;
+    }
   },
 };
 
