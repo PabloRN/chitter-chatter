@@ -20,7 +20,7 @@
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
-     class="mx-2 menu-item" fab dark small @click.prevent="emit('exitRoom')"
+     class="mx-2 menu-item" fab dark small @click.prevent.stop="emit('exitRoom')"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
       mdi-door-open

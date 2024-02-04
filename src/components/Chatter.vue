@@ -178,7 +178,7 @@ export default {
     ...mapGetters('user', ['getCurrentUser']),
     ...mapGetters('rooms', ['getUserPosition']),
     ...mapState('messages', ['dialogText']),
-    ...mapState('user', ['usersPosition', 'userPositionmodified']),
+    ...mapState('user', ['usersPosition', 'userPositionModified']),
     isCurrentUser() {
       return this.userId === this.getCurrentUser.userId;
     },
@@ -240,7 +240,7 @@ export default {
         this.message = newVal[newVal.length - 1].text;
       }
     },
-    userPositionmodified() {
+    userPositionModified() {
       if (this.usersPosition[this.userId]) {
         const {
           left,

@@ -116,7 +116,7 @@ export default {
       this.background = this.roomList[this.$route.params.roomId].picture;
       this.initUsers();
     }
-    // this.getDialogs(this.$route.params.roomId);
+    this.getDialogs(this.$route.params.roomId);
   },
   // beforeRouteLeave(from, to, next) {
   //   const userVal = Object.values(this.currentUser)[0];
@@ -129,16 +129,17 @@ export default {
   // },
   watch: {
     async userAdded(newUser) {
-      if (newUser.roomId === this.$route.params.roomId) {
+      console.log('userAdded', newUser);
+      if (newUser && newUser?.roomId === this.$route.params.roomId) {
         const userDataNew = await this.getUserData(newUser.userId);
         if (Object.keys(userDataNew).length > 0) {
-          this.chatters.push(await userDataNew);
+          this.chatters.push(userDataNew);
         }
       }
     },
-    async userExit(user) {
-      if (user.roomId === this.$route.params.roomId) {
-        const findUserIndex = (userId) => userId === user.userId;
+    userExit({ roomId, userId }) {
+      if (roomId === this.$route.params.roomId) {
+        const findUserIndex = (user) => userId === user;
         const userIdIndex = this.chatters.findIndex(findUserIndex);
         this.chatters.splice(userIdIndex, 1);
       }

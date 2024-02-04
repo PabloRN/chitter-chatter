@@ -64,14 +64,14 @@ const actions = {
       await firebase.database().ref(`users/${currentUser}/privateMessage/`).set({
         requestedBy: null,
       });
-      await firebase.database()
+      firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
         .on('child_added', async (messageSnap) => { // Get the private message sent
           console.log('message added', messageSnap.val());
           commit('SET_PRIVATE_USERS', { users: `${requestedBy}_${currentUser}` });
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
         });
-      await firebase.database()
+      firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
         .on('child_removed', async () => { // Get the private message sent
           // commit('CLOSE_PRIVATE_MESSAGE_DIALOG', `${requestedBy}_${currentUser}`);
@@ -186,9 +186,9 @@ const actions = {
 
 // Mutations
 const mutations = {
-  SEND_TEXT_SUCCESS(state, text) {
-    state.dialogText = text;
-  },
+  // SEND_MESSAGE_SUCCESS(state, text) {
+  //   state.dialogText = text;
+  // },
   SEND_PRIVATE_MESSAGE(state, message) {
     state.privateMessage.push(message);
   },

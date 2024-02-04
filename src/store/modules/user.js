@@ -14,7 +14,7 @@ const state = {
   userData: {},
   currentUser: {},
   usersPosition: {},
-  userPositionmodified: false,
+  userPositionModified: false,
   requestedBy: '',
 };
 
@@ -193,7 +193,7 @@ const mutations = {
     } else {
       Object.assign(state.usersPosition, { [userId]: { position } });
     }
-    state.userPositionmodified = !state.userPositionmodified;
+    state.userPositionModified = !state.userPositionModified;
   },
   PRIVATE_REQUESTED(state, { requestedBy, userId }) {
     state.requestedBy = requestedBy;
