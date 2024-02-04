@@ -34,7 +34,7 @@ const actions = {
           commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
         });
       } else {
-        router.push({ name: 'login' });// No user is signed in.
+        // router.push({ name: 'login' });// No user is signed in.
       }
     });
   },
@@ -162,11 +162,12 @@ const mutations = {
   setEmail(state, data) { state.email = data; },
   setPassword(state, data) { state.password = data; },
   setCurrentUser(state, data) {
+    console.log('DDDDDDD', data);
     if (state.currentUser[data.userId]) {
-      state.currentUser[data.userId] = data.data;
-      state.currentUser[data.userId].userId = data.userId;
+      state.currentUser = data.data;
+      state.currentUser.userId = data.userId;
     } else {
-      Object.assign(state.currentUser, { [data.userId]: data.data });
+      Object.assign(state.currentUser, { [data.userId]: data.data, userId: data.userId });
     }
   },
   setUserData(state, data) {

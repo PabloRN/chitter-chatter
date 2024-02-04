@@ -61,7 +61,7 @@ export default {
       this.sendPrivateMessage(
         {
           message: this.message,
-          userId: Object.keys(this.getCurrentUser)[0],
+          userId: this.getCurrentUser.userId,
         },
       );
       this.message = '';

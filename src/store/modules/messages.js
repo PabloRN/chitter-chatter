@@ -27,10 +27,9 @@ const actions = {
     }
   },
   async sendMessage({ commit }, { message, roomId, userId }) {
-    commit('SEND_MESSAGE');
-    console.log({ roomId, userId, message });
+    // commit('SEND_MESSAGE');
     try {
-      const roomMessagesKey = await firebase.database().ref().child(`rooms/${roomId}/messages/`).push().key;
+      const roomMessagesKey = firebase.database().ref().child(`rooms/${roomId}/messages/`).push().key;
       const updates = {};
       updates[`/rooms/${roomId}/messages/${roomMessagesKey}`] = { message, userId };
       updates[`/users/${userId}/messages/${roomId}`] = { roomMessagesKey, message };
@@ -84,7 +83,7 @@ const actions = {
     }
   },
   async sendPrivateMessageRequest({ commit }, { currentUser, userId }) {
-    const currentId = Object.keys(currentUser)[0];
+    const currentId = currentUser.userId;
     commit('SEND_PRIVATE_MESSAGE_REQUEST');
     try {
       await firebase.database().ref(`users/${userId}/privateMessage/`).set({
@@ -103,7 +102,7 @@ const actions = {
       commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
       await firebase.database()
         .ref(`privateMessages/${currentId}_${userId}`)
-        .on('child_added', async (messageSnap) => { // Get the private message sent
+        .on('child_added', (messageSnap) => { // Get the private message sent
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
         });
       await firebase.database()
