@@ -6,7 +6,7 @@ const state = {
   roomList: {},
   userAdded: {},
   userExit: {},
-  getingRoomsLoading: false,
+  getitngRoomsLoading: false,
 };
 
 const getters = {
@@ -54,13 +54,11 @@ const actions = {
   },
   async pushUser({ commit, dispatch }, { roomId, userId }) {
     commit('PUSH_USER');
-    console.log('HYYYYYYY', { roomId, userId });
     try {
       const roomUsersKey = firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
       const updates = {};
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = { userId };
       updates[`/users/${userId}/rooms/${roomId}`] = { roomUsersKey };
-      await firebase.database().ref().update(updates);
 
       firebase.database()
         .ref(`rooms/${roomId}/users/`)
@@ -68,9 +66,11 @@ const actions = {
           if (userSnap.val() !== null) {
             console.log('User enter room', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
             commit('ENTER_ROOM', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
+
             // console.log('child_added', { roomId, ...userSnap.val(), roomUsersKey: userSnap.key }, snapshot.val());
           }
         });
+
       firebase.database()
         .ref(`rooms/${roomId}/users`)
         .on('child_removed', (userSnap) => {
@@ -78,6 +78,8 @@ const actions = {
           dispatch('removeUser', { roomId, userId, roomUsersKey: userSnap.key });
           console.log('child_removed', { roomId, user: userSnap.val(), roomUsersKey: userSnap.key });
         });
+      await firebase.database().ref().update(updates);
+
       commit('PUSH_USER_SUCCESS');
     } catch (error) {
       console.log(error);
@@ -97,15 +99,16 @@ const actions = {
       updates[`privateMessages/${rootState.messages.privateUsers}/`] = null;
       firebase.database().ref().update(updates);
       if (rootState.user.currentUser.userId === userId) {
-        firebase.database()
-          .ref(`rooms/${roomId}/messages/`)
-          .off();
-        firebase.database()
-          .ref(`privateMessages/${state.privateUsers}`)
-          .off();
+        // firebase.database()
+        //   .ref(`rooms/${roomId}/messages/`)
+        //   .off();
+        // firebase.database()
+        //   .ref(`privateMessages/${state.privateUsers}`)
+        //   .off();
         firebase.database()
           .ref(`rooms/${roomId}/users`).off();
       }
+
       commit('EXIT_ROOM', {
         roomId, userId, roomUsersKey, rootState,
       });
@@ -119,21 +122,30 @@ const actions = {
 const mutations = {
 
   GET_ROOMS(state) {
-    state.getingRoomsLoading = true;
+    state.getitngRoomsLoading = true;
   },
   SET_ROOMS(state, data) {
     state.roomList = [];
     state.roomList = data;
-    state.getingRoomsLoading = false;
+    state.getitngRoomsLoading = false;
   },
   SET_ROOMS_FAIL(state) {
-    state.getingRoomsLoading = false;
+    state.getitngRoomsLoading = false;
   },
   PUSH_USER(state) {
     state.pushingUser = true;
   },
   PUSH_USER_SUCCESS(state) {
     state.pushingUser = false;
+  },
+  SET_USER_POSITION(state, { position, userId }) {
+    console.log(this.state);
+    if (this.state.user.usersPosition[userId]) {
+      this.state.user.usersPosition[userId].position = position;
+    } else {
+      Object.assign(this.state.user.usersPosition, { [userId]: { position } });
+    }
+    this.state.user.userPositionModified = !this.state.user.userPositionModified;
   },
   ENTER_ROOM(state, { roomId, userId, roomUsersKey }) {
     if (state.roomList[roomId].users) {
@@ -145,9 +157,10 @@ const mutations = {
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
     console.log('EXIT ROOM', { roomId, userId, roomUsersKey });
-    state.roomList[roomId].users[roomUsersKey] = null;
-    this.state.user.userData[userId] = null;
-    this.state.user.usersPosition[userId] = null;
+    delete state.roomList[roomId].users[roomUsersKey];
+    delete this.state.user.userData[userId];
+    delete this.state.user.usersPosition[userId];
+    this.state.user.userPositionModified = false;
     state.userExit = { roomId, userId };
     state.userAdded = null;
   },

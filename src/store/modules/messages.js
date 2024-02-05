@@ -83,8 +83,8 @@ const actions = {
     }
   },
   async sendPrivateMessageRequest({ commit }, { currentUser, userId }) {
-    const currentId = currentUser.userId;
-    commit('SEND_PRIVATE_MESSAGE_REQUEST');
+    const currentId = currentUser;
+    // commit('SEND_PRIVATE_MESSAGE_REQUEST');
     try {
       await firebase.database().ref(`users/${userId}/privateMessage/`).set({
         requestedBy: currentId,
@@ -99,8 +99,8 @@ const actions = {
           msg: 'Private message resquest successfuly sent',
         },
         { root: true });
-      commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
-      await firebase.database()
+      // commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
+      firebase.database()
         .ref(`privateMessages/${currentId}_${userId}`)
         .on('child_added', (messageSnap) => { // Get the private message sent
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());

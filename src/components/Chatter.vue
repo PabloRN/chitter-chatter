@@ -113,6 +113,7 @@ export default {
       // Mouse events
       this.chatterManager.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this.isDown = true;
         this.mouseMoved = false;
         this.offset = [
@@ -176,14 +177,10 @@ export default {
   },
   computed: {
     ...mapGetters('user', ['getCurrentUser']),
-    ...mapGetters('rooms', ['getUserPosition']),
     ...mapState('messages', ['dialogText']),
     ...mapState('user', ['usersPosition', 'userPositionModified']),
     isCurrentUser() {
       return this.userId === this.getCurrentUser.userId;
-    },
-    userposition() {
-      return this.usersPosition[this.userId].position;
     },
   },
   methods: {

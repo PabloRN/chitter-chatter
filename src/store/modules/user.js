@@ -54,13 +54,15 @@ const actions = {
     const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
     commit('setUserData', await { ...snapshot.val(), userId });
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
-    const privateMessage = firebase.database().ref(`users/${Object.keys(state.currentUser)[0]}/privateMessage/requestedBy`);
+    const privateMessage = firebase.database().ref(`users/${state.currentUser.userId}/privateMessage/requestedBy`);
+
     userPosition.on('value', (snapPosition) => {
       commit('SET_USER_POSITION', { position: snapPosition.val(), userId });
     });
     privateMessage.on('value', (snapPrivate) => {
       commit('PRIVATE_REQUESTED', { requestedBy: state.userData[snapPrivate.val()], userId: snapPrivate.val() });
     });
+
     return { ...snapshot.val(), userId };
   },
   setEmailAction: async ({ commit }, payload) => {
@@ -162,7 +164,7 @@ const mutations = {
   setEmail(state, data) { state.email = data; },
   setPassword(state, data) { state.password = data; },
   setCurrentUser(state, data) {
-    console.log('DDDDDDD', data);
+    // console.log('DDDDDDD', data);
     if (state.currentUser[data.userId]) {
       state.currentUser = data.data;
       state.currentUser.userId = data.userId;
