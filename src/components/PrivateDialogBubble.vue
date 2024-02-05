@@ -15,14 +15,14 @@
 
         </v-card-title>
         <v-card-text v-for="(t, idx) in text" :key="idx" style="height: 10vh;"
-         :class="t.userId === Object.values(getCurrentUser)[0].userId
+         :class="t.userId === getCurrentUser.userId
          ? 'd-flex justify-end align-center' : 'd-flex justify-start align-center' ">
-          <v-avatar v-if="t.userId !== Object.values(getCurrentUser)[0].userId">
+          <v-avatar v-if="t.userId !== getCurrentUser.userId">
             <img :src="userData[t.userId].miniavatar" alt="avatar">
           </v-avatar>
           {{t.message}}
-          <v-avatar v-if="t.userId === Object.values(getCurrentUser)[0].userId">
-            <img :src="Object.values(getCurrentUser)[0].miniavatar" alt="avatar">
+          <v-avatar v-if="t.userId === getCurrentUser.userId">
+            <img :src="getCurrentUser.miniavatar" alt="avatar">
           </v-avatar>
         </v-card-text>
       </v-card>

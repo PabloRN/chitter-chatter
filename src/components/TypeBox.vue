@@ -78,8 +78,8 @@ export default {
       this.sendMessage(
         {
           message: this.message,
-          userId: Object.keys(this.getCurrentUser)[0],
-          roomId: this.$route.params.roomid,
+          userId: this.getCurrentUser.userId,
+          roomId: this.$route.params.roomId,
         },
       );
       this.message = '';

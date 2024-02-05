@@ -1,10 +1,12 @@
+<!-- eslint-disable max-len -->
+<!-- eslint-disable max-len -->
 <template>
   <div class="home" @dragover.prevent @dragenter.prevent>
     <v-card>
       <v-img v-if="background !== ''" :src="background !== '' ? background : ''"
-        class="white--text align-end" height="800">
-        <Chatter v-for="{userId, avatar, nickname, rooms} in chatters" :userId="userId"
-          :key="userId" :avatar="avatar" :nickname="nickname" :rooms="rooms" />
+        class="white--text align-end" height="100vh">
+        <Chatter v-for="{userId, avatar, nickname} in chatters" :userId="userId"
+          :key="userId" :avatar="avatar" :nickname="nickname" :room="roomId" />
       </v-img>
       {{$route.params.id}}
     </v-card>
@@ -51,7 +53,7 @@ export default {
     PrivateDialogBubble,
   },
   props: {
-    roomid: String,
+    roomId: String,
   },
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
@@ -72,25 +74,31 @@ export default {
   }),
   methods: {
     ...mapActions('user', ['getUserData']),
-    ...mapActions('rooms', ['getRooms', 'pushUser', 'removeUser']),
+    ...mapActions('rooms', ['getRooms', 'removeUser']),
     ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages']),
     async initUsers() {
-      if (Object.keys(this.roomList).length > 0
-       && Object.keys(this.roomList[this.$route.params.roomid].users).length > 0) {
-        Object.keys(this.roomList[this.$route.params.roomid].users).forEach(async (roomUserID) => {
-          const { userId } = this.roomList[this.$route.params.roomid].users[roomUserID];
+      if (
+        Object.keys(this.roomList).length > 0
+    && this.roomList[this.$route.params.roomId].users
+     && Object.keys(this.roomList[this.$route.params.roomId].users).length > 0
+      ) {
+        const userIDs = Object.keys(this.roomList[this.$route.params.roomId].users);
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (const roomUserID of userIDs) {
+          const { userId } = this.roomList[this.$route.params.roomId].users[roomUserID];
+          // eslint-disable-next-line no-await-in-loop
           const userDataNew = await this.getUserData(userId);
           if (Object.keys(userDataNew).length > 0) {
-            const chatter = this.userData[userId];
-            this.chatters.push(chatter);
+            this.chatters.push(userDataNew);
           }
-        });
+        }
       }
     },
     confirmPrivateRequest() {
       this.confirmPrivate({
         requestedBy: this.requestedBy.userId,
-        currentUser: Object.keys(this.currentUser)[0],
+        currentUser: this.currentUser.userId,
       });
     },
     privateMessageClosed() {
@@ -102,34 +110,36 @@ export default {
     this.innerHeight = window.innerHeight;
     if (Object.keys(this.roomList).length === 0) {
       this.getRooms()
-        .then(() => { this.background = this.roomList[this.$route.params.roomid].picture; });
+        // eslint-disable-next-line max-len
+        .then(() => { this.background = this.roomList[this.$route.params.roomId].picture; this.initUsers(); });
     } else {
-      this.background = this.roomList[this.$route.params.roomid].picture;
+      this.background = this.roomList[this.$route.params.roomId].picture;
+      this.initUsers();
     }
-    this.getDialogs(this.$route.params.roomid);
-    this.initUsers();
+    this.getDialogs(this.$route.params.roomId);
   },
-  beforeRouteLeave(from, to, next) {
-    const userVal = Object.values(this.currentUser)[0];
-    this.removeUser({
-      userId: Object.keys(this.currentUser)[0],
-      roomId: this.$route.params.roomid,
-      roomUsersKey: userVal.rooms[this.$route.params.roomid].roomUsersKey,
-    });
-    next();
-  },
+  // beforeRouteLeave(from, to, next) {
+  //   const userVal = Object.values(this.currentUser)[0];
+  //   this.removeUser({
+  //     userId: Object.keys(this.currentUser)[0],
+  //     roomId: this.$route.params.roomId,
+  //     roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
+  //   });
+  //   next();
+  // },
   watch: {
     async userAdded(newUser) {
-      if (newUser.roomId === this.$route.params.roomid) {
+      console.log('userAdded', newUser);
+      if (newUser && newUser?.roomId === this.$route.params.roomId) {
         const userDataNew = await this.getUserData(newUser.userId);
         if (Object.keys(userDataNew).length > 0) {
-          this.chatters.push(await userDataNew);
+          this.chatters.push(userDataNew);
         }
       }
     },
-    async userExit(user) {
-      if (user.roomId === this.$route.params.roomid) {
-        const findUserIndex = (userId) => userId === user.userId;
+    userExit({ roomId, userId }) {
+      if (roomId === this.$route.params.roomId) {
+        const findUserIndex = (user) => userId === user;
         const userIdIndex = this.chatters.findIndex(findUserIndex);
         this.chatters.splice(userIdIndex, 1);
       }

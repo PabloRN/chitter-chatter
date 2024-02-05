@@ -61,10 +61,10 @@ export default {
   methods: {
     ...mapActions('rooms', ['getRooms', 'pushUser']),
     enterRoom(room, key) {
-      this.pushUser({ roomId: key, userId: Object.keys(this.getCurrentUser)[0] });
+      this.pushUser({ roomId: key, userId: this.getCurrentUser.userId });
       this.$router.push({
         name: 'room',
-        params: { roomid: key, background: room.picture, maxusers: room.maxusers },
+        params: { roomId: key, background: room.picture, maxusers: room.maxusers },
       });
     },
   },

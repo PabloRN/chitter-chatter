@@ -27,10 +27,9 @@ const actions = {
     }
   },
   async sendMessage({ commit }, { message, roomId, userId }) {
-    commit('SEND_MESSAGE');
-    console.log({ roomId, userId, message });
+    // commit('SEND_MESSAGE');
     try {
-      const roomMessagesKey = await firebase.database().ref().child(`rooms/${roomId}/messages/`).push().key;
+      const roomMessagesKey = firebase.database().ref().child(`rooms/${roomId}/messages/`).push().key;
       const updates = {};
       updates[`/rooms/${roomId}/messages/${roomMessagesKey}`] = { message, userId };
       updates[`/users/${userId}/messages/${roomId}`] = { roomMessagesKey, message };
@@ -65,14 +64,14 @@ const actions = {
       await firebase.database().ref(`users/${currentUser}/privateMessage/`).set({
         requestedBy: null,
       });
-      await firebase.database()
+      firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
         .on('child_added', async (messageSnap) => { // Get the private message sent
           console.log('message added', messageSnap.val());
           commit('SET_PRIVATE_USERS', { users: `${requestedBy}_${currentUser}` });
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
         });
-      await firebase.database()
+      firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
         .on('child_removed', async () => { // Get the private message sent
           // commit('CLOSE_PRIVATE_MESSAGE_DIALOG', `${requestedBy}_${currentUser}`);
@@ -84,8 +83,8 @@ const actions = {
     }
   },
   async sendPrivateMessageRequest({ commit }, { currentUser, userId }) {
-    const currentId = Object.keys(currentUser)[0];
-    commit('SEND_PRIVATE_MESSAGE_REQUEST');
+    const currentId = currentUser;
+    // commit('SEND_PRIVATE_MESSAGE_REQUEST');
     try {
       await firebase.database().ref(`users/${userId}/privateMessage/`).set({
         requestedBy: currentId,
@@ -100,10 +99,10 @@ const actions = {
           msg: 'Private message resquest successfuly sent',
         },
         { root: true });
-      commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
-      await firebase.database()
+      // commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
+      firebase.database()
         .ref(`privateMessages/${currentId}_${userId}`)
-        .on('child_added', async (messageSnap) => { // Get the private message sent
+        .on('child_added', (messageSnap) => { // Get the private message sent
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
         });
       await firebase.database()
@@ -187,9 +186,9 @@ const actions = {
 
 // Mutations
 const mutations = {
-  SEND_TEXT_SUCCESS(state, text) {
-    state.dialogText = text;
-  },
+  // SEND_MESSAGE_SUCCESS(state, text) {
+  //   state.dialogText = text;
+  // },
   SEND_PRIVATE_MESSAGE(state, message) {
     state.privateMessage.push(message);
   },

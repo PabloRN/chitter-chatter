@@ -4,13 +4,19 @@
     @keyboard-clicked="keyboardCLicked"
     @click="chatterClicked"
     @touchstart="chatterClicked"
-    width="50"
+    width="200"
     style="heigth:200px;width:50px;">
     <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
     <v-img class="chatter" height="200" max-width="50" :src="avatar"></v-img>
     <TypeBox ref="keyboard" v-if="isCurrentUser" />
-    <RoundedMenu v-on="{['privateMessage']:invitePrivate}"
+    <RoundedMenu v-on="{
+      ['privateMessage']:invitePrivate,
+      }"
      ref="roundedmenu" v-if="!isCurrentUser" />
+    <RoundedMenuCurrent :moving="mouseMoved"
+     ref="roundedmenucurrent" v-if="isCurrentUser" v-on="{
+      ['exitRoom']:leaveRoom,
+      }" />
 </div>
 </template>
 
@@ -23,6 +29,7 @@ import {
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
 import RoundedMenu from '@/components/RoundedMenu.vue';
+import RoundedMenuCurrent from '@/components/RoundedMenuCurrent.vue';
 
 export default {
   name: 'chatter',
@@ -30,12 +37,13 @@ export default {
     TypeBox,
     DialogBubble,
     RoundedMenu,
+    RoundedMenuCurrent,
   },
   props: {
     userId: String,
     avatar: String,
     nickname: String,
-    rooms: Object,
+    room: String,
   },
   data: () => ({
     chatterManager: {},
@@ -105,7 +113,9 @@ export default {
       // Mouse events
       this.chatterManager.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this.isDown = true;
+        this.mouseMoved = false;
         this.offset = [
           this.chatterManager.offsetLeft - e.clientX,
           this.chatterManager.offsetTop - e.clientY,
@@ -114,7 +124,7 @@ export default {
       document.addEventListener('mousemove', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
+        if (this.isDown && this.userId === this.getCurrentUser.userId) {
           this.mouseMoved = true;
           const mousePosition = {
             x: e.clientX,
@@ -145,7 +155,7 @@ export default {
       }, true);
       this.chatterManager.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
+        if (this.isDown && this.userId === this.getCurrentUser.userId) {
           this.mouseMoved = true;
           const mousePosition = {
             x: e.changedTouches[0].clientX,
@@ -166,19 +176,17 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('user', ['getCurrentUser', 'getUserPosition']),
+    ...mapGetters('user', ['getCurrentUser']),
     ...mapState('messages', ['dialogText']),
-    ...mapState('user', ['usersPosition', 'userPositionmodified']),
+    ...mapState('user', ['usersPosition', 'userPositionModified']),
     isCurrentUser() {
-      return this.userId === Object.keys(this.getCurrentUser)[0];
-    },
-    userposition() {
-      return this.usersPosition[this.userId].position;
+      return this.userId === this.getCurrentUser.userId;
     },
   },
   methods: {
     ...mapActions('user', ['initPosition', 'changePosition']),
     ...mapActions('messages', ['sendPrivateMessageRequest']),
+    ...mapActions('rooms', ['removeUser']),
     keyboardCLicked(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -197,21 +205,30 @@ export default {
 
     },
     leaveRoom() {
-
+      const userVal = this.getCurrentUser;
+      this.removeUser({
+        userId: this.userId,
+        roomId: this.$route.params.roomId,
+        roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
+      });
+      this.$router.push({
+        name: 'rooms',
+      });
     },
     invitePrivate() {
-      this.sendPrivateMessageRequest({ currentUser: this.getCurrentUser, userId: this.userId });
+      // eslint-disable-next-line max-len
+      this.sendPrivateMessageRequest({ currentUser: this.getCurrentUser.userId, userId: this.userId });
     },
     chatterClicked(e) {
       e.preventDefault();
       e.stopPropagation();
-      if (this.mouseMoved !== true) {
-        if (!this.isCurrentUser) {
-          console.log(this.userId);
-        }
-      }
-      this.mouseMoved = false;
-      this.keyboardClicked = false;
+      // if (this.mouseMoved !== true) {
+      //   if (this.isCurrentUser) {
+      //     console.log(this.userId);
+      //   }
+      // }
+      // this.mouseMoved = false;
+      // this.keyboardClicked = false;
     },
   },
   watch: {
@@ -220,7 +237,7 @@ export default {
         this.message = newVal[newVal.length - 1].text;
       }
     },
-    userPositionmodified() {
+    userPositionModified() {
       if (this.usersPosition[this.userId]) {
         const {
           left,
