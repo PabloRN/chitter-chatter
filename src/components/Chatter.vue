@@ -1,13 +1,10 @@
 <template>
 <div :id="userId" :ref="userId"
-    heigth="200"
     @keyboard-clicked="keyboardCLicked"
     @click="chatterClicked"
-    @touchstart="chatterClicked"
-    width="200"
-    style="heigth:200px;width:50px;">
+    @touchstart="chatterClicked">
     <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
-    <v-img class="chatter" height="200" max-width="50" :src="avatar"></v-img>
+    <v-img class="chatter" height="200" width="70" :src="avatar"></v-img>
     <TypeBox ref="keyboard" v-if="isCurrentUser" />
     <RoundedMenu v-on="{
       ['privateMessage']:invitePrivate,
@@ -257,7 +254,8 @@ export default {
 }
 
 .chater {
-    position: absolute;
+    position: relative;
+    object-fit: fill
 }
 .private-dialog{
   height:80vh;
