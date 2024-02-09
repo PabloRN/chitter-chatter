@@ -5,7 +5,7 @@
     @touchstart="chatterClicked">
     <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
     <v-img class="chatter" height="200" width="70" :src="avatar"></v-img>
-    <TypeBox ref="keyboard" v-if="isCurrentUser" />
+    <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved"/>
     <RoundedMenu v-on="{
       ['privateMessage']:invitePrivate,
       }"
