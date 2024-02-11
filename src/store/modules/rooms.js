@@ -99,16 +99,16 @@ const actions = {
       updates[`privateMessages/${rootState.messages.privateUsers}/`] = null;
       firebase.database().ref().update(updates);
       if (rootState.user.currentUser.userId === userId) {
-        // firebase.database()
-        //   .ref(`rooms/${roomId}/messages/`)
-        //   .off();
-        // firebase.database()
-        //   .ref(`privateMessages/${state.privateUsers}`)
-        //   .off();
+        firebase.database()
+          .ref(`rooms/${roomId}/messages/`)
+          .off();
+        firebase.database()
+          .ref(`privateMessages/${state.privateUsers}`)
+          .off();
         firebase.database()
           .ref(`rooms/${roomId}/users`).off();
       }
-
+      firebase.database().ref(`users/${userId}/position/`).off();
       commit('EXIT_ROOM', {
         roomId, userId, roomUsersKey, rootState,
       });
@@ -138,15 +138,15 @@ const mutations = {
   PUSH_USER_SUCCESS(state) {
     state.pushingUser = false;
   },
-  SET_USER_POSITION(state, { position, userId }) {
-    console.log(this.state);
-    if (this.state.user.usersPosition[userId]) {
-      this.state.user.usersPosition[userId].position = position;
-    } else {
-      Object.assign(this.state.user.usersPosition, { [userId]: { position } });
-    }
-    this.state.user.userPositionModified = !this.state.user.userPositionModified;
-  },
+  // SET_USER_POSITION(state, { position, userId }) {
+  //   console.log(this.state);
+  //   if (this.state.user.usersPosition[userId]) {
+  //     this.state.user.usersPosition[userId].position = position;
+  //   } else {
+  //     Object.assign(this.state.user.usersPosition, { [userId]: { position } });
+  //   }
+  //   this.state.user.userPositionModified = !this.state.user.userPositionModified;
+  // },
   ENTER_ROOM(state, { roomId, userId, roomUsersKey }) {
     if (state.roomList[roomId].users) {
       Object.assign(state.roomList[roomId].users, { [roomUsersKey]: userId });

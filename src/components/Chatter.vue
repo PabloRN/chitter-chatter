@@ -1,20 +1,16 @@
 <template>
-<div :id="userId" :ref="userId"
-    @keyboard-clicked="keyboardCLicked"
-    @click="chatterClicked"
+  <div :id="userId" :ref="userId" @keyboard-clicked="keyboardCLicked" @click="chatterClicked"
     @touchstart="chatterClicked">
     <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
     <v-img class="chatter" height="200" width="70" :src="avatar"></v-img>
-    <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved"/>
+    <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved" />
     <RoundedMenu v-on="{
-      ['privateMessage']:invitePrivate,
-      }"
-     ref="roundedmenu" v-if="!isCurrentUser" />
-    <RoundedMenuCurrent :moving="mouseMoved"
-     ref="roundedmenucurrent" v-if="isCurrentUser" v-on="{
-      ['exitRoom']:leaveRoom,
-      }" />
-</div>
+      ['privateMessage']: invitePrivate,
+    }" ref="roundedmenu" v-if="!isCurrentUser" />
+    <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-if="isCurrentUser" v-on="{
+      ['exitRoom']: leaveRoom,
+    }" />
+  </div>
 </template>
 
 <script>
@@ -92,10 +88,12 @@ export default {
     windowWidth: 0,
   }),
   created() {
+    this.isDown = false;
     this.windowHeight = window.outerHeight;
     this.windowWidth = window.outerWidth;
   },
   async mounted() {
+    this.isDown = false;
     this.chatterManager = await this.$refs[this.userId];
     if (this.chatterManager) {
       this.initPosition({
@@ -118,7 +116,7 @@ export default {
           this.chatterManager.offsetTop - e.clientY,
         ];
       }, true);
-      document.addEventListener('mousemove', (e) => {
+      this.chatterManager.addEventListener('mousemove', (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (this.isDown && this.userId === this.getCurrentUser.userId) {
@@ -126,7 +124,6 @@ export default {
           const mousePosition = {
             x: e.clientX,
             y: e.clientY,
-
           };
           this.changePosition({
             left: `${mousePosition.x + this.offset[0]}px`,
@@ -144,6 +141,7 @@ export default {
       }, true);
       this.chatterManager.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this.isDown = true;
         this.offset = [
           this.chatterManager.offsetLeft - e.changedTouches[0].clientX,
@@ -152,6 +150,7 @@ export default {
       }, true);
       this.chatterManager.addEventListener('touchmove', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if (this.isDown && this.userId === this.getCurrentUser.userId) {
           this.mouseMoved = true;
           const mousePosition = {
@@ -203,6 +202,8 @@ export default {
     },
     leaveRoom() {
       const userVal = this.getCurrentUser;
+      this.isDown = false;
+      this.mouseMoved = false;
       this.removeUser({
         userId: this.userId,
         roomId: this.$route.params.roomId,
@@ -219,13 +220,8 @@ export default {
     chatterClicked(e) {
       e.preventDefault();
       e.stopPropagation();
-      // if (this.mouseMoved !== true) {
-      //   if (this.isCurrentUser) {
-      //     console.log(this.userId);
-      //   }
-      // }
-      // this.mouseMoved = false;
-      // this.keyboardClicked = false;
+      this.isDown = false;
+      this.mouseMoved = false;
     },
   },
   watch: {
@@ -235,7 +231,8 @@ export default {
       }
     },
     userPositionModified() {
-      if (this.usersPosition[this.userId]) {
+      console.log('userPositionModified', this.usersPosition[this.userId]);
+      if (this.usersPosition[this.userId] && this.usersPosition[this.userId].position) {
         const {
           left,
           top,
@@ -250,14 +247,15 @@ export default {
 
 <style scoped>
 .chatter:hover {
-    cursor: pointer;
+  cursor: pointer;
 }
 
-.chater {
-    position: relative;
-    object-fit: fill
+.chatter {
+  position: relative;
+  object-fit: fill
 }
-.private-dialog{
-  height:80vh;
+
+.private-dialog {
+  height: 80vh;
 }
 </style>
