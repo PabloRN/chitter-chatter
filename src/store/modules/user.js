@@ -51,6 +51,7 @@ const actions = {
     });
   },
   async getUserData({ commit, state }, userId) {
+    console.log('getUserData');
     const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
     commit('setUserData', await { ...snapshot.val(), userId });
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
@@ -109,11 +110,11 @@ const actions = {
       const urlList = [];
       const storage = firebase.storage();
       // Create a storage reference from our storage service
-      const storageRef = await storage.ref();
-      const listRef = await storageRef.child('avatars');
-      const tempRefs = await listRef.listAll();
+      const storageRef = storage.ref();
+      const avatarsRef = storageRef.child('avatars');
+      const tempRefs = await avatarsRef.listAll();
       await Promise.all(tempRefs.items.map((async (ref, index) => {
-        const starsRef = await storageRef.child(ref.location.path);
+        const starsRef = storageRef.child(ref.location.path);
         const miniavatarurl = await storageRef.child(`miniavatars/${ref.name}`);
         // const metadata = await starsRef.getMetadata();
         const url = await starsRef.getDownloadURL();
@@ -190,6 +191,8 @@ const mutations = {
     state.getavatarsLoading = false;
   },
   SET_USER_POSITION(state, { position, userId }) {
+    console.log('SET_USER_POSITION', state.usersPosition[userId]);
+    console.log('state.userPositionModified = !state.userPositionModified;', state.userPositionModified);
     if (state.usersPosition[userId]) {
       state.usersPosition[userId].position = position;
     } else {

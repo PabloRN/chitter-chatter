@@ -1,6 +1,6 @@
+<!-- eslint-disable max-len -->
 <template>
-  <div :id="userId" :ref="userId" @keyboard-clicked="keyboardCLicked" @click="chatterClicked"
-    @touchstart="chatterClicked">
+  <div :id="userId" :ref="userId" @keyboard-clicked="keyboardCLicked" @click="chatterClicked">
     <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
     <v-img class="chatter" height="200" width="70" :src="avatar"></v-img>
     <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved" />
@@ -9,7 +9,9 @@
     }" ref="roundedmenu" v-if="!isCurrentUser" />
     <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-if="isCurrentUser" v-on="{
       ['exitRoom']: leaveRoom,
+      ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
     }" />
+    <AvatarSelector :showAvatarSelector="showAvatarSelector"  @onClose="() => this.showAvatarSelector = false"/>
   </div>
 </template>
 
@@ -23,6 +25,7 @@ import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
 import RoundedMenu from '@/components/RoundedMenu.vue';
 import RoundedMenuCurrent from '@/components/RoundedMenuCurrent.vue';
+import AvatarSelector from '@/components/AvatarSelector.vue';
 
 export default {
   name: 'chatter',
@@ -31,6 +34,7 @@ export default {
     DialogBubble,
     RoundedMenu,
     RoundedMenuCurrent,
+    AvatarSelector,
   },
   props: {
     userId: String,
@@ -86,6 +90,7 @@ export default {
     pMessage: {},
     windowHeight: 0,
     windowWidth: 0,
+    showAvatarSelector: false,
   }),
   created() {
     this.isDown = false;
@@ -106,6 +111,11 @@ export default {
       this.chatterManager.style.top = `${this.windowHeight / 2}px`;
 
       // Mouse events
+      this.chatterManager.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.showAvatarSelector = true;
+      }, true);
       this.chatterManager.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -221,7 +231,7 @@ export default {
       e.preventDefault();
       e.stopPropagation();
       this.isDown = false;
-      this.mouseMoved = false;
+      // this.mouseMoved = false;
     },
   },
   watch: {
@@ -231,7 +241,6 @@ export default {
       }
     },
     userPositionModified() {
-      console.log('userPositionModified', this.usersPosition[this.userId]);
       if (this.usersPosition[this.userId] && this.usersPosition[this.userId].position) {
         const {
           left,

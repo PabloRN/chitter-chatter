@@ -6,7 +6,7 @@
       <v-img v-if="background !== ''" :src="background !== '' ? background : ''" class="white--text align-end"
         height="100vh">
         <Chatter v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="userId"
-          :avatar="avatar" :nickname="nickname" :room="roomId" />
+          :avatar="avatar" :nickname="nickname" :room="roomId" v-show="true"/>
       </v-img>
       {{ $route.params.id }}
     </v-card>
@@ -73,7 +73,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('user', ['getUserData']),
+    ...mapActions('user', ['getUserData', 'getAvatars']),
     ...mapActions('rooms', ['getRooms', 'removeUser']),
     ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages']),
     async initUsers() {
@@ -118,6 +118,7 @@ export default {
       this.initUsers();
     }
     this.getDialogs(this.$route.params.roomId);
+    this.getAvatars();
   },
   // beforeRouteLeave(from, to, next) {
   //   const userVal = Object.values(this.currentUser)[0];

@@ -90,14 +90,14 @@ const actions = {
 
     try {
       const updates = {};
-      console.log(rootState);
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
       updates[`/users/${userId}/rooms/${roomId}`] = null;
       updates[`/users/${userId}/messages/`] = null;
       updates[`/users/${userId}/privateMessage/`] = null;
       updates[`/users/${userId}/position/`] = null;
       updates[`privateMessages/${rootState.messages.privateUsers}/`] = null;
-      firebase.database().ref().update(updates);
+
+      // firebase.database().ref(`users/${userId}/position/`).off();
       if (rootState.user.currentUser.userId === userId) {
         firebase.database()
           .ref(`rooms/${roomId}/messages/`)
@@ -107,8 +107,9 @@ const actions = {
           .off();
         firebase.database()
           .ref(`rooms/${roomId}/users`).off();
+        firebase.database().ref('users/').off();
       }
-      firebase.database().ref(`users/${userId}/position/`).off();
+      firebase.database().ref().update(updates);
       commit('EXIT_ROOM', {
         roomId, userId, roomUsersKey, rootState,
       });
@@ -160,7 +161,7 @@ const mutations = {
     delete state.roomList[roomId].users[roomUsersKey];
     delete this.state.user.userData[userId];
     delete this.state.user.usersPosition[userId];
-    this.state.user.userPositionModified = false;
+    this.state.user.userPositionModified = true;
     state.userExit = { roomId, userId };
     state.userAdded = null;
   },

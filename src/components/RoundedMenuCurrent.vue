@@ -5,7 +5,7 @@
       @touchstart.native.prevent="toggleMenu">
     </v-btn>
     <v-btn :class="hideMenu ? 'hidded' : 'nothidded' "
-    class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
+    class="mx-2 menu-item" fab dark small @click.prevent.stop="emit('showAvatarList')"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
       mdi-account-plus
@@ -95,6 +95,10 @@ export default {
         case 'exitRoom':
           this.toggleMenu();
           this.$emit('exitRoom');
+          break;
+        case 'showAvatarList':
+          this.toggleMenu();
+          this.$emit('showAvatarList');
           break;
 
         default:
