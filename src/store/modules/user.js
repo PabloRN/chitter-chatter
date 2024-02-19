@@ -13,15 +13,13 @@ const state = {
   code: '',
   userData: {},
   currentUser: {},
+  currentUserId: '',
   usersPosition: {},
   userPositionModified: false,
   requestedBy: '',
 };
 
 const getters = {
-  getAllAvatars(state) {
-    return state.avatarsList;
-  },
   getCurrentUser(state) {
     return state.currentUser;
   },
@@ -104,27 +102,6 @@ const actions = {
         },
       );
   },
-  async getAvatars({ commit }) {
-    commit('GET_AVATARS');
-    try {
-      const urlList = [];
-      const storage = firebase.storage();
-      // Create a storage reference from our storage service
-      const storageRef = storage.ref();
-      const avatarsRef = storageRef.child('avatars');
-      const tempRefs = await avatarsRef.listAll();
-      await Promise.all(tempRefs.items.map((async (ref, index) => {
-        const starsRef = storageRef.child(ref.location.path);
-        const miniavatarurl = await storageRef.child(`miniavatars/${ref.name}`);
-        // const metadata = await starsRef.getMetadata();
-        const url = await starsRef.getDownloadURL();
-        urlList.push({ avatarId: index, url, miniurl: await miniavatarurl.getDownloadURL() });
-      })));
-      commit('GET_AVATARS_SUCCESED', urlList);
-    } catch (error) {
-      commit('GET_AVATARS_FAILED');
-    }
-  },
   signUserIn({ commit, state }) {
     firebase.auth().setPersistence('local').then(() => {
       firebase.auth().signInWithEmailAndPassword(state.email, state.password)
@@ -169,6 +146,7 @@ const mutations = {
     if (state.currentUser[data.userId]) {
       state.currentUser = data.data;
       state.currentUser.userId = data.userId;
+      state.currentUserId = data.userId;
     } else {
       Object.assign(state.currentUser, { [data.userId]: data.data, userId: data.userId });
     }
@@ -179,16 +157,6 @@ const mutations = {
     } else {
       Object.assign(state.userData, { [data.userId]: data });
     }
-  },
-  GET_AVATARS(state) {
-    state.getavatarsLoading = true;
-  },
-  GET_AVATARS_SUCCESED(state, data) {
-    state.avatarsList = data;
-    state.getavatarsLoading = false;
-  },
-  GET_AVATARS_FAILED(state) {
-    state.getavatarsLoading = false;
   },
   SET_USER_POSITION(state, { position, userId }) {
     console.log('SET_USER_POSITION', state.usersPosition[userId]);

@@ -11,7 +11,7 @@
       ['exitRoom']: leaveRoom,
       ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
     }" />
-    <AvatarSelector :showAvatarSelector="showAvatarSelector"  @onClose="() => this.showAvatarSelector = false"/>
+    <AvatarSelector v-if="showAvatarSelector" :showAvatarSelector="showAvatarSelector"  @onClose="() => this.showAvatarSelector = !this.showAvatarSelector"/>
   </div>
 </template>
 

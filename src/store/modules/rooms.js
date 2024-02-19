@@ -7,6 +7,7 @@ const state = {
   userAdded: {},
   userExit: {},
   getitngRoomsLoading: false,
+  avatarsList: [],
 };
 
 const getters = {
@@ -15,6 +16,9 @@ const getters = {
   },
   getUserPosition(state) {
     return state.usersPosition;
+  },
+  getAllAvatars(state) {
+    return state.avatarsList;
   },
 };
 const actions = {
@@ -118,10 +122,42 @@ const actions = {
       console.log(error);
     }
   },
+  async getAvatars({ commit, rootState }, roomId) {
+    commit('GET_AVATARS');
+    try {
+      const urlList = [];
+      const storage = firebase.storage();
+      // Create a storage reference from our storage service
+      const storageRef = storage.ref();
+      const avatarsRef = storageRef.child(`rooms/${roomId}/avatars/${rootState.user.currentUser.level}`);
+      const tempRefs = await avatarsRef.listAll();
+      await Promise.all(tempRefs.items.map((async (ref, index) => {
+        const starsRef = storageRef.child(ref.location.path);
+        // const miniavatarurl = await storageRef.child(`miniavatars/${ref.name}`);
+        // const metadata = await starsRef.getMetadata();
+        const url = await starsRef.getDownloadURL();
+        // const miniurl = await miniavatarurl.getDownloadURL();
+        urlList.push({ avatarId: index, url });
+        console.log('urlList', urlList);
+      })));
+      commit('GET_AVATARS_SUCCEED', urlList);
+    } catch (error) {
+      commit('GET_AVATARS_FAILED');
+    }
+  },
 };
 
 const mutations = {
-
+  GET_AVATARS(state) {
+    state.getavatarsLoading = true;
+  },
+  GET_AVATARS_SUCCEED(state, data) {
+    state.avatarsList = data;
+    state.getavatarsLoading = false;
+  },
+  GET_AVATARS_FAILED(state) {
+    state.getavatarsLoading = false;
+  },
   GET_ROOMS(state) {
     state.getitngRoomsLoading = true;
   },

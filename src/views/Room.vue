@@ -65,7 +65,7 @@ export default {
     chattersCounter: 0,
   }),
   computed: {
-    ...mapState('rooms', ['userAdded', 'userExit', 'roomList']),
+    ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList']),
     ...mapState('user', ['userData', 'currentUser', 'requestedBy']),
     ...mapState('messages', ['privateMessage', 'privateUsers']),
     chattersArray() {
@@ -73,8 +73,8 @@ export default {
     },
   },
   methods: {
-    ...mapActions('user', ['getUserData', 'getAvatars']),
-    ...mapActions('rooms', ['getRooms', 'removeUser']),
+    ...mapActions('user', ['getUserData']),
+    ...mapActions('rooms', ['getRooms', 'removeUser', 'getAvatars']),
     ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages']),
     async initUsers() {
       if (
@@ -82,6 +82,7 @@ export default {
         && this.roomList[this.$route.params.roomId].users
         && Object.keys(this.roomList[this.$route.params.roomId].users).length > 0
       ) {
+        this.getAvatars(this.$route.params.roomId);
         const userIDs = Object.keys(this.roomList[this.$route.params.roomId].users);
 
         // eslint-disable-next-line no-restricted-syntax
@@ -118,7 +119,6 @@ export default {
       this.initUsers();
     }
     this.getDialogs(this.$route.params.roomId);
-    this.getAvatars();
   },
   // beforeRouteLeave(from, to, next) {
   //   const userVal = Object.values(this.currentUser)[0];
