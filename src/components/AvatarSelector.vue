@@ -8,8 +8,9 @@
             <!-- Using the slider component -->
             <slider ref="slider" :options="options" @slide='slide' @tap='onTap' @init='onInit' style=" width:100%">
               <!-- slideritem wrapped package with the components you need -->
-              <slideritem class="slider-item-custom" v-for="(item, index) in avatarsList" :key="index" style=" width:10%;margin-right: 2%;">
-                <v-img class="chatter" height="200" width="70" :src="item.url"></v-img>
+              <slideritem class="slider-item-custom" v-for="(item, index) in avatarsList" :key="index"
+                 style="width:10%;margin-right: 2%;">
+                <v-img @click="(event) => { avatarSelected(event, item) }" class="chatter" height="200" width="70" :src="item.url"></v-img>
               </slideritem>
               <!-- Customizable loading -->
               <div slot="loading">loading...</div>
@@ -37,120 +38,6 @@ export default {
   data: () => ({
     isLoading: false,
     sheet: true,
-    someList: [
-      {
-        html: 'slider1',
-        style: {
-          background: '#4abf8a',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider2',
-        style: {
-          background: '#4bbfc3',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider3',
-        style: {
-          background: '#7baabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider4',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider5',
-        style: {
-          background: '#4abf8a',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider6',
-        style: {
-          background: '#4bbfc3',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider7',
-        style: {
-          background: '#7baabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider8',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider9',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider10',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider11',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider12',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider13',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-      {
-        html: 'slider14',
-        style: {
-          background: '#7caabe',
-          width: '12%',
-          'margin-right': '2%',
-        },
-      },
-    ],
     // Slider configuration [obj]
     options: {
       currentPage: 0,
@@ -176,7 +63,7 @@ export default {
     // this.setDrawer(false);
   },
   methods: {
-    ...mapActions('user', ['signUserIn']),
+    ...mapActions('user', ['signUserIn', 'changeAvatar']),
     setIsLoading(val) {
       this.isLoading = val;
     },
@@ -184,17 +71,25 @@ export default {
       this.signUserIn();
     },
     slide(data) {
-      console.log(data);
+      console.log('slide', data);
     },
     onTap(data) {
-      console.log(data);
+      console.log('tap', data);
+    },
+    avatarSelected(e, itemSelected) {
+      e.stopPropagation();
+      e.preventDefault();
+      this.changeAvatar(itemSelected.url);
+      this.$emit('onClose');
     },
     onInit(data) {
       console.log(data);
     },
-    clickedOutside() {
+    clickedOutside(e) {
+      e.stopPropagation();
+      e.preventDefault();
       console.log('onClose clicked');
-      this.$emit('onClose');
+      // this.$emit('onClose');
     },
   },
   watch: {
@@ -210,7 +105,9 @@ export default {
 }
 
 .slider-item-custom {
-  width: '12%'!important;
-  margin-right: '2%'!important;
-  border: 1px solid #000000
-}</style>
+  width: '12%' !important;
+  margin-right: '2%' !important;
+  border: 1px solid #000000;
+  cursor: pointer!important;
+}
+</style>

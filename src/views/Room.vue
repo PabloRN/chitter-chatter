@@ -66,7 +66,7 @@ export default {
   }),
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList']),
-    ...mapState('user', ['userData', 'currentUser', 'requestedBy']),
+    ...mapState('user', ['userData', 'currentUser', 'requestedBy', 'avatarUpdated']),
     ...mapState('messages', ['privateMessage', 'privateUsers']),
     chattersArray() {
       return this.chattersCounter && Array.from(this.chatters);
@@ -142,11 +142,15 @@ export default {
     },
     userExit({ roomId, userId }) {
       if (roomId === this.$route.params.roomId) {
-        // const findUserIndex = (user) => userId === user;
-        // const userIdIndex = this.chatters.findIndex(findUserIndex);
         this.chatters.delete(userId);
         this.chattersCounter -= 1;
       }
+    },
+    avatarUpdated({ url, userId }) {
+      const tempUser = this.chatters.get(userId);
+      Object.assign(tempUser, { avatar: url });
+      this.chatters.set(userId, tempUser);
+      this.chattersCounter += 1;
     },
     requestedBy(user) {
       if (user) {

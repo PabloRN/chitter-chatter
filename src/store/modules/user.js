@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 /* eslint-disable no-shadow */
 import * as firebase from 'firebase';
 import router from '@/router/index';
@@ -17,6 +18,7 @@ const state = {
   usersPosition: {},
   userPositionModified: false,
   requestedBy: '',
+  avatarUpdated: {},
 };
 
 const getters = {
@@ -136,6 +138,23 @@ const actions = {
         );
     });
   },
+  async changeAvatar({ commit, state }, url) {
+    // commit('SET_USER_AVATAR');
+    try {
+      const { currentUser } = state;
+      const tempUser = JSON.parse(JSON.stringify(currentUser));
+      console.log('tempUser before', tempUser);
+      Object.assign(tempUser, { avatar: url });
+      console.log('tempUser after', tempUser);
+      await firebase.database().ref(`users/${state.currentUserId}/`).set(tempUser);
+      firebase.database().ref(`users/${state.currentUserId}/avatar`).on('value', (snapPosition) => {
+        commit('SET_USER_AVATAR_SUCCESS', { url: snapPosition.val(), userId: state.currentUserId });
+      });
+    } catch (error) {
+      // commit('SET_USER_AVATAR_FAILED');
+      console.log(error);
+    }
+  },
 };
 
 const mutations = {
@@ -159,14 +178,15 @@ const mutations = {
     }
   },
   SET_USER_POSITION(state, { position, userId }) {
-    console.log('SET_USER_POSITION', state.usersPosition[userId]);
-    console.log('state.userPositionModified = !state.userPositionModified;', state.userPositionModified);
     if (state.usersPosition[userId]) {
       state.usersPosition[userId].position = position;
     } else {
       Object.assign(state.usersPosition, { [userId]: { position } });
     }
     state.userPositionModified = !state.userPositionModified;
+  },
+  SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
+    state.avatarUpdated = { url, userId };
   },
   PRIVATE_REQUESTED(state, { requestedBy, userId }) {
     state.requestedBy = requestedBy;
