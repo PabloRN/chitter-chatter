@@ -64,7 +64,6 @@ export default {
     },
     closedialogprivate() {
       this.$emit('privateMessageClosed');
-      console.log('close');
     },
   },
   watch: {

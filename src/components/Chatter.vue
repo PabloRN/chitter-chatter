@@ -2,7 +2,7 @@
 <template>
   <div :id="userId" :ref="userId" @keyboard-clicked="keyboardCLicked" @click="chatterClicked">
     <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
-    <v-img class="chatter" height="200" width="70" :src="avatar"></v-img>
+    <v-img :id="`img-${userId}`" class="chatter" height="200" width="70" :src="avatar"></v-img>
     <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved" />
     <RoundedMenu v-on="{
       ['privateMessage']: invitePrivate,
@@ -11,7 +11,7 @@
       ['exitRoom']: leaveRoom,
       ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
     }" />
-    <AvatarSelector v-if="showAvatarSelector" :showAvatarSelector="showAvatarSelector"  @onClose="() => this.showAvatarSelector = !this.showAvatarSelector"/>
+    <AvatarSelector ref="avatar" v-if="showAvatarSelector" :showAvatarSelector="showAvatarSelector"  @onClose="() => this.showAvatarSelector = !this.showAvatarSelector"/>
   </div>
 </template>
 
@@ -184,7 +184,7 @@ export default {
   computed: {
     ...mapGetters('user', ['getCurrentUser']),
     ...mapState('messages', ['dialogText']),
-    ...mapState('user', ['usersPosition', 'userPositionModified']),
+    ...mapState('user', ['usersPosition', 'userPositionModified', 'userData', 'avatarUpdated']),
     isCurrentUser() {
       return this.userId === this.getCurrentUser.userId;
     },
@@ -211,7 +211,7 @@ export default {
 
     },
     leaveRoom() {
-      const userVal = this.getCurrentUser;
+      const userVal = this.userData[this.userId];
       this.isDown = false;
       this.mouseMoved = false;
       this.removeUser({

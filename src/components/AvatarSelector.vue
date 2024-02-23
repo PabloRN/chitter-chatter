@@ -56,8 +56,7 @@ export default {
     ...mapState('rooms', ['avatarsList']),
   },
   created() {
-    this.avatars = this.avatarList;
-    console.log('this.avatars', this.avatarsList);
+    this.avatars = this.avatarsList;
   },
   mounted() {
     // this.setDrawer(false);

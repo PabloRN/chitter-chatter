@@ -70,8 +70,6 @@ const actions = {
           if (userSnap.val() !== null) {
             console.log('User enter room', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
             commit('ENTER_ROOM', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
-
-            // console.log('child_added', { roomId, ...userSnap.val(), roomUsersKey: userSnap.key }, snapshot.val());
           }
         });
 
@@ -90,8 +88,6 @@ const actions = {
     }
   },
   async removeUser({ commit, rootState }, { roomId, userId, roomUsersKey }) {
-    console.log('XXXXXX', { roomId, userId, roomUsersKey });
-
     try {
       const updates = {};
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
@@ -138,7 +134,6 @@ const actions = {
         const url = await starsRef.getDownloadURL();
         // const miniurl = await miniavatarurl.getDownloadURL();
         urlList.push({ avatarId: index, url });
-        console.log('urlList', urlList);
       })));
       commit('GET_AVATARS_SUCCEED', urlList);
     } catch (error) {
@@ -193,7 +188,6 @@ const mutations = {
     state.userAdded = { roomId, ...userId };
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
-    console.log('EXIT ROOM', { roomId, userId, roomUsersKey });
     delete state.roomList[roomId].users[roomUsersKey];
     delete this.state.user.userData[userId];
     delete this.state.user.usersPosition[userId];

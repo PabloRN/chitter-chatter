@@ -67,7 +67,6 @@ const actions = {
       firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
         .on('child_added', async (messageSnap) => { // Get the private message sent
-          console.log('message added', messageSnap.val());
           commit('SET_PRIVATE_USERS', { users: `${requestedBy}_${currentUser}` });
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
         });
@@ -126,7 +125,6 @@ const actions = {
       firebase.database()
         .ref(`rooms/${roomId}/messages/`)
         .on('child_added', async (messageSnap) => { // Get the message sended to the room
-          console.log('message added', messageSnap.val());
           if (messageSnap.val() !== null) {
             commit('MESSAGE_ADDED_SUCCESS', {
               roomId,
@@ -161,7 +159,6 @@ const actions = {
     const updates = {};
     updates[`privateMessages/${state.privateUsers}/`] = null;
     try {
-      console.log('off', state.privateUsers);
       await firebase.database()
         .ref(`privateMessages/${state.privateUsers}`)
         .off();

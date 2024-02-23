@@ -131,7 +131,6 @@ export default {
   // },
   watch: {
     async userAdded(newUser) {
-      console.log('userAdded', newUser);
       if (newUser && newUser?.roomId === this.$route.params.roomId) {
         const userDataNew = await this.getUserData(newUser.userId);
         if (Object.keys(userDataNew).length > 0) {
@@ -147,10 +146,14 @@ export default {
       }
     },
     avatarUpdated({ url, userId }) {
-      const tempUser = this.chatters.get(userId);
-      Object.assign(tempUser, { avatar: url });
-      this.chatters.set(userId, tempUser);
-      this.chattersCounter += 1;
+      this.$nextTick(() => {
+        const tempUser = this.chatters.get(userId);
+        if (tempUser) {
+          tempUser.avatar = url;
+          this.chatters.set(userId, tempUser);
+          this.chattersCounter += 1;
+        }
+      });
     },
     requestedBy(user) {
       if (user) {
