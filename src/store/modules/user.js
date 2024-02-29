@@ -52,7 +52,11 @@ const actions = {
   },
   async getUserData({ commit, state }, userId) {
     const snapshot = await firebase.database().ref(`users/${userId}`).once('value');
-    commit('setUserData', { ...snapshot.val(), userId });
+    const userDataTemp = snapshot.val();
+    if (userDataTemp.position) {
+      commit('SET_USER_POSITION', { position: userDataTemp.position, userId });
+    }
+    commit('setUserData', { ...userDataTemp, userId });
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
     const privateMessage = firebase.database().ref(`users/${state.currentUser.userId}/privateMessage/requestedBy`);
     firebase.database().ref(`users/${userId}/avatar`).on('value', (snapAvatar) => {
@@ -65,7 +69,7 @@ const actions = {
       commit('PRIVATE_REQUESTED', { requestedBy: state.userData[snapPrivate.val()], userId: snapPrivate.val() });
     });
 
-    return { ...snapshot.val(), userId };
+    return { ...userDataTemp, userId };
   },
   setEmailAction: async ({ commit }, payload) => {
     commit('setEmail', payload);

@@ -101,11 +101,21 @@ export default {
     this.isDown = false;
     this.chatterManager = await this.$refs[this.userId];
     if (this.chatterManager) {
-      this.initPosition({
-        left: this.usersPosition[this.userId] && this.usersPosition[this.userId].position ? this.usersPosition[this.userId].position.left : `${this.windowWidth / 2}px`,
-        top: this.usersPosition[this.userId] && this.usersPosition[this.userId].position ? this.usersPosition[this.userId].position.top : `${this.windowHeight / 2}px`,
-        userId: this.userId,
-      });
+      const userID = this.userId;
+      const usersPositionTemp = JSON.parse(JSON.stringify(this.usersPosition));
+      if (Object.keys(usersPositionTemp).length > 0) {
+        this.initPosition({
+          left: Object.keys(usersPositionTemp).length > 0 && Object.keys(usersPositionTemp)[0] === userID ? Object.values(usersPositionTemp)[0].position.left : `${this.windowWidth / 2}px`,
+          top: Object.keys(usersPositionTemp).length > 0 && Object.keys(usersPositionTemp)[0] === userID ? Object.values(usersPositionTemp)[0].position.top : `${this.windowHeight / 2}px`,
+          userId: this.userId,
+        });
+      } else {
+        this.initPosition({
+          left: `${this.windowWidth / 2}px`,
+          top: `${this.windowHeight / 2}px`,
+          userId: this.userId,
+        });
+      }
       this.chatterManager.style.position = 'absolute';
       this.chatterManager.style.left = `${this.windowWidth / 2}px`;
       this.chatterManager.style.top = `${this.windowHeight / 2}px`;
