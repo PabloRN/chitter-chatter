@@ -1,7 +1,9 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div :id="userId" :ref="userId" @keyboard-clicked="keyboardCLicked" @click="chatterClicked">
-    <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
+  <div style="text-align: center;" :class="isCurrentUser ? 'current-user' : 'user'" id="userId" :ref="userId" @keyboard-clicked="keyboardCLicked" @click="chatterClicked">
+    <DialogBubble ref="bubble" :id="`${userId}`" :message="message" />
+    <div v-if="!isCurrentUser" style="position: absolute;top: -22px;left: 5px; color: #ffffff;
+text-shadow: 1px 1px 1px rgba(0,0,0,1);">{{nickname}}</div>
     <v-img :id="`img-${userId}`" class="chatter" height="200" width="70" :src="avatar"></v-img>
     <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved" />
     <RoundedMenu v-on="{
@@ -276,5 +278,8 @@ export default {
 
 .private-dialog {
   height: 80vh;
+}
+.current-user{
+  z-index: 1000;
 }
 </style>
