@@ -29,6 +29,15 @@ const actions = {
   getUser({ commit }) {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
+        const ref = firebase.database().ref(`users/${user.uid}`);
+        ref.update({
+          onlineState: true,
+          status: "I'm online.",
+        });
+        ref.onDisconnect().update({
+          onlineState: false,
+          status: "I'm offline.",
+        });
         firebase.database().ref(`users/${user.uid}`).once('value', (snapshot) => {
           console.log('snapshot from getUser', snapshot.val());
           commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
