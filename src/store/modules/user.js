@@ -35,8 +35,21 @@ const actions = {
   },
   getUser({ commit, dispatch }) {
     firebase.auth().onAuthStateChanged((user) => {
+      console.log('ceck user', user);
       if (user) {
+        console.log(user);
         const ref = firebase.database().ref(`users/${user.uid}`);
+        if (user.isAnonymous) {
+          ref.set({
+            nickname: 'anonymous',
+            avatar: 'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fyk7XJwBbTJPFkDJ92vZF9bv1Od45%2Favatars%2FL1%2Fbills-200-70.png?alt=media&token=cdb26e62-d3b6-4af1-9279-c0e733159008',
+            age: 0,
+            miniavatar: null,
+            level: 'L1',
+            userId: user.uid,
+          });
+          // ref.onDisconnect().delete();
+        }
         ref.update({
           onlineState: true,
           status: "I'm online.",
@@ -50,7 +63,7 @@ const actions = {
           commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
         });
       } else {
-        // router.push({ name: 'login' });// No user is signed in.
+        dispatch('loginAnonymously');
       }
     });
   },
@@ -173,6 +186,22 @@ const actions = {
       // commit('SET_USER_AVATAR_FAILED');
       console.log(error);
     }
+  },
+  async loginAnonymously() {
+    // commit('SET_USER_AVATAR');
+    firebase.auth().signInAnonymously()
+      // .then(() => {
+      // // Signed in..
+      // })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        if (errorCode === 'auth/operation-not-allowed') {
+          alert('You must enable Anonymous auth in the Firebase Console.');
+        } else {
+          console.error(errorMessage);
+        }
+      });
   },
 };
 

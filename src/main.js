@@ -22,13 +22,9 @@ Vue.config.productionTip = false;
 Vue.prototype._ = lodash;
 
 new Vue({
-  router,
-  store,
-  vuetify,
-  i18n,
-  render: (h) => h(App),
+
   async created() {
-    await firebase.initializeApp(
+    firebase.initializeApp(
       {
         apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
         authDomain: 'chitter-chatter-f762a.firebaseapp.com',
@@ -41,4 +37,9 @@ new Vue({
       },
     );
   },
+  router,
+  store,
+  vuetify,
+  i18n,
+  render: (h) => h(App),
 }).$mount('#app');

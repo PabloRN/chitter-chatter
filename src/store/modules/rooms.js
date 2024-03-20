@@ -87,15 +87,21 @@ const actions = {
       console.log(error);
     }
   },
-  async removeUser({ commit, rootState }, { roomId, userId, roomUsersKey }) {
+  async removeUser({ commit, rootState }, {
+    roomId, userId, roomUsersKey, isAnonymous,
+  }) {
     try {
       const updates = {};
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;
-      updates[`/users/${userId}/rooms/${roomId}`] = null;
-      updates[`/users/${userId}/messages/`] = null;
-      updates[`/users/${userId}/privateMessage/`] = null;
-      updates[`/users/${userId}/position/`] = null;
-      updates[`privateMessages/${rootState.messages.privateUsers}/`] = null;
+      if (!isAnonymous) {
+        updates[`/users/${userId}/rooms/${roomId}`] = null;
+        updates[`/users/${userId}/messages/`] = null;
+        updates[`/users/${userId}/privateMessage/`] = null;
+        updates[`/users/${userId}/position/`] = null;
+        updates[`privateMessages/${rootState.messages.privateUsers}/`] = null;
+      } else {
+        updates[`/users/${userId}`] = null;
+      }
 
       // firebase.database().ref(`users/${userId}/position/`).off();
       if (rootState.user.currentUser.userId === userId) {

@@ -203,7 +203,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions('user', ['initPosition', 'changePosition']),
+    ...mapActions('user', ['initPosition', 'changePosition', 'userSignOut']),
     ...mapActions('messages', ['sendPrivateMessageRequest']),
     ...mapActions('rooms', ['removeUser']),
     keyboardCLicked(e) {
