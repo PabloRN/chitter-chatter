@@ -26,7 +26,14 @@ const getters = {
   },
 };
 const actions = {
-  getUser({ commit }) {
+  userSignOut() {
+    console.log('signOut');
+    // const auth = firebase.auth().getAuth();
+    firebase.auth().signOut().then(
+      () => router.push({ name: 'login' }),
+    );
+  },
+  getUser({ commit, dispatch }) {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         const ref = firebase.database().ref(`users/${user.uid}`);

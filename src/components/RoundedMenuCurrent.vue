@@ -6,7 +6,7 @@
     </v-btn>
     <v-btn :class="hideMenu ? 'hidded' : 'nothidded' "
     class="mx-2 menu-item" fab dark small @click.prevent.stop="emit('showAvatarList')"
-      @touchstart.native.prevent="toggleMenu">
+      @touchstart.native.prevent="emit('showAvatarList')">
       <v-icon >
       mdi-account-plus
     </v-icon>
@@ -14,14 +14,14 @@
     <v-btn class="mx-2 menu-item"
      :class="hideMenu ? 'hidded' : 'nothidded' "
       fab dark small @click.prevent.stop="emit('privateMessage')"
-      @touchstart.native.prevent.stop="toggleMenu">
+      @touchstart.native.prevent.stop="emit('privateMessage')">
       <v-icon >
       mdi-forum-outline
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
      class="mx-2 menu-item" fab dark small @click.prevent.stop="emit('exitRoom')"
-      @touchstart.native.prevent="toggleMenu">
+      @touchstart.native.prevent="emit('exitRoom')">
       <v-icon >
       mdi-door-open
     </v-icon>
@@ -34,8 +34,8 @@
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
-     class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+     class="mx-2 menu-item" fab dark small @click.prevent.stop="emit('signOut')"
+      @touchstart.native.prevent="emit('signOut')">
       <v-icon >
       mdi-alpha-e-circle-outline
     </v-icon>
@@ -99,6 +99,10 @@ export default {
         case 'showAvatarList':
           this.toggleMenu();
           this.$emit('showAvatarList');
+          break;
+        case 'signOut':
+          this.toggleMenu();
+          this.$emit('signOut');
           break;
 
         default:

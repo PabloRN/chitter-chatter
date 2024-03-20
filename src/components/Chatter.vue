@@ -11,6 +11,7 @@ text-shadow: 1px 1px 1px rgba(0,0,0,1);">{{nickname}}</div>
     }" ref="roundedmenu" v-if="!isCurrentUser" />
     <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-if="isCurrentUser" v-on="{
       ['exitRoom']: leaveRoom,
+      ['signOut']: () => userSignOutCall(),
       ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
     }" />
     <AvatarSelector ref="avatar" v-if="showAvatarSelector" :showAvatarSelector="showAvatarSelector"  @onClose="() => this.showAvatarSelector = !this.showAvatarSelector"/>
@@ -238,6 +239,17 @@ export default {
     invitePrivate() {
       // eslint-disable-next-line max-len
       this.sendPrivateMessageRequest({ currentUser: this.getCurrentUser.userId, userId: this.userId });
+    },
+    userSignOutCall() {
+      console.log('userSignOut called');
+      const userVal = this.userData[this.userId];
+      this.removeUser({
+        userId: this.userId,
+        roomId: this.$route.params.roomId,
+        roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
+        isAnonymous: this.getCurrentUser.nickname === 'anonymous',
+      });
+      this.userSignOut(this.userId);
     },
     chatterClicked(e) {
       e.preventDefault();
