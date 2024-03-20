@@ -163,6 +163,7 @@ const actions = {
         .ref(`privateMessages/${state.privateUsers}`)
         .off();
       await firebase.database().ref().update(updates);
+      commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
       // const singleRoom = firebase.database().ref()
       // commit('SET_ROOMS', await snapshot.val());
     } catch (error) {
