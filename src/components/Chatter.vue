@@ -106,10 +106,13 @@ export default {
     if (this.chatterManager) {
       const userID = this.userId;
       const usersPositionTemp = JSON.parse(JSON.stringify(this.usersPosition));
-      if (Object.keys(usersPositionTemp).length > 0) {
+      if (Object.keys(usersPositionTemp).length > 0
+       && Object.keys(usersPositionTemp)[0] === userID
+       && Object.values(usersPositionTemp)[0].position) {
+        console.log('usersPositionTemp', usersPositionTemp);
         this.initPosition({
-          left: Object.keys(usersPositionTemp).length > 0 && Object.keys(usersPositionTemp)[0] === userID ? Object.values(usersPositionTemp)[0].position.left : `${this.windowWidth / 2}px`,
-          top: Object.keys(usersPositionTemp).length > 0 && Object.keys(usersPositionTemp)[0] === userID ? Object.values(usersPositionTemp)[0].position.top : `${this.windowHeight / 2}px`,
+          left: Object.values(usersPositionTemp)[0].position.left,
+          top: Object.values(usersPositionTemp)[0].position.top,
           userId: this.userId,
         });
       } else {
