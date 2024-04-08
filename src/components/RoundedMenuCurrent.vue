@@ -1,5 +1,5 @@
 <template>
-  <div style="text-align:center;postion:absolute;height:200">
+  <div style="text-align:center;position:relative;top:-250px;left:10px;height:200">
     <v-btn height="200" class="mx-2 menu-activator" dark
       @click.prevent.stop="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
@@ -8,7 +8,7 @@
     class="mx-2 menu-item" fab dark small @click.prevent.stop="emit('showAvatarList')"
       @touchstart.native.prevent="emit('showAvatarList')">
       <v-icon >
-      mdi-account-plus
+        mdi mdi-account-switch
     </v-icon>
     </v-btn>
     <v-btn class="mx-2 menu-item"
@@ -30,14 +30,14 @@
      class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
       <v-icon >
-      mdi-volume-off
+        mdi mdi-eye-off
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "
      class="mx-2 menu-item" fab dark small @click.prevent.stop="emit('signOut')"
       @touchstart.native.prevent="emit('signOut')">
       <v-icon >
-      mdi-alpha-e-circle-outline
+        mdi mdi-logout-variant
     </v-icon>
     </v-btn>
     <v-btn  :class="hideMenu ? 'hidded' : 'nothidded' "

@@ -1,5 +1,4 @@
 <!-- eslint-disable max-len -->
-<!-- eslint-disable max-len -->
 <template>
   <div class="home" @dragover.prevent @dragenter.prevent>
     <v-card>
@@ -41,7 +40,7 @@
 // @ is an alias to /src
 import Chatter from '@/components/Chatter.vue';
 import PrivateDialogBubble from '@/components/PrivateDialogBubble.vue';
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions, mapGetters } from 'vuex';
 
 export default {
   name: 'Home',
@@ -68,15 +67,18 @@ export default {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList']),
     ...mapState('user', ['userData', 'currentUser', 'requestedBy', 'avatarUpdated']),
     ...mapState('messages', ['privateMessage', 'privateUsers']),
+    ...mapGetters('user', ['getCurrentUser']),
     chattersArray() {
       return this.chattersCounter && Array.from(this.chatters);
     },
   },
   methods: {
     ...mapActions('user', ['getUserData']),
-    ...mapActions('rooms', ['getRooms', 'removeUser', 'getAvatars']),
+    ...mapActions('rooms', ['getRooms', 'removeUser', 'getAvatars', 'pushUser']),
     ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages']),
     async initUsers() {
+      // eslint-disable-next-line max-len
+      if (this.$route.params.roomId && this.getCurrentUser.userId) this.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
       if (
         Object.keys(this.roomList).length > 0
         && this.roomList[this.$route.params.roomId].users
@@ -108,7 +110,13 @@ export default {
       this.closePrivate();
     },
   },
+  created() {
+    // eslint-disable-next-line max-len
+
+  },
   mounted() {
+    // eslint-disable-next-line max-len
+
     this.innerHeight = window.innerHeight;
     if (Object.keys(this.roomList).length === 0) {
       this.getRooms()

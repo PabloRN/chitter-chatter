@@ -60,8 +60,7 @@ export default {
   },
   methods: {
     ...mapActions('rooms', ['getRooms', 'pushUser']),
-    enterRoom(room, key) {
-      this.pushUser({ roomId: key, userId: this.getCurrentUser.userId });
+    enterRoom(room, key) { // TODO: add enter room on deeplink to room
       this.$router.push({
         name: 'room',
         params: { roomId: key, background: room.picture, maxusers: room.maxusers },
