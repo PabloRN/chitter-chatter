@@ -44,7 +44,7 @@ const actions = {
             nickname: 'anonymous',
             avatar: 'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fyk7XJwBbTJPFkDJ92vZF9bv1Od45%2Favatars%2FL1%2Fbills-200-70.png?alt=media&token=cdb26e62-d3b6-4af1-9279-c0e733159008',
             age: 0,
-            miniavatar: null,
+            miniavatar: '',
             level: 'L1',
             userId: user.uid,
           });
