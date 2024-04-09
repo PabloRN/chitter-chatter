@@ -4,7 +4,7 @@
     <DialogBubble ref="bubble" :id="`${userId}`" :message="message" />
     <div v-if="!isCurrentUser" style="position: absolute;top: -22px;left: 5px; color: #ffffff;
 text-shadow: 1px 1px 1px rgba(0,0,0,1);">{{nickname}}</div>
-    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="230px"  min-height="220" width="auto" min-width="80px" :cover="false" :src="avatar"></v-img>
+    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="230px"  min-height="220" width="auto" max-width="70px"  :cover="false" :src="avatar"></v-img>
     <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved" />
     <RoundedMenu v-on="{
       ['privateMessage']: invitePrivate,
@@ -268,6 +268,7 @@ export default {
       }
     },
     userPositionModified() {
+      console.log('XXXXXXX');
       if (this.usersPosition[this.userId] && this.usersPosition[this.userId].position) {
         const {
           left,
@@ -276,6 +277,10 @@ export default {
         this.chatterManager.style.left = left;
         this.chatterManager.style.top = top;
       }
+    },
+    usersPosition: {
+      deep: true,
+      handler(newval, oldval) { console.log({ newval, oldval }); },
     },
   },
 };

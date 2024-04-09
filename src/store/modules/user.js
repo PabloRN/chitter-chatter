@@ -15,9 +15,10 @@ const state = {
   userData: {},
   currentUser: {},
   usersPosition: {},
-  userPositionModified: false,
+  userPositionModified: true,
   requestedBy: '',
   avatarUpdated: {},
+  roomIn: {},
 };
 
 const getters = {
@@ -33,12 +34,15 @@ const actions = {
       () => router.push({ name: 'login' }),
     );
   },
-  getUser({ commit, dispatch }) {
+  getUser({ commit, dispatch, state }) {
     firebase.auth().onAuthStateChanged((user) => {
       console.log('ceck user', user);
       if (user) {
-        console.log(user);
+        // eslint-disable-next-line no-template-curly-in-string
+        console.log('rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}', `rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}`);
         const ref = firebase.database().ref(`users/${user.uid}`);
+        // const refRoom = firebase.database().ref(`rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}`);
+
         if (user.isAnonymous) {
           ref.set({
             nickname: 'anonymous',
@@ -48,12 +52,13 @@ const actions = {
             level: 'L1',
             userId: user.uid,
           });
-          // ref.onDisconnect().delete();
+          // ref.onDisconnect().remove();
         }
         ref.update({
           onlineState: true,
           status: "I'm online.",
         });
+
         ref.onDisconnect().update({
           onlineState: false,
           status: "I'm offline.",
@@ -217,12 +222,8 @@ const mutations = {
     // Object.assign(state.currentUser, { [data.userId]: data });
   },
   SET_USER_POSITION(state, { position, userId }) {
-    if (state.usersPosition[userId]) {
-      state.usersPosition[userId].position = position;
-    } else {
-      Object.assign(state.usersPosition, { [userId]: { position } });
-    }
-    state.userPositionModified = !state.userPositionModified;
+    Object.assign(state.usersPosition, { [userId]: { position } });
+    state.userPositionModified = position.left || position.right;
   },
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };
