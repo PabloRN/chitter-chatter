@@ -56,7 +56,7 @@ const actions = {
     }
     return 'ready';
   },
-  async pushUser({ commit, dispatch }, { roomId, userId }) {
+  async pushUser({ commit, dispatch, rootState }, { roomId, userId }) {
     commit('PUSH_USER');
     try {
       const roomUsersKey = firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
@@ -69,10 +69,11 @@ const actions = {
         .on('child_added', async (userSnap) => { // Get the user that enter to the room
           if (userSnap.val() !== null) {
             console.log('User enter room', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
-            commit('ENTER_ROOM', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
+            commit('ENTER_ROOM', {
+              roomId, userId: userSnap.val(), roomUsersKey: userSnap.key, rootState,
+            });
           }
         });
-
       firebase.database()
         .ref(`rooms/${roomId}/users`)
         .on('child_removed', (userSnap) => {
@@ -185,13 +186,18 @@ const mutations = {
   //   }
   //   this.state.user.userPositionModified = !this.state.user.userPositionModified;
   // },
-  ENTER_ROOM(state, { roomId, userId, roomUsersKey }) {
+  ENTER_ROOM(state, {
+    roomId, userId, roomUsersKey,
+  }) {
     if (state.roomList[roomId].users) {
       Object.assign(state.roomList[roomId].users, { [roomUsersKey]: userId });
     } else {
       Object.assign(state.roomList[roomId], { users: { [roomUsersKey]: userId } });
     }
     state.userAdded = { roomId, ...userId };
+    this.state.user.roomIn = { roomId, roomUsersKey };
+    const refRoom = firebase.database().ref(`rooms/${this.state.user.roomIn.roomId}/users/${this.state.user.roomIn.roomUsersKey}`);
+    refRoom.onDisconnect().remove();
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
     delete state.roomList[roomId].users[roomUsersKey];
