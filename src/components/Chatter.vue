@@ -1,20 +1,20 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div style="text-align: center;" :class="isCurrentUser ? 'current-user' : 'user'" id="userId" :ref="userId" @keyboard-clicked="keyboardCLicked" @click="chatterClicked">
-    <DialogBubble ref="bubble" :id="`${userId}`" :message="message" />
+  <div style="text-align: center;" :class="isCurrentUser ? 'current-user' : 'user'" :id="userId" :ref="userId" @click="chatterClicked">
+    <DialogBubble :ref="`$bubble_${userId}`" :id="`$bubble_${userId}`" :message="message" />
     <div v-if="!isCurrentUser" style="position: absolute;top: -22px;left: 5px; color: #ffffff;
 text-shadow: 1px 1px 1px rgba(0,0,0,1);">{{nickname}}</div>
-    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="230px"  min-height="220" width="auto" max-width="70px"  :cover="false" :src="avatar"></v-img>
-    <TypeBox ref="keyboard" v-if="isCurrentUser" :moving="mouseMoved" />
+    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="210px"  min-height="200" width="auto" max-width="70px" :src="avatar"></v-img>
     <RoundedMenu v-on="{
       ['privateMessage']: invitePrivate,
-    }" ref="roundedmenu" v-if="!isCurrentUser" />
-    <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-if="isCurrentUser" v-on="{
+    }" ref="roundedmenu" v-show="!isCurrentUser" />
+    <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-show="isCurrentUser" v-on="{
       ['exitRoom']: leaveRoom,
       ['signOut']: () => userSignOutCall(),
       ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
     }" />
-    <AvatarSelector ref="avatar" v-if="showAvatarSelector" :showAvatarSelector="showAvatarSelector"  @onClose="() => this.showAvatarSelector = !this.showAvatarSelector"/>
+    <TypeBox  :ref="`keyboard_${userId}`"  :id="`keyboard_${userId}`" v-if="isCurrentUser" :moving="mouseMoved" />
+    <AvatarSelector :ref="`avatar-selector_${userId}`"  :id="`avatar-selector_${userId}`" v-show="showAvatarSelector" :showAvatarSelector="showAvatarSelector"   @onClose="() => this.showAvatarSelector = false"/>
   </div>
 </template>
 
@@ -83,6 +83,10 @@ export default {
     keyboardClicked: false,
     message: '',
     mouseMoved: false,
+    touchMove: false,
+    openMenu: false,
+    touchend: '',
+    touchstart: '',
     muted: false,
     offset: [0, 0],
     positionX: 0,
@@ -102,14 +106,13 @@ export default {
   },
   async mounted() {
     this.isDown = false;
-    this.chatterManager = await this.$refs[this.userId];
+    this.chatterManager = this.$refs[this.userId];
     if (this.chatterManager) {
       const userID = this.userId;
       const usersPositionTemp = JSON.parse(JSON.stringify(this.usersPosition));
       if (Object.keys(usersPositionTemp).length > 0
        && Object.keys(usersPositionTemp)[0] === userID
        && Object.values(usersPositionTemp)[0].position) {
-        console.log('usersPositionTemp', usersPositionTemp);
         this.initPosition({
           left: Object.values(usersPositionTemp)[0].position.left,
           top: Object.values(usersPositionTemp)[0].position.top,
@@ -127,11 +130,11 @@ export default {
       this.chatterManager.style.top = `${this.windowHeight / 2}px`;
 
       // Mouse events
-      this.chatterManager.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.showAvatarSelector = true;
-      }, true);
+      // this.chatterManager.addEventListener('dblclick', (e) => {
+      //   e.preventDefault();
+      //   e.stopPropagation();
+      //   this.showAvatarSelector = true;
+      // }, true);
       this.chatterManager.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -166,9 +169,9 @@ export default {
         this.isDown = false;
       }, true);
       this.chatterManager.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        this.touchstart = this.usersPosition;
         this.isDown = true;
+        this.mouseMoved = false;
         this.offset = [
           this.chatterManager.offsetLeft - e.changedTouches[0].clientX,
           this.chatterManager.offsetTop - e.changedTouches[0].clientY,
@@ -177,6 +180,7 @@ export default {
       this.chatterManager.addEventListener('touchmove', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         if (this.isDown && this.userId === this.getCurrentUser.userId) {
           this.mouseMoved = true;
           const mousePosition = {
@@ -190,9 +194,7 @@ export default {
           });
         }
       });
-      this.chatterManager.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+      this.chatterManager.addEventListener('touchend', () => {
         this.isDown = false;
       }, true);
     }
@@ -268,7 +270,6 @@ export default {
       }
     },
     userPositionModified() {
-      console.log('XXXXXXX');
       if (this.usersPosition[this.userId] && this.usersPosition[this.userId].position) {
         const {
           left,
@@ -293,13 +294,14 @@ export default {
 
 .chatter {
   position: relative;
-  object-fit: fill
+  object-fit: fill;
+  z-index: 10;
 }
 
 .private-dialog {
   height: 80vh;
 }
-.current-user{
-  z-index: 1000;
-}
+/* .current-user{
+  z-index: 10;
+} */
 </style>
