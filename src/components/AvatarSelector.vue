@@ -1,7 +1,7 @@
 <!-- eslint-disable max-len -->
 <template>
   <div class="text-center">
-    <v-bottom-sheet v-model="sheet" width="50%" v-click-outside="clickedOutside">
+    <v-bottom-sheet v-model="sheet" width="50%">
       <v-sheet class="text-center" height="250px">
         <div class="py-1">
           <div style="width:95%;margin:20px auto;height:200px">
@@ -33,11 +33,14 @@ export default {
     slideritem,
   },
   props: {
-    showAvatarSelector: Boolean,
+    showAvatarSelector: {
+      default: false,
+      type: Boolean,
+    },
   },
   data: () => ({
     isLoading: false,
-    sheet: true,
+    sheet: false,
     // Slider configuration [obj]
     options: {
       currentPage: 0,
@@ -59,7 +62,7 @@ export default {
     this.avatars = this.avatarsList;
   },
   mounted() {
-    // this.setDrawer(false);
+    this.avatars = this.avatarsList;
   },
   methods: {
     ...mapActions('user', ['signUserIn', 'changeAvatar']),
@@ -83,12 +86,6 @@ export default {
     },
     onInit(data) {
       console.log(data);
-    },
-    clickedOutside(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      console.log('onClose clicked');
-      // this.$emit('onClose');
     },
   },
   watch: {

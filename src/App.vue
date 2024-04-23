@@ -50,7 +50,7 @@ export default Vue.extend({
     ...mapActions('languageswitcher', ['SET_LANG']),
     ...mapActions('user', ['getUser']),
     leaveBrowser() {
-
+      console.log('User leaved the browser');
     },
     // checkLoggedIn() {
     //   if (this.$ls.get('isLoggedIn') !== true) {
