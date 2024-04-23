@@ -26,7 +26,7 @@ const actions = {
       commit('SEND_TEXT_ERROR');
     }
   },
-  async sendMessage({ commit }, { message, roomId, userId }) {
+  async sendMessage(_, { message, roomId, userId }) {
     // commit('SEND_MESSAGE');
     try {
       const roomMessagesKey = firebase.database().ref().child(`rooms/${roomId}/messages/`).push().key;
@@ -34,7 +34,7 @@ const actions = {
       updates[`/rooms/${roomId}/messages/${roomMessagesKey}`] = { message, userId };
       updates[`/users/${userId}/messages/${roomId}`] = { roomMessagesKey, message };
       await firebase.database().ref().update(updates);
-      commit('SEND_MESSAGE_SUCCESS');
+      // commit('SEND_MESSAGE_SUCCESS');
     } catch (error) {
       console.log(error);
     }
@@ -46,7 +46,7 @@ const actions = {
       const updates = {};
       updates[`privateMessages/${state.privateUsers}/${roomMessagesKey}`] = { message, userId };
       await firebase.database().ref().update(updates);
-      commit('SEND_MESSAGE_SUCCESS');
+      // commit('SEND_MESSAGE_SUCCESS');
     } catch (error) {
       console.log(error);
     }
