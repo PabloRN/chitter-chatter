@@ -1,8 +1,8 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div style="text-align:center">
-    <v-btn class="mx-2 keyboard-icon" fab dark x-small :ripple="false" @click.prevent="toggleKeyBoard"
-      @touchstart.native.prevent="toggleKeyBoard">
+  <div style="text-align:center" ref="buttonK">
+    <v-btn class="mx-2 keyboard-icon" fab dark x-small :ripple="false" @click="toggleKeyBoard"
+      @touchsend="toggleKeyBoard">
       <v-icon v-if="hideKeyboard" dark>
         mdi-keyboard
       </v-icon>
@@ -44,6 +44,7 @@ export default {
   data: () => ({
     message: '',
     hideKeyboard: true,
+
   }),
   mounted() {
 
@@ -94,6 +95,8 @@ export default {
 </script>
 <style lang="scss">
 .typebox {
+  z-index: 1000;
+  -webkit-transform:translate3d(0,0,0);
   left: -120px;
   bottom: -60px;
   position: absolute;
@@ -107,10 +110,10 @@ export default {
   line-height: 1.3rem !important;
   margin-top: 3px !important;
   padding-top: 5px !important;
+  z-index: 999;
 }
 
 .keyboard-icon {
-  z-index: 100;
   border: 2px solid white;
 }
 </style>
