@@ -41,7 +41,6 @@ const actions = {
         // eslint-disable-next-line no-template-curly-in-string
         console.log('rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}', `rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}`);
         const ref = firebase.database().ref(`users/${user.uid}`);
-        // const refRoom = firebase.database().ref(`rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}`);
 
         if (user.isAnonymous) {
           ref.set({
@@ -223,7 +222,7 @@ const mutations = {
   },
   SET_USER_POSITION(state, { position, userId }) {
     Object.assign(state.usersPosition, { [userId]: { position } });
-    state.userPositionModified = position.left || position.right;
+    state.userPositionModified = position?.left || position?.right;
   },
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };

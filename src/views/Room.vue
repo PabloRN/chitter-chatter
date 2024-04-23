@@ -15,7 +15,7 @@
         <v-card-title class="text-body-2">
         </v-card-title>
         <v-card-text style="height: 10vh;">
-          {{ `User ${privateRequestuser.nickname} wants to start a private chat with you` }}
+          {{ `User ${privateRequestUser.nickname} wants to start a private chat with you` }}
         </v-card-text>
         <v-card-actions class=" text-body-2 pa-2 d-flex justify-center align-center">
           <v-btn small class="px-10" color="primary darken-1" tile
@@ -55,10 +55,9 @@ export default {
     innerHeight: '',
     chatters: new Map(),
     initialUsers: [],
-    isCurrentUser: false,
     background: '',
     privateRequestDialog: false,
-    privateRequestuser: {},
+    privateRequestUser: {},
     showDialog: false,
     pMessage: [],
     chattersCounter: 0,
@@ -166,7 +165,7 @@ export default {
     requestedBy(user) {
       if (user) {
         this.privateRequestDialog = true;
-        this.privateRequestuser = user;
+        this.privateRequestUser = user;
       }
     },
     privateMessage(newVal) {
