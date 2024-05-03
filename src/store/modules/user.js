@@ -50,17 +50,15 @@ const actions = {
             miniavatar: '',
             level: 'L1',
             userId: user.uid,
+            onlineState: true,
+            status: 'online',
           });
           // ref.onDisconnect().remove();
         }
-        ref.update({
-          onlineState: true,
-          status: "I'm online.",
-        });
 
         ref.onDisconnect().update({
           onlineState: false,
-          status: "I'm offline.",
+          status: 'offline',
         });
         firebase.database().ref(`users/${user.uid}`).once('value', (snapshot) => {
           console.log('snapshot from getUser', snapshot.val());

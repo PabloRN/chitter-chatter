@@ -301,7 +301,7 @@ export default {
 .private-dialog {
   height: 80vh;
 }
-/* .current-user{
-  z-index: 10;
-} */
+.current-user{
+  z-index: 990;
+}
 </style>

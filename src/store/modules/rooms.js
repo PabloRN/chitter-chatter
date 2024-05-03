@@ -6,8 +6,9 @@ const state = {
   roomList: {},
   userAdded: {},
   userExit: {},
-  getitngRoomsLoading: false,
+  gettingRoomsLoading: false,
   avatarsList: [],
+  userDisconnected: false,
 };
 
 const getters = {
@@ -27,6 +28,21 @@ const actions = {
     commit('GET_ROOMS');
     try {
       const snapshot = await firebase.database().ref('rooms/').once('value');// Get ref to rooms folder
+      // // Assume we have the following data in the Database:
+      // {
+      //   "name": {
+      //     "first": "Ada",
+      //     "last": "Lovelace"
+      //   }
+      // }
+
+      // var ref = firebase.database().ref("users/ada");
+      // ref.once("value")
+      //   .then(function(snapshot) {
+      //     var a = snapshot.numChildren(); // 1 ("name")
+      //     var b = snapshot.child("name").numChildren(); // 2 ("first", "last")
+      //     var c = snapshot.child("name/first").numChildren(); // 0
+      //   });
       // For each room created we will create a listener to each user's
       // folder listenning for new users that enter to the room
       // Object.keys(snapshot.val())
@@ -61,9 +77,13 @@ const actions = {
     try {
       const roomUsersKey = firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
       const updates = {};
+      console.log('pushed user', { roomId, userId });
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = { userId };
       updates[`/users/${userId}/rooms/${roomId}`] = { roomUsersKey };
-
+      const refRoom = firebase.database().ref(`rooms/${roomId}/users/${roomUsersKey}/`);
+      refRoom.onDisconnect().update({
+        userId: null,
+      });
       firebase.database()
         .ref(`rooms/${roomId}/users/`)
         .on('child_added', async (userSnap) => { // Get the user that enter to the room
@@ -161,15 +181,15 @@ const mutations = {
     state.getavatarsLoading = false;
   },
   GET_ROOMS(state) {
-    state.getitngRoomsLoading = true;
+    state.gettingRoomsLoading = true;
   },
   SET_ROOMS(state, data) {
     state.roomList = [];
     state.roomList = data;
-    state.getitngRoomsLoading = false;
+    state.gettingRoomsLoading = false;
   },
   SET_ROOMS_FAIL(state) {
-    state.getitngRoomsLoading = false;
+    state.gettingRoomsLoading = false;
   },
   PUSH_USER(state) {
     state.pushingUser = true;
@@ -196,8 +216,6 @@ const mutations = {
     }
     state.userAdded = { roomId, ...userId };
     this.state.user.roomIn = { roomId, roomUsersKey };
-    const refRoom = firebase.database().ref(`rooms/${this.state.user.roomIn.roomId}/users/${this.state.user.roomIn.roomUsersKey}`);
-    refRoom.onDisconnect().remove();
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
     delete state.roomList[roomId].users[roomUsersKey];
