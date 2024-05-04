@@ -59,7 +59,7 @@ export default {
   },
   computed: {
     ...mapState('cognito', ['user']),
-    ...mapState('authorization', ['password', 'email']),
+    ...mapState('user', ['password', 'email']),
     ...mapGetters('cognito', ['userAttributes']),
     ...mapGetters('cognito', ['userGroups']),
     ...mapGetters('languageswitcher', ['getLang']),

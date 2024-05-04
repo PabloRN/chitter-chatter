@@ -1,10 +1,14 @@
 <template>
-  <div class="home">
+  <div class="home pa-2">
 <v-row dense>
         <v-col
           v-for="(room, key) in getAllRooms"
           :key="key"
-          :cols="2"
+          cols="12"
+          xs="12"
+          sm="3"
+          md="3"
+          lg="2"
         >
           <v-card @click="enterRoom(room, key)">
             <v-img
@@ -52,15 +56,14 @@ export default {
   computed: {
     ...mapGetters('rooms', ['getAllRooms']),
     ...mapState('rooms', ['roomList']),
-    ...mapGetters('authorization', ['getCurrentUser']),
+    ...mapGetters('user', ['getCurrentUser']),
   },
   methods: {
     ...mapActions('rooms', ['getRooms', 'pushUser']),
-    enterRoom(room, key) {
-      this.pushUser({ roomId: key, userId: Object.keys(this.getCurrentUser)[0] });
+    enterRoom(room, key) { // TODO: add enter room on deeplink to room
       this.$router.push({
         name: 'room',
-        params: { roomid: key, background: room.picture, maxusers: room.maxusers },
+        params: { roomId: key, background: room.picture, maxusers: room.maxusers },
       });
     },
   },

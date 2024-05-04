@@ -13,6 +13,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
+// import * as firebase from 'firebase';
 import {
   mapActions,
 } from 'vuex';
@@ -40,10 +41,17 @@ export default Vue.extend({
     this.getUser();
     // this.checkLoggedIn();
     console.log('ENV:', process.env.NODE_ENV);
+    window.addEventListener(
+      'beforeunload',
+      this.leaveBrowser,
+    );
   },
   methods: {
     ...mapActions('languageswitcher', ['SET_LANG']),
-    ...mapActions('authorization', ['getUser']),
+    ...mapActions('user', ['getUser']),
+    leaveBrowser() {
+      console.log('User leaved the browser');
+    },
     // checkLoggedIn() {
     //   if (this.$ls.get('isLoggedIn') !== true) {
     //     this.$router.push({ name: 'login' });

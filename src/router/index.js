@@ -22,9 +22,10 @@ const routes = [
     component: Rooms,
   },
   {
-    path: '/rooms/:roomid',
+    path: '/rooms/:roomId',
     name: 'room',
     component: Room,
+    props: true,
   },
   {
     path: '/signup',
@@ -51,7 +52,10 @@ const routes = [
       {
         path: 'signup',
         name: 'signup',
-        component: () => import(/* webpackChunkName: "signup" */ '../components/SignupForm.vue'),
+        meta: {
+          auth: ['ALL'],
+        },
+        component: SignupForm,
       },
     ],
   },

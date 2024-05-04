@@ -50,7 +50,7 @@ export default {
 
   },
   methods: {
-    ...mapActions('authorization', ['setEmailAction']),
+    ...mapActions('user', ['setEmailAction']),
   },
   watch: {
     email(input) {

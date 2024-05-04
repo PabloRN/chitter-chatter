@@ -1,12 +1,13 @@
+<!-- eslint-disable max-len -->
 <template>
 <v-scroll-y-reverse-transition>
- <div v-if="showBubble" class="bubble bubble-bottom-left text-body-2 pa-4">
+ <div v-if="showBubble" :class="isCurrentUser ? 'bubble-current': 'bubble'" class="bubble-bottom-left text-body-2 pa-4" >
    {{text}}</div>
 </v-scroll-y-reverse-transition>
 </template>
 
 <script>
-// import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'dialogbubble',
@@ -24,6 +25,10 @@ export default {
   },
   computed: {
     // ...mapGetters('messages', ['getText']),
+    ...mapGetters('user', ['getCurrentUser']),
+    isCurrentUser() {
+      return this.id === this.getCurrentUser.userId;
+    },
   },
   methods: {
     removeTimer() {
@@ -57,7 +62,22 @@ export default {
   background: #fff;
   border-radius: 10px;
   color: #000;
-  bottom: 245px;
+  top: -60px;
+  max-height: 92px;
+  text-align: center;
+  box-shadow: 1px 1px 3px #424242;
+  z-index: 1000
+}
+.bubble-current {
+  position: absolute;
+  font-family: 'Courier New', Courier, monospace sans-serif!important;
+  font-size: 16px;
+  line-height: 1.2;
+  width: 200px;
+  background: #fff;
+  border-radius: 10px;
+  color: #000;
+  top: -60px;
   max-height: 92px;
   text-align: center;
   box-shadow: 1px 1px 3px #424242;
@@ -72,7 +92,7 @@ export default {
   border-right: 12px solid transparent;
   border-top: 12px solid #fff;
   border-bottom: 20px solid transparent;
-  left: 32px;
+  left: 42px;
   bottom: -24px;
 }
 </style>

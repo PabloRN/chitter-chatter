@@ -1,53 +1,53 @@
+<!-- eslint-disable max-len -->
 <template>
-<div :id="userId" :ref="userId"
- heigth="200"
-@keyboard-clicked="keyboardCLicked"
-@click="chatterClicked"
-@touchstart="chatterClicked"
-
- width="50" style="heigth:200px;width:50px;">
- <DialogBubble ref="bubble" class="mb-5" :id="`bb-${userId}`" :message="message" />
-  <v-img class="chatter"
-  height="200"
-  max-width="50"
-  :src="avatar"
-></v-img>
-<TypeBox ref="keyboard" v-if="isCurrentUser" />
-</div>
+  <div style="text-align: center;" :class="isCurrentUser ? 'current-user' : 'user'" :id="userId" :ref="userId" @click="chatterClicked">
+    <DialogBubble :ref="`$bubble_${userId}`" :id="`$bubble_${userId}`" :message="message" />
+    <div v-if="!isCurrentUser" style="position: absolute;top: -22px;left: 5px; color: #ffffff;
+text-shadow: 1px 1px 1px rgba(0,0,0,1);">{{nickname}}</div>
+    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="210px"  min-height="200" width="auto" max-width="70px" :src="avatar"></v-img>
+    <RoundedMenu v-on="{
+      ['privateMessage']: invitePrivate,
+    }" ref="roundedmenu" v-show="!isCurrentUser" />
+    <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-show="isCurrentUser" v-on="{
+      ['exitRoom']: leaveRoom,
+      ['signOut']: () => userSignOutCall(),
+      ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
+    }" />
+    <TypeBox  :ref="`keyboard_${userId}`"  :id="`keyboard_${userId}`" v-if="isCurrentUser" :moving="mouseMoved" />
+    <AvatarSelector :ref="`avatar-selector_${userId}`"  :id="`avatar-selector_${userId}`" v-show="showAvatarSelector" :showAvatarSelector="showAvatarSelector"   @onClose="() => this.showAvatarSelector = false"/>
+  </div>
 </template>
 
 <script>
-import { mapGetters, mapState, mapActions } from 'vuex';
+import {
+  mapGetters,
+  mapState,
+  mapActions,
+} from 'vuex';
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
+import RoundedMenu from '@/components/RoundedMenu.vue';
+import RoundedMenuCurrent from '@/components/RoundedMenuCurrent.vue';
+import AvatarSelector from '@/components/AvatarSelector.vue';
 
 export default {
   name: 'chatter',
   components: {
     TypeBox,
     DialogBubble,
+    RoundedMenu,
+    RoundedMenuCurrent,
+    AvatarSelector,
   },
   props: {
     userId: String,
     avatar: String,
     nickname: String,
-    rooms: Object,
+    room: String,
   },
   data: () => ({
-    keyboardClicked: false,
-    mouseMoved: false,
     chatterManager: {},
-    offset: [0, 0],
-    isDown: false,
-    positionX: 0,
-    positionY: 0,
-    talking: false,
-    muted: false,
     dialogs: '',
-    status: '',
-    visible: '',
-    followingTo: [],
-    followedBy: [],
     expresion: {
       default: true,
       angry: false,
@@ -56,68 +56,111 @@ export default {
       sorprise: false,
       inlove: false,
     },
-    message: '',
-    expresionList: [
-      {
-        icon: 'img/icons/smily-smile',
-        name: 'smile',
-      },
-      {
-        icon: 'img/icons/smily-inlove',
-        name: 'inlove',
-      },
-      {
-        icon: 'img/icons/smily-shocked',
-        name: 'shocked',
-      },
-      {
-        icon: 'img/icons/smily-sad',
-        name: 'sad',
-      },
-      {
-        icon: 'img/icons/smily-mad',
-        name: 'mad',
-      },
+    expresionList: [{
+      icon: 'img/icons/smily-smile',
+      name: 'smile',
+    },
+    {
+      icon: 'img/icons/smily-inlove',
+      name: 'inlove',
+    },
+    {
+      icon: 'img/icons/smily-shocked',
+      name: 'shocked',
+    },
+    {
+      icon: 'img/icons/smily-sad',
+      name: 'sad',
+    },
+    {
+      icon: 'img/icons/smily-mad',
+      name: 'mad',
+    },
     ],
+    followedBy: [],
+    followingTo: [],
+    isDown: false,
+    keyboardClicked: false,
+    message: '',
+    mouseMoved: false,
+    touchMove: false,
+    openMenu: false,
+    touchend: '',
+    touchstart: '',
+    muted: false,
+    offset: [0, 0],
+    positionX: 0,
+    positionY: 0,
+    status: '',
+    talking: false,
+    visible: '',
+    pMessage: {},
     windowHeight: 0,
     windowWidth: 0,
+    showAvatarSelector: false,
   }),
   created() {
+    this.isDown = false;
     this.windowHeight = window.outerHeight;
-    console.log(window.outerHeight);
-    console.log(window.outerWidth);
     this.windowWidth = window.outerWidth;
   },
   async mounted() {
-    this.chatterManager = await this.$refs[this.userId];
+    this.isDown = false;
+    this.chatterManager = this.$refs[this.userId];
     if (this.chatterManager) {
-      this.initPosition({
-        left: this.usersPosition[this.userId] ? this.usersPosition[this.userId].position.left : `${this.windowWidth / 2}px`,
-        top: this.usersPosition[this.userId] ? this.usersPosition[this.userId].position.top : `${this.windowHeight / 2}px`,
-        userId: this.userId,
-      });
+      const userID = this.userId;
+      const usersPositionTemp = JSON.parse(JSON.stringify(this.usersPosition));
       this.chatterManager.style.position = 'absolute';
-      this.chatterManager.style.left = `${this.windowWidth / 2}px`;
-      this.chatterManager.style.top = `${this.windowHeight / 2}px`;
+      setTimeout(() => {
+        if (usersPositionTemp[userID]
+        && usersPositionTemp[userID]?.position?.left
+        && usersPositionTemp[userID]?.position?.top) {
+          this.initPosition({
+            left: usersPositionTemp[userID]?.position?.left,
+            top: usersPositionTemp[userID]?.position?.top,
+            userId: this.userId,
+          });
+        } else {
+          this.initPosition({
+            left: `${this.windowWidth / 2}px`,
+            top: `${this.windowHeight / 2}px`,
+            userId: this.userId,
+          });
+        }
+        if (this.usersPosition[this.userId] && this.usersPosition[this.userId].position) {
+          const {
+            left,
+            top,
+          } = this.usersPosition[this.userId].position;
+          this.chatterManager.style.left = left;
+          this.chatterManager.style.top = top;
+        }
+      }, 1500);
 
       // Mouse events
+      // this.chatterManager.addEventListener('dblclick', (e) => {
+      //   e.preventDefault();
+      //   e.stopPropagation();
+      //   this.showAvatarSelector = true;
+      // }, true);
       this.chatterManager.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         this.isDown = true;
+        this.mouseMoved = false;
         this.offset = [
           this.chatterManager.offsetLeft - e.clientX,
           this.chatterManager.offsetTop - e.clientY,
         ];
       }, true);
-      document.addEventListener('mousemove', (e) => {
+      this.chatterManager.addEventListener('mousemove', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
+        if (this.isDown && this.userId === this.getCurrentUser.userId) {
           this.mouseMoved = true;
           const mousePosition = {
             x: e.clientX,
             y: e.clientY,
-
           };
           this.changePosition({
             left: `${mousePosition.x + this.offset[0]}px`,
@@ -134,8 +177,9 @@ export default {
         this.isDown = false;
       }, true);
       this.chatterManager.addEventListener('touchstart', (e) => {
-        e.preventDefault();
+        this.touchstart = this.usersPosition;
         this.isDown = true;
+        this.mouseMoved = false;
         this.offset = [
           this.chatterManager.offsetLeft - e.changedTouches[0].clientX,
           this.chatterManager.offsetTop - e.changedTouches[0].clientY,
@@ -143,7 +187,9 @@ export default {
       }, true);
       this.chatterManager.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        if (this.isDown && this.userId === Object.keys(this.getCurrentUser)[0]) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (this.isDown && this.userId === this.getCurrentUser.userId) {
           this.mouseMoved = true;
           const mousePosition = {
             x: e.changedTouches[0].clientX,
@@ -156,34 +202,23 @@ export default {
           });
         }
       });
-      this.chatterManager.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+      this.chatterManager.addEventListener('touchend', () => {
         this.isDown = false;
       }, true);
-      // this.chatterManager.addEventListener('click', (e) => {
-      //   e.preventDefault();
-      //   if (this.mouseMoved !== true && e.target.localName === 'div') {
-      //     this.chatterClicked(e);
-      //   }
-      //   this.mouseMoved = false;
-      //   this.keyboardClicked = false;
-      // }, true);
     }
   },
   computed: {
-    ...mapGetters('authorization', ['getCurrentUser', 'getUserPosition']),
+    ...mapGetters('user', ['getCurrentUser']),
     ...mapState('messages', ['dialogText']),
-    ...mapState('authorization', ['usersPosition', 'userPositionmodified']),
+    ...mapState('user', ['usersPosition', 'userPositionModified', 'userData', 'avatarUpdated']),
     isCurrentUser() {
-      return this.userId === Object.keys(this.getCurrentUser)[0];
-    },
-    userposition() {
-      return this.usersPosition[this.userId].position;
+      return this.userId === this.getCurrentUser.userId;
     },
   },
   methods: {
-    ...mapActions('authorization', ['initPosition', 'changePosition']),
+    ...mapActions('user', ['initPosition', 'changePosition', 'userSignOut']),
+    ...mapActions('messages', ['sendPrivateMessageRequest']),
+    ...mapActions('rooms', ['removeUser']),
     keyboardCLicked(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -202,15 +237,38 @@ export default {
 
     },
     leaveRoom() {
-
+      const userVal = this.userData[this.userId];
+      this.isDown = false;
+      this.mouseMoved = false;
+      this.removeUser({
+        userId: this.userId,
+        roomId: this.$route.params.roomId,
+        roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
+      });
+      this.$router.push({
+        name: 'rooms',
+      });
+    },
+    invitePrivate() {
+      // eslint-disable-next-line max-len
+      this.sendPrivateMessageRequest({ currentUser: this.getCurrentUser.userId, userId: this.userId });
+    },
+    userSignOutCall() {
+      console.log('userSignOut called');
+      const userVal = this.userData[this.userId];
+      this.removeUser({
+        userId: this.userId,
+        roomId: this.$route.params.roomId,
+        roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
+        isAnonymous: this.getCurrentUser.nickname === 'anonymous',
+      });
+      this.userSignOut(this.userId);
     },
     chatterClicked(e) {
       e.preventDefault();
-      if (this.mouseMoved !== true) {
-        console.log('clicked', this.$refs);
-      }
-      this.mouseMoved = false;
-      this.keyboardClicked = false;
+      e.stopPropagation();
+      this.isDown = false;
+      // this.mouseMoved = false;
     },
   },
   watch: {
@@ -219,21 +277,39 @@ export default {
         this.message = newVal[newVal.length - 1].text;
       }
     },
-    userPositionmodified() {
-      if (this.usersPosition[this.userId]) {
-        const { left, top } = this.usersPosition[this.userId].position;
+    userPositionModified() {
+      if (this.usersPosition[this.userId] && this.usersPosition[this.userId].position) {
+        const {
+          left,
+          top,
+        } = this.usersPosition[this.userId].position;
         this.chatterManager.style.left = left;
         this.chatterManager.style.top = top;
       }
     },
+    usersPosition: {
+      deep: true,
+      handler(newval, oldval) { console.log({ newval, oldval }); },
+    },
   },
 };
 </script>
+
 <style scoped>
-.chatter:hover{
+.chatter:hover {
   cursor: pointer;
 }
-.chater{
-  position: absolute;
+
+.chatter {
+  position: relative;
+  object-fit: fill;
+  z-index: 10;
+}
+
+.private-dialog {
+  height: 80vh;
+}
+.current-user{
+  z-index: 990;
 }
 </style>
