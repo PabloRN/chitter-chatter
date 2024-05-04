@@ -110,24 +110,32 @@ export default {
     if (this.chatterManager) {
       const userID = this.userId;
       const usersPositionTemp = JSON.parse(JSON.stringify(this.usersPosition));
-      if (Object.keys(usersPositionTemp).length > 0
-       && Object.keys(usersPositionTemp)[0] === userID
-       && Object.values(usersPositionTemp)[0].position) {
-        this.initPosition({
-          left: Object.values(usersPositionTemp)[0].position.left,
-          top: Object.values(usersPositionTemp)[0].position.top,
-          userId: this.userId,
-        });
-      } else {
-        this.initPosition({
-          left: `${this.windowWidth / 2}px`,
-          top: `${this.windowHeight / 2}px`,
-          userId: this.userId,
-        });
-      }
       this.chatterManager.style.position = 'absolute';
-      this.chatterManager.style.left = `${this.windowWidth / 2}px`;
-      this.chatterManager.style.top = `${this.windowHeight / 2}px`;
+      setTimeout(() => {
+        if (usersPositionTemp[userID]
+        && usersPositionTemp[userID]?.position?.left
+        && usersPositionTemp[userID]?.position?.top) {
+          this.initPosition({
+            left: usersPositionTemp[userID]?.position?.left,
+            top: usersPositionTemp[userID]?.position?.top,
+            userId: this.userId,
+          });
+        } else {
+          this.initPosition({
+            left: `${this.windowWidth / 2}px`,
+            top: `${this.windowHeight / 2}px`,
+            userId: this.userId,
+          });
+        }
+        if (this.usersPosition[this.userId] && this.usersPosition[this.userId].position) {
+          const {
+            left,
+            top,
+          } = this.usersPosition[this.userId].position;
+          this.chatterManager.style.left = left;
+          this.chatterManager.style.top = top;
+        }
+      }, 1500);
 
       // Mouse events
       // this.chatterManager.addEventListener('dblclick', (e) => {

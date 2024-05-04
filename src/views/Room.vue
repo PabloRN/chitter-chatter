@@ -77,13 +77,15 @@ export default {
     ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages']),
     async initUsers() {
       // eslint-disable-next-line max-len
-      if (this.$route.params.roomId && this.getCurrentUser.userId) this.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
+      if (this.$route.params.roomId && this.getCurrentUser.userId) {
+        this.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
+        this.getAvatars(this.$route.params.roomId);
+      }
       if (
         Object.keys(this.roomList).length > 0
         && this.roomList[this.$route.params.roomId].users
         && Object.keys(this.roomList[this.$route.params.roomId].users).length > 0
       ) {
-        this.getAvatars(this.$route.params.roomId);
         const userIDs = Object.keys(this.roomList[this.$route.params.roomId].users);
 
         // eslint-disable-next-line no-restricted-syntax

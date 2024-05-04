@@ -90,7 +90,8 @@ const actions = {
     commit('setUserData', { ...userDataTemp, userId });
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
     const privateMessage = firebase.database().ref(`users/${state.currentUser.userId}/privateMessage/requestedBy`);
-    firebase.database().ref(`users/${userId}/avatar`).on('value', (snapAvatar) => {
+    const userAvatar = firebase.database().ref(`users/${userId}/avatar`);
+    userAvatar.on('value', (snapAvatar) => {
       commit('SET_USER_AVATAR_SUCCESS', { url: snapAvatar.val(), userId });
     });
     userPosition.on('value', (snapPosition) => {
