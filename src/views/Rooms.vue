@@ -1,80 +1,41 @@
 <template>
   <div class="home pa-2">
-<v-row dense>
-        <v-col
-          v-for="(room, key) in getAllRooms"
-          :key="key"
-          cols="12"
-          xs="12"
-          sm="3"
-          md="3"
-          lg="2"
-        >
-          <v-card @click="enterRoom(room, key)">
-            <v-img
-              :src="room.picture"
-              class="white--text align-end"
-              gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
-              height="200px"
-            >
-              <v-card-title v-text="room.nombre"></v-card-title>
-            </v-img>
-
-            <v-card-actions>
-              <v-spacer></v-spacer>
-
-              <v-btn icon>
-                <v-icon>mdi-heart</v-icon>
-              </v-btn>
-
-              <v-btn icon>
-                <v-icon>mdi-bookmark</v-icon>
-              </v-btn>
-
-              <v-btn icon>
-                <v-icon>mdi-share-variant</v-icon>
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
+    <v-row dense>
+      <v-col v-for="(room, key) in getAllRooms" :key="key" cols="12" xs="12" sm="3" md="3" lg="2">
+      <RoomThumbnail :room="room" :id="key" :key="key"/>
+      </v-col>
+    </v-row>
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
 import { mapActions, mapGetters, mapState } from 'vuex';
+import RoomThumbnail from '@/components/RoomThumbnail.vue';
 
 export default {
   name: 'Home',
-  components: {
-
-  },
+  components: { RoomThumbnail },
   data: () => ({
-
+    usersOnline: 0,
   }),
   computed: {
     ...mapGetters('rooms', ['getAllRooms']),
-    ...mapState('rooms', ['roomList']),
+    ...mapState('rooms', ['roomList', 'usersOnlineNow']),
     ...mapGetters('user', ['getCurrentUser']),
+
   },
   methods: {
     ...mapActions('rooms', ['getRooms', 'pushUser']),
-    enterRoom(room, key) { // TODO: add enter room on deeplink to room
-      this.$router.push({
-        name: 'room',
-        params: { roomId: key, background: room.picture, maxusers: room.maxusers },
-      });
-    },
   },
   created() {
     this.getRooms();
   },
+  mounted() {
+    // console.log('usersOnline', this.usersOnline);
+  },
   watch: {
-    roomList: {
-      deep: true,
-      handler(newval, oldval) { console.log({ newval, oldval }); },
-    },
+
   },
 };
 </script>

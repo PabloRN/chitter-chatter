@@ -100,7 +100,6 @@ const actions = {
     privateMessage.on('value', (snapPrivate) => {
       commit('PRIVATE_REQUESTED', { requestedBy: state.userData[snapPrivate.val()], userId: snapPrivate.val() });
     });
-
     return { ...userDataTemp, userId };
   },
   setEmailAction: async ({ commit }, payload) => {
