@@ -45,7 +45,7 @@ export default {
       this.cleanTime = setTimeout(() => {
         this.text = '';
         this.showBubble = false;
-      }, 5000);
+      }, 6000);
     },
   },
 };
