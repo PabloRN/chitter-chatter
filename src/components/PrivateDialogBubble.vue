@@ -48,7 +48,6 @@ export default {
     text: '',
   }),
   mounted() {
-    console.log(this.message);
     this.text = this.message;
   },
   computed: {
@@ -58,7 +57,6 @@ export default {
   },
   methods: {
     gotoBottom(element) {
-      console.log(element);
       // eslint-disable-next-line no-param-reassign
       element.scrollTop = element.scrollHeight;
     },
@@ -68,7 +66,6 @@ export default {
   },
   watch: {
     message(value) {
-      console.log(value);
       if (value && value.length > 0) {
         this.text = value;
         this.avatar = value.avatar;

@@ -6,7 +6,7 @@
         <div class="py-1">
           <div style="width:95%;margin:20px auto;height:200px">
             <!-- Using the slider component -->
-            <slider ref="slider" :options="options" @slide='slide' @tap='onTap' @init='onInit' style=" width:100%">
+            <slider ref="slider" :options="options" style=" width:100%">
               <!-- slideritem wrapped package with the components you need -->
               <slideritem class="slider-item-custom" v-for="(item, index) in avatarsList" :key="index"
                  style="width:10%;margin-right: 2%;">
@@ -72,21 +72,21 @@ export default {
     submit() {
       this.signUserIn();
     },
-    slide(data) {
-      console.log('slide', data);
-    },
-    onTap(data) {
-      console.log('tap', data);
-    },
+    // slide(data) {
+    //   console.log('slide', data);
+    // },
+    // onTap(data) {
+    //   console.log('tap', data);
+    // },
     avatarSelected(e, itemSelected) {
       e.stopPropagation();
       e.preventDefault();
       this.changeAvatar(itemSelected.url);
       this.$emit('onClose');
     },
-    onInit(data) {
-      console.log(data);
-    },
+    // onInit(data) {
+    //   console.log(data);
+    // },
   },
   watch: {
     showAvatarSelector(newVal) {

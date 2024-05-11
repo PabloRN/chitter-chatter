@@ -4,7 +4,7 @@
     <DialogBubble :ref="`$bubble_${userId}`" :id="`$bubble_${userId}`" :message="message" />
     <div v-if="!isCurrentUser" style="position: absolute;top: -22px;left: 5px; color: #ffffff;
 text-shadow: 1px 1px 1px rgba(0,0,0,1);">{{nickname}}</div>
-    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="210px"  min-height="200" width="auto" max-width="70px" :src="avatar"></v-img>
+    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="210px"  min-height="198" width="auto" max-width="68px" min-width="63px" :src="avatar"></v-img>
     <RoundedMenu v-on="{
       ['privateMessage']: invitePrivate,
     }" ref="roundedmenu" v-show="!isCurrentUser" />
@@ -135,7 +135,7 @@ export default {
           this.chatterManager.style.left = left;
           this.chatterManager.style.top = top;
         }
-      }, 1500);
+      }, 3000);
 
       // Mouse events
       // this.chatterManager.addEventListener('dblclick', (e) => {
@@ -254,7 +254,6 @@ export default {
       this.sendPrivateMessageRequest({ currentUser: this.getCurrentUser.userId, userId: this.userId });
     },
     userSignOutCall() {
-      console.log('userSignOut called');
       const userVal = this.userData[this.userId];
       this.removeUser({
         userId: this.userId,
@@ -286,10 +285,6 @@ export default {
         this.chatterManager.style.left = left;
         this.chatterManager.style.top = top;
       }
-    },
-    usersPosition: {
-      deep: true,
-      handler(newval, oldval) { console.log({ newval, oldval }); },
     },
   },
 };

@@ -70,10 +70,19 @@ const actions = {
   },
   async pushUser({ commit, dispatch, rootState }, { roomId, userId }) {
     commit('PUSH_USER');
+    const { currentUser } = rootState.user;
+    const storageRef = firebase.storage().ref();
+    const defaultAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/defaultAvatar/defaultAvatar.png`);
+    const defaultUrl = await defaultAvatarRef.getDownloadURL();
+    if (defaultUrl) {
+      // eslint-disable-next-line no-undef
+      // const tempUser = structuredClone(currentUser);
+      // Object.assign(tempUser, { avatar: defaultUrl });
+      await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(defaultUrl);
+    }
     try {
       const roomUsersKey = firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
       const updates = {};
-      console.log('pushed user', { roomId, userId });
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = { userId };
       updates[`/users/${userId}/rooms/${roomId}`] = { roomUsersKey };
       const refRoom = firebase.database().ref(`rooms/${roomId}/users/${roomUsersKey}/`);
@@ -85,7 +94,6 @@ const actions = {
 
       usersRoom.on('child_added', async (userSnap) => { // Get the user that enter to the room
         if (userSnap.val() !== null) {
-          console.log('User enter room', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
           commit('ENTER_ROOM', {
             roomId, userId: userSnap.val(), roomUsersKey: userSnap.key, rootState,
           });
@@ -94,7 +102,6 @@ const actions = {
       usersRoom.on('child_removed', (userSnap) => {
         const { userId } = userSnap.val();
         dispatch('removeUser', { roomId, userId, roomUsersKey: userSnap.key });
-        console.log('child_removed', { roomId, user: userSnap.val(), roomUsersKey: userSnap.key });
       });
       await firebase.database().ref().update(updates);
 
@@ -144,9 +151,9 @@ const actions = {
     commit('GET_AVATARS');
     try {
       const urlList = [];
-      const storage = firebase.storage();
+
       // Create a storage reference from our storage service
-      const storageRef = storage.ref();
+      const storageRef = firebase.storage().ref();
       const avatarsRef = storageRef.child(`rooms/${roomId}/avatars/${rootState.user.currentUser.level}`);
       const tempRefs = await avatarsRef.listAll();
       await Promise.all(tempRefs.items.map((async (ref, index) => {

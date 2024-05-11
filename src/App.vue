@@ -52,7 +52,6 @@ export default Vue.extend({
     this.SET_LANG();
     this.getUser();
     // this.checkLoggedIn();
-    console.log('ENV:', process.env.NODE_ENV);
     window.addEventListener(
       'beforeunload',
       this.leaveBrowser,
