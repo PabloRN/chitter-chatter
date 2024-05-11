@@ -27,7 +27,7 @@ export default {
     // ...mapGetters('messages', ['getText']),
     ...mapGetters('user', ['getCurrentUser']),
     isCurrentUser() {
-      return this.id === this.getCurrentUser.userId;
+      return this.id === `$bubble_${this.getCurrentUser.userId}`;
     },
   },
   methods: {
@@ -51,16 +51,16 @@ export default {
 };
 </script>
 <style scoped>
-@import url(https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic);
-
+/* @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic); */
+@import url(https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap);
 .bubble {
   position: absolute;
-  font-family: 'Courier New', Courier, monospace sans-serif!important;
-  font-size: 16px;
-  line-height: 1.2;
+  font-family: "Nanum Pen Script", cursive!important;
+  font-size: 1.1rem!important;
+  line-height: 1.1!important;
   width: 200px;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 6px;
   color: #000;
   top: -60px;
   max-height: 92px;
@@ -70,29 +70,30 @@ export default {
 }
 .bubble-current {
   position: absolute;
-  font-family: 'Courier New', Courier, monospace sans-serif!important;
-  font-size: 16px;
-  line-height: 1.2;
+  font-family: "Nanum Pen Script", cursive!important;
+  font-size: 1.1rem!important;
+  line-height: 1.1!important;
   width: 200px;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 6px;
   color: #000;
   top: -60px;
   max-height: 92px;
   text-align: center;
   box-shadow: 1px 1px 3px #424242;
+  z-index: 999;
 }
 
 .bubble-bottom-left:before {
   content: "";
-  width: 0px;
-  height: 0px;
-  position: absolute;
-  border-left: 24px solid #fff;
-  border-right: 12px solid transparent;
-  border-top: 12px solid #fff;
-  border-bottom: 20px solid transparent;
-  left: 42px;
-  bottom: -24px;
+    width: 0px;
+    height: 0px;
+    position: absolute;
+    border-left: 15px solid #fff;
+    border-right: 5px solid transparent;
+    border-top: 12px solid #fff;
+    border-bottom: 30px solid transparent;
+    left: 42px;
+    bottom: -28px;
 }
 </style>
