@@ -37,6 +37,18 @@ export default Vue.extend({
     // console.log(this.$router.beforeEach());
   },
   created() {
+  // eslint-disable-next-line
+    // const orientation = screen.orientation;
+    // // eslint-disable-next-line
+    // console.log(orientation)
+    // if (orientation && orientation.lock) {
+    //   // Lock the screen orientation to landscape
+    //   // eslint-disable-next-line dot-notation
+    //   orientation['lock']('landscape');
+    // } else {
+    //   // Screen orientation API not supported
+    //   console.error('Screen orientation API is not supported on this device.');
+    // }
     this.SET_LANG();
     this.getUser();
     // this.checkLoggedIn();
