@@ -2,8 +2,8 @@
 <template>
   <div style="text-align: center;" :class="isCurrentUser ? 'current-user' : 'user'" :id="userId" :ref="userId" @click="chatterClicked">
     <DialogBubble :ref="`$bubble_${userId}`" :id="`$bubble_${userId}`" :message="message" />
-    <div v-if="!isCurrentUser" style="position: absolute;top: -22px;left: 5px; color: #ffffff;
-text-shadow: 1px 1px 1px rgba(0,0,0,1);">{{nickname}}</div>
+    <div v-if="!isCurrentUser" style="position: absolute;top: -32px;left: -14px; color: #ffffff;
+       text-shadow: 1px 1px 2px rgba(0,0,0,1);font-family: 'Nanum Pen Script', cursive!important;font-size: 1.5em;">{{nickname}}</div>
     <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="210px"  min-height="198" width="auto" max-width="68px" min-width="63px" :src="avatar"></v-img>
     <RoundedMenu v-on="{
       ['privateMessage']: invitePrivate,
