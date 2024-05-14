@@ -68,6 +68,7 @@ export default {
         },
       );
       this.message = '';
+      this.$refs.refDialog.blur();
     },
     toggleKeyBoard(e) {
       e.preventDefault();
