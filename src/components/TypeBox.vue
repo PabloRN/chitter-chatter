@@ -20,7 +20,7 @@
         </v-col>
         <v-spacer></v-spacer>
         <v-col cols="3" style="background: rgba(255,255,255,0.5);border-radius: 0px 10px 10px 0px;">
-          <v-btn class="grey lighten-1" :disabled="message.length === 0" @click="talk" @touchstart.native.prevent="talk"
+          <v-btn class="grey lighten-1 talk-button" :disabled="message.length === 0" @click="talk" @touchstart.native.prevent="talk"
             block elevation="2" large x-small style="border-radius: 0px 10px 10px 0px;height: 98.5%;">
             <span class="text-caption font-weight-medium" style="color: #616161;
 text-shadow: 1px 1px 1px rgba(255,255,255,.5);">Talk</span></v-btn>
@@ -56,10 +56,12 @@ export default {
     ...mapActions('messages', ['sendMessage']),
     enterPress(e) {
       if (e.type === 'keypress' && e.key === 'Enter') {
-        this.talk();
+        this.talk(e);
       }
     },
-    talk() {
+    talk(e) {
+      e.preventDefault();
+      e.stopPropagation();
       this.sendMessage(
         {
           message: this.message,
@@ -96,7 +98,7 @@ export default {
 </script>
 <style lang="scss">
 .typebox {
-  z-index: 1000;
+  z-index: 10000;
   -webkit-transform:translate3d(0,0,0);
   left: -120px;
   bottom: -60px;
@@ -113,7 +115,9 @@ export default {
   padding-top: 5px !important;
   z-index: 999;
 }
-
+.talk-button {
+  z-index: 10000;
+}
 .keyboard-icon {
   border: 2px solid white;
 }
