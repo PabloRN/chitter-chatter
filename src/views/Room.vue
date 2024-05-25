@@ -33,12 +33,13 @@
       class="pa-5 ma-5 private-dialog">
       <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
     </v-dialog>
+    <TimeMachine />
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
 import Chatter from '@/components/Chatter.vue';
+import TimeMachine from '@/components/TimeMachine.vue';
 import PrivateDialogBubble from '@/components/PrivateDialogBubble.vue';
 import { mapState, mapActions, mapGetters } from 'vuex';
 
@@ -47,6 +48,7 @@ export default {
   components: {
     Chatter,
     PrivateDialogBubble,
+    TimeMachine,
   },
   props: {
     roomId: String,
@@ -65,7 +67,7 @@ export default {
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList']),
     ...mapState('user', ['userData', 'currentUser', 'requestedBy', 'avatarUpdated']),
-    ...mapState('messages', ['privateMessage', 'privateUsers']),
+    ...mapState('messages', ['privateMessage', 'privateUsers', 'showMessagesStatus']),
     ...mapGetters('user', ['getCurrentUser']),
     chattersArray() {
       return this.chattersCounter && Array.from(this.chatters);
@@ -117,7 +119,6 @@ export default {
   },
   mounted() {
     // eslint-disable-next-line max-len
-
     this.innerHeight = window.innerHeight;
     if (Object.keys(this.roomList).length === 0) {
       this.getRooms()
@@ -193,5 +194,8 @@ export default {
   position: relative;
   top: 60px;
   left: 629px;
+}
+.chatter {
+  animation: flop 1s ease-in-out;
 }
 </style>

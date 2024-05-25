@@ -40,8 +40,10 @@ const actions = {
         const ref = firebase.database().ref(`users/${user.uid}`);
 
         if (user.isAnonymous) {
+          const uidSnippet = user.uid.substring(0, 4);
+          const nickname = `anonymous${uidSnippet}`;
           ref.set({
-            nickname: 'anonymous',
+            nickname,
             avatar: '',
             age: 0,
             miniavatar: '',

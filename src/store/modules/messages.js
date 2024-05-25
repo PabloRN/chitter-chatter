@@ -2,15 +2,16 @@
 import * as firebase from 'firebase';
 // State object
 const state = {
-  dialogText: [],
+  roomMessages: [],
   privateMessage: [],
   privateUsers: '',
+  showMessagesStatus: false,
 };
 
 // Getter functions
 const getters = {
   getText(state) {
-    return state.dialogText;
+    return state.roomMessages;
   },
 };
 
@@ -26,13 +27,24 @@ const actions = {
       commit('SEND_TEXT_ERROR');
     }
   },
-  async sendMessage(_, { message, roomId, userId }) {
+  showMessages({ commit }, payload) {
+    commit('SHOW_MESSAGES', payload);
+  },
+  async sendMessage(state, {
+    message, roomId, userId, nickname,
+  }) {
     // commit('SEND_MESSAGE');
+    const utcTimestamp = new Date().toISOString();
     try {
       const roomMessagesKey = firebase.database().ref().child(`rooms/${roomId}/messages/`).push().key;
+      const messageData = {
+        message, userId, timestamp: utcTimestamp, nickname,
+      };
       const updates = {};
-      updates[`/rooms/${roomId}/messages/${roomMessagesKey}`] = { message, userId };
-      updates[`/users/${userId}/messages/${roomId}`] = { roomMessagesKey, message };
+      updates[`/rooms/${roomId}/messages/${roomMessagesKey}`] = messageData;
+      updates[`/users/${userId}/messages/${roomId}`] = {
+        roomMessagesKey, message, timestamp: utcTimestamp, nickname,
+      };
       await firebase.database().ref().update(updates);
       // commit('SEND_MESSAGE_SUCCESS');
     } catch (error) {
@@ -120,20 +132,37 @@ const actions = {
       console.log(error);
     }
   },
-  async getDialogs({ commit }, roomId) {
+  async getDialogs({ commit, state }, roomId) {
     try {
-      firebase.database()
-        .ref(`rooms/${roomId}/messages/`)
-        .on('child_added', async (messageSnap) => { // Get the message sended to the room
-          if (messageSnap.val() !== null) {
-            commit('MESSAGE_ADDED_SUCCESS', {
-              roomId,
-              text: messageSnap.val().message,
-              userId: messageSnap.val().userId,
-              roomUsersKey: messageSnap.key,
-            });
+      const messagesListRef = firebase.database().ref(`rooms/${roomId}/messages/`);
+      const messagesListRefVals = (await messagesListRef.once('value')).val();
+      console.log('messagesListRefVals', messagesListRefVals);
+      messagesListRef.on('child_added', async (messageSnap) => { // Get the message sended to the room
+        if (messageSnap.val() !== null) {
+          commit('MESSAGE_ADDED_SUCCESS', {
+            roomId,
+            text: messageSnap.val().message,
+            userId: messageSnap.val().userId,
+            roomUsersKey: messageSnap.key,
+            timestamp: messageSnap.val().timestamp,
+            nickname: messageSnap.val()?.nickname,
+          });
+        }
+        let extraMessages = state.roomMessages.length - 10;
+        if (extraMessages > 0) {
+          const updateMessage = {};
+          while (extraMessages !== 0) {
+            updateMessage[`rooms/${roomId}/messages/${state.roomMessages[extraMessages - 1].roomUsersKey}`] = null;
+            extraMessages -= 1;
           }
-        });
+          await firebase.database().ref().update(updateMessage);
+        }
+      });
+      messagesListRef.on('child_removed', async (messageSnap) => { // Get the message sended to the room
+        if (messageSnap.val() !== null) {
+          commit('MESSAGE_REMOVED_SUCCESS', messageSnap.key);
+        }
+      });
       // const singleRoom = firebase.database().ref()
       // commit('SET_ROOMS', await snapshot.val());
     } catch (error) {
@@ -185,16 +214,22 @@ const actions = {
 // Mutations
 const mutations = {
   // SEND_MESSAGE_SUCCESS(state, text) {
-  //   state.dialogText = text;
+  //   state.roomMessages = text;
   // },
   SEND_PRIVATE_MESSAGE(state, message) {
     state.privateMessage.push(message);
+  },
+  SHOW_MESSAGES(state, payload) {
+    state.showMessagesStatus = payload;
   },
   SEND_TEXT_ERROR() {
     console.log('Error sending text');
   },
   MESSAGE_ADDED_SUCCESS(state, message) {
-    state.dialogText.push(message);
+    state.roomMessages.push(message);
+  },
+  MESSAGE_REMOVED_SUCCESS(state, messageId) {
+    state.roomMessages = state.roomMessages.filter((message) => message.roomUsersKey !== messageId);
   },
   SET_PRIVATE_USERS(state, { users }) {
     state.privateUsers = users;

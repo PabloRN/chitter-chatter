@@ -66,6 +66,7 @@ export default {
         {
           message: this.message,
           userId: this.getCurrentUser.userId,
+          nickname: this.getCurrentUser.nickname,
           roomId: this.$route.params.roomId,
         },
       );
