@@ -4,7 +4,11 @@
     <DialogBubble :ref="`$bubble_${userId}`" :id="`$bubble_${userId}`" :message="message" :class="dialogSide"/>
     <div v-if="!isCurrentUser" style="position: absolute;top: -32px;left: -14px; color: #ffffff;
        text-shadow: 1px 1px 2px rgba(0,0,0,1);font-family: 'Nanum Pen Script', cursive!important;font-size: 1.5em;">{{nickname}}</div>
-    <v-img :id="`img-${userId}`" class="chatter" height="auto" max-height="210px"  min-height="198" width="auto" max-width="68px" min-width="63px" :src="avatar"></v-img>
+    <v-img
+    contain
+     :id="`img-${userId}`"
+     class="avatar-image"
+     :src="avatar"></v-img>
     <RoundedMenu v-on="{
       ['privateMessage']: invitePrivate,
     }" ref="roundedmenu" v-show="!isCurrentUser" />
@@ -12,6 +16,7 @@
       ['exitRoom']: leaveRoom,
       ['signOut']: () => userSignOutCall(),
       ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
+      ['showMessages']: () =>  toggleMessages(),
     }" />
     <TypeBox :ref="`keyboard_${userId}`"  :id="`keyboard_${userId}`" v-if="isCurrentUser" :moving="mouseMoved" />
     <AvatarSelector :ref="`avatar-selector_${userId}`"  :id="`avatar-selector_${userId}`" v-show="showAvatarSelector" :showAvatarSelector="showAvatarSelector"   @onClose="() => this.showAvatarSelector = false"/>
@@ -210,7 +215,7 @@ export default {
   },
   computed: {
     ...mapGetters('user', ['getCurrentUser']),
-    ...mapState('messages', ['dialogText']),
+    ...mapState('messages', ['roomMessages']),
     ...mapState('user', ['usersPosition', 'userPositionModified', 'userData', 'avatarUpdated']),
     isCurrentUser() {
       return this.userId === this.getCurrentUser.userId;
@@ -218,12 +223,15 @@ export default {
   },
   methods: {
     ...mapActions('user', ['initPosition', 'changePosition', 'userSignOut']),
-    ...mapActions('messages', ['sendPrivateMessageRequest']),
+    ...mapActions('messages', ['sendPrivateMessageRequest', 'showMessages']),
     ...mapActions('rooms', ['removeUser']),
     keyboardCLicked(e) {
       e.preventDefault();
       e.stopPropagation();
       this.keyboardClicked = true;
+    },
+    toggleMessages() {
+      this.showMessages(true);
     },
     findClosestDivPosition(givenDivId) {
       const divPositions = this.usersPosition;
@@ -313,7 +321,7 @@ export default {
 
   },
   watch: {
-    dialogText(newVal) {
+    roomMessages(newVal) {
       if (newVal[newVal.length - 1].userId === this.userId) {
         this.message = newVal[newVal.length - 1].text;
       }
@@ -334,14 +342,33 @@ export default {
 </script>
 
 <style scoped>
+.avatar-image {
+  filter: drop-shadow(1px 2px 1px #424242);
+  position: relative;
+  object-fit: contain;
+
+  z-index: 10;
+  width: 80px;
+  height: 200px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* hide any overflow */
+}
+
+/* .v-image--cover {
+  background-size: contain;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* ensures the image fits within the container without cutting */
+/* } */
 .chatter:hover {
   cursor: pointer;
 }
 
 .chatter {
-  position: relative;
-  object-fit: fill;
-  z-index: 10;
+  background-size: contain;
 }
 
 .private-dialog {

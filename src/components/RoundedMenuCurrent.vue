@@ -1,5 +1,5 @@
 <template>
-<div style="text-align:center;height:200">
+<div style="text-align:center;height:200;z-index:1000">
   <v-btn height="200" class="mx-2 menu-activator" dark
       @click.prevent.stop="toggleMenu"
       v-touch="{
@@ -32,7 +32,7 @@
       fab
       dark
       small
-      @click="emit('privateMessage')"
+      @click.prevent.stop="emit('privateMessage')"
       v-touch="{
       end: () => emit('privateMessage'),
     }"
@@ -59,7 +59,7 @@
       fab
       dark
       small
-      @click.prevent="toggleMenu"
+      @click.prevent.stop="toggleMenu"
       @touchstart.native.prevent="toggleMenu"
       v-touch="{
       end: () => toggleMenu,
@@ -87,10 +87,10 @@
       fab
       dark
       small
-      @click.prevent="toggleMenu"
-      @touchend.native.prevent="toggleMenu"
-      v-touch="{
-      end: () => toggleMenu,
+      @click.prevent.stop="()=>{if(!hideMenu){emit('showMessages')}else{toggleMenu()}}"
+      @touchstart.native.prevent="emit('showMessages')"
+            v-touch="{
+      end: () => emit('showMessages'),
     }"
     >
       <v-icon> mdi-alpha-f-circle-outline </v-icon>
@@ -121,6 +121,7 @@ export default {
   methods: {
     ...mapActions('messages', ['sendMessage']),
     toggleMenu() {
+      console.log('toggle');
       this.$nextTick(() => {
         if (this.moving === false) {
           this.hideMenu = !this.hideMenu;
@@ -151,6 +152,10 @@ export default {
         case 'signOut':
           this.toggleMenu();
           this.$emit('signOut');
+          break;
+        case 'showMessages':
+          this.toggleMenu();
+          this.$emit('showMessages');
           break;
 
         default:
@@ -206,8 +211,8 @@ export default {
   -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
   transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
   position: absolute;
-  top: 50px;
-  left: -5px;
+  top: 45px;
+  left: 5px;
   z-index: 1000;
   border: 2px solid white;
 }
