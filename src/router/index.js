@@ -7,14 +7,15 @@ import LoginForm from '@/components/LoginForm.vue';
 import SignupForm from '@/components/SignupForm.vue';
 import Rooms from '@/views/Rooms.vue';
 import Room from '@/views/Room.vue';
+import LoadingPage from '@/views/LoadingPage.vue';
 
 Vue.use(VueRouter);
 
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: Rooms,
+    name: 'loading',
+    component: LoadingPage,
   },
   {
     path: '/rooms',
