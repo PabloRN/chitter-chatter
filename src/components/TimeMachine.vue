@@ -59,7 +59,7 @@ export default {
 
   },
   methods: {
-    ...mapActions('messages', ['getDialogs', 'confirmPrivate', 'closePrivate', 'cleanPrivateMessages', 'showMessages']),
+    ...mapActions('messages', ['showMessages']),
     onTransitionend(value) {
       if (!value) this.showMessages(false);
     },

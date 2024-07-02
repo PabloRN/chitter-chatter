@@ -2,7 +2,7 @@
 <template>
 <v-scroll-y-reverse-transition>
   <v-card @click="enterRoom(room, id)">
-          <v-img :src="room.picture" class="white--text align-end"
+          <v-img :src="room.thumbnail ? room.thumbnail : room.picture" class="white--text align-end"
            gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
             height="200px">
             <v-card-title class="roomtitle" v-text="room.nombre"></v-card-title>

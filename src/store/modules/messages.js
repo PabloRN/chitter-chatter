@@ -107,7 +107,7 @@ const actions = {
       commit('main/setSnackbar',
         {
           type: 'success',
-          msg: 'Private message resquest successfuly sent',
+          msg: 'Private message request successfully sent',
         },
         { root: true });
       // commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
@@ -137,8 +137,11 @@ const actions = {
       const messagesListRef = firebase.database().ref(`rooms/${roomId}/messages/`);
       const messagesListRefVals = (await messagesListRef.once('value')).val();
       console.log('messagesListRefVals', messagesListRefVals);
-      messagesListRef.on('child_added', async (messageSnap) => { // Get the message sended to the room
-        if (messageSnap.val() !== null) {
+      messagesListRef.on('child_added', async (messageSnap) => { // Get the message sent to the room
+        if (messageSnap.val() !== null && state.roomMessages.filter((m) => {
+          console.log(m.roomUsersKey, messageSnap.key);
+          return m.roomUsersKey === messageSnap.key;
+        }).length === 0) {
           commit('MESSAGE_ADDED_SUCCESS', {
             roomId,
             text: messageSnap.val().message,
