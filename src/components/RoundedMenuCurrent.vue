@@ -167,7 +167,9 @@ export default {
 </script>
 <style lang="scss">
 .menu-item {
-  top: 50;
+  z-index: 1000;
+  top: 65px;
+  left: 15px;
    margin-left: -40px;
    position: absolute;
    -webkit-transform: translate3d(0, 0, 0);
@@ -176,6 +178,9 @@ export default {
    transition: -webkit-transform ease-out 200ms;
    transition: opacity transform ease-out 200ms;
    transition: opacity transform ease-out 200ms, -webkit-transform ease-out 200ms;
+    -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
+  transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
+    border: 2px solid white;
 }
 .menu-item:nth-child(2) {
    -webkit-transition-duration: 180ms;
@@ -207,15 +212,15 @@ export default {
    transition-duration: 180ms;
    opacity: 0;
 }
-.menu-item {
-  -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-  transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-  position: absolute;
-  top: 45px;
-  left: 5px;
-  z-index: 1000;
-  border: 2px solid white;
-}
+// .menu-item {
+//   -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
+//   transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
+//   position: absolute;
+//   top: 45px;
+//   left: 5px;
+//   z-index: 1000;
+//   border: 2px solid white;
+// }
 .nothidden:nth-child(2) {
    transition-duration: 180ms;
    -webkit-transition-duration: 180ms;
@@ -265,9 +270,9 @@ export default {
 .menu-activator {
   opacity: 0;
   position: absolute;
-  top: 0;
+  top: 20px;
   height: 200px;
-  left: 0;
+  left: 5px;
   z-index: 1000;
   -webkit-transform:translate3d(0,0,0);
   // touch-action: none;

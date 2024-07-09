@@ -1,5 +1,6 @@
 /* eslint no-shadow: ["error", { "allow": ["state"] }] */
 import * as firebase from 'firebase';
+
 // State object
 const state = {
   roomMessages: [],
@@ -20,7 +21,6 @@ const actions = {
   async sendText({ commit }, text) {
     try {
       // TODO: send text to firebase
-
       commit('SEND_TEXT_SUCCESS', text);
     } catch (error) {
       console.error(error);
@@ -30,20 +30,19 @@ const actions = {
   showMessages({ commit }, payload) {
     commit('SHOW_MESSAGES', payload);
   },
-  async sendMessage(state, {
-    message, roomId, userId, nickname,
+  async sendMessage(_, {
+    message, roomId, userId, nickname, miniAvatar,
   }) {
-    // commit('SEND_MESSAGE');
     const utcTimestamp = new Date().toISOString();
     try {
       const roomMessagesKey = firebase.database().ref().child(`rooms/${roomId}/messages/`).push().key;
       const messageData = {
-        message, userId, timestamp: utcTimestamp, nickname,
+        message, userId, timestamp: utcTimestamp, nickname, miniAvatar,
       };
       const updates = {};
       updates[`/rooms/${roomId}/messages/${roomMessagesKey}`] = messageData;
       updates[`/users/${userId}/messages/${roomId}`] = {
-        roomMessagesKey, message, timestamp: utcTimestamp, nickname,
+        roomMessagesKey, message, timestamp: utcTimestamp, nickname, miniAvatar,
       };
       await firebase.database().ref().update(updates);
       // commit('SEND_MESSAGE_SUCCESS');
@@ -78,14 +77,13 @@ const actions = {
       });
       firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
-        .on('child_added', async (messageSnap) => { // Get the private message sent
+        .on('child_added', (messageSnap) => { // Get the private message sent
           commit('SET_PRIVATE_USERS', { users: `${requestedBy}_${currentUser}` });
           commit('SEND_PRIVATE_MESSAGE', messageSnap.val());
         });
       firebase.database()
         .ref(`privateMessages/${requestedBy}_${currentUser}`)
-        .on('child_removed', async () => { // Get the private message sent
-          // commit('CLOSE_PRIVATE_MESSAGE_DIALOG', `${requestedBy}_${currentUser}`);
+        .on('child_removed', () => { // Get the private message sent
           commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
         });
       commit('CONFIRM__REQUEST_SUCCESS');
@@ -123,9 +121,9 @@ const actions = {
             requestedTo: null,
           });
         });
-      await firebase.database()
+      firebase.database()
         .ref(`privateMessages/${currentId}_${userId}`)
-        .on('child_removed', async () => { // Get the private message sent
+        .on('child_removed', () => { // Get the private message sent
           commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
         });
     } catch (error) {
@@ -135,20 +133,18 @@ const actions = {
   async getDialogs({ commit, state }, roomId) {
     try {
       const messagesListRef = firebase.database().ref(`rooms/${roomId}/messages/`);
-      const messagesListRefVals = (await messagesListRef.once('value')).val();
-      console.log('messagesListRefVals', messagesListRefVals);
-      messagesListRef.on('child_added', async (messageSnap) => { // Get the message sent to the room
-        if (messageSnap.val() !== null && state.roomMessages.filter((m) => {
-          console.log(m.roomUsersKey, messageSnap.key);
-          return m.roomUsersKey === messageSnap.key;
-        }).length === 0) {
+      messagesListRef.on('child_added', async (messageSnap) => {
+        const messageVal = messageSnap.val();
+        if (messageVal !== null && state.roomMessages.filter((m) => m.roomUsersKey
+          === messageSnap.key).length === 0) {
           commit('MESSAGE_ADDED_SUCCESS', {
             roomId,
-            text: messageSnap.val().message,
-            userId: messageSnap.val().userId,
+            text: messageVal.message,
+            userId: messageVal.userId,
             roomUsersKey: messageSnap.key,
-            timestamp: messageSnap.val().timestamp,
-            nickname: messageSnap.val()?.nickname,
+            timestamp: messageVal.timestamp,
+            nickname: messageVal?.nickname,
+            miniAvatar: messageVal?.miniAvatar,
           });
         }
         let extraMessages = state.roomMessages.length - 10;
@@ -161,13 +157,11 @@ const actions = {
           await firebase.database().ref().update(updateMessage);
         }
       });
-      messagesListRef.on('child_removed', async (messageSnap) => { // Get the message sended to the room
+      messagesListRef.on('child_removed', (messageSnap) => {
         if (messageSnap.val() !== null) {
           commit('MESSAGE_REMOVED_SUCCESS', messageSnap.key);
         }
       });
-      // const singleRoom = firebase.database().ref()
-      // commit('SET_ROOMS', await snapshot.val());
     } catch (error) {
       commit('SET_ROOMS_FAIL');
       console.log(error);
@@ -180,8 +174,6 @@ const actions = {
       firebase.database()
         .ref(`rooms/${roomId}/messages/`)
         .off();
-      // const singleRoom = firebase.database().ref()
-      // commit('SET_ROOMS', await snapshot.val());
     } catch (error) {
       commit('SET_ROOMS_FAIL');
       console.log(error);
@@ -196,8 +188,6 @@ const actions = {
         .off();
       await firebase.database().ref().update(updates);
       commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
-      // const singleRoom = firebase.database().ref()
-      // commit('SET_ROOMS', await snapshot.val());
     } catch (error) {
       commit('SET_ROOMS_FAIL');
       console.log(error);
@@ -208,7 +198,7 @@ const actions = {
     commit('main/setSnackbar',
       {
         type: 'info',
-        msg: 'The other user has close the dialog window',
+        msg: 'The other user has closed the dialog window',
       },
       { root: true });
   },
@@ -216,9 +206,6 @@ const actions = {
 
 // Mutations
 const mutations = {
-  // SEND_MESSAGE_SUCCESS(state, text) {
-  //   state.roomMessages = text;
-  // },
   SEND_PRIVATE_MESSAGE(state, message) {
     state.privateMessage.push(message);
   },
@@ -242,6 +229,7 @@ const mutations = {
     state.privateMessage = [];
   },
 };
+
 export default {
   namespaced: true,
   state,

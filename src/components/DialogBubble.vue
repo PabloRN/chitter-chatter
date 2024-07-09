@@ -36,7 +36,11 @@ export default {
   },
   watch: {
     message(value) {
-      this.removeTimer();
+      this.$nextTick(() => {
+        console.log('value', value);
+      });
+
+      // this.removeTimer();
       if (value && value.length > 0) {
         this.text = value;
         this.showBubble = true;
@@ -52,6 +56,25 @@ export default {
 <style scoped lang="scss">
 /* @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic); */
 @import url(https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap);
+#default_avatar_character_12345{
+  .bubble {
+    position: relative;
+    left: -161px;
+    top: 0px;
+  }
+  .position-right:before {
+  border: solid 12px transparent;
+  border-left: solid 12px #000;
+  border-top: solid 12px #000;
+  bottom: -24px;
+  content: '';
+  height: 0;
+  left: 24px;
+  position: absolute;
+  transform: skew(-15deg);
+  width: 0;
+}
+}
 .bubble {
   background-color: #fff;
   border: solid 2px #000;
@@ -68,7 +91,7 @@ export default {
   background: #fff;
   border-radius: 6px;
   color: #000;
-  bottom: 215px;
+  bottom: 230px;
   text-align: center;
   box-shadow: 1px 1px 3px #424242;
   z-index: 1000;
@@ -83,10 +106,10 @@ export default {
   &-current {
     @extend .bubble;
     z-index: 999;
-    bottom: 240px;
+    bottom: 260px;
     &.position-left {
       @extend .bubble-current;
-      left: -161px;
+      left: -155px;
     }
     &.position-right {
       @extend .bubble-current;

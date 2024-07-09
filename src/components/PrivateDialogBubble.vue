@@ -17,12 +17,14 @@
         <v-card-text v-for="(t, idx) in text" :key="idx" style="height: 10vh;"
          :class="t.userId === getCurrentUser.userId
          ? 'd-flex justify-end align-center' : 'd-flex justify-start align-center' ">
-          <v-avatar v-if="t.userId !== getCurrentUser.userId">
-            <img :src="userData[t.userId].miniavatar" alt="avatar">
+          <v-avatar v-if="t.userId !== getCurrentUser.userId" color="grey darken-3 ">
+            <v-img contain :src="userData[t.userId].miniAvatar" alt="avatar"
+             class="elevation-6 pa-1 mini-avatar"></v-img>
           </v-avatar>
-          {{t.message}}
-          <v-avatar v-if="t.userId === getCurrentUser.userId">
-            <img :src="getCurrentUser.miniavatar" alt="avatar">
+          <div class="ma-3 private-text">{{t.message}}</div>
+          <v-avatar v-if="t.userId === getCurrentUser.userId" color="grey darken-3 ">
+            <v-img contain :src="getCurrentUser.miniAvatar" alt="avatar"
+             class="elevation-6 pa-1 mini-avatar"></v-img>
           </v-avatar>
         </v-card-text>
       </v-card>
@@ -87,6 +89,14 @@ export default {
     right: 1px;
     top: 1px;
     z-index: 1;
-
+}
+.private-text{
+  margin: 10px;
+  font-family: 'Nanum Pen Script', cursive !important;
+  font-size: 1.3rem ;
+  line-height: 1.1;
+}
+.mini-avatar{
+  background-size: 80%;
 }
 </style>

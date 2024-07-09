@@ -2,7 +2,7 @@
 <template>
   <div style="text-align: center;" :class="isCurrentUser ? 'current-user' : 'user'" :id="userId" :ref="userId" @click="chatterClicked">
     <DialogBubble :ref="`$bubble_${userId}`" :id="`$bubble_${userId}`" :message="message" :class="dialogSide"/>
-    <div v-if="!isCurrentUser" style="position: absolute;top: -32px;left: -14px; color: #ffffff;
+    <div v-if="!isCurrentUser && userId !== 'default_avatar_character_12345'" style="position: absolute;top: -32px;left: -14px; color: #ffffff;
        text-shadow: 1px 1px 2px rgba(0,0,0,1);font-family: 'Nanum Pen Script', cursive!important;font-size: 1.5em;">{{nickname}}</div>
     <v-img
     contain
@@ -142,6 +142,18 @@ export default {
           this.chatterManager.style.top = top;
         }
       }, 3000);
+      // this.$nextTick(() => {
+      //   setInterval(() => {
+      //   // method to be executed;
+      //     console.log('hello');
+      //     this.message = 'hello';
+      //   }, 5000);
+      // });
+      // setInterval(() => {
+      //   // method to be executed;
+      //   console.log('hello');
+      //   this.message = 'hello';
+      // }, 5000);
 
       // Mouse events
       // this.chatterManager.addEventListener('dblclick', (e) => {
@@ -273,9 +285,6 @@ export default {
       }
       return 'position-right';
     },
-    changeAvatar() {
-
-    },
     changeExpresion() {
 
     },
@@ -334,7 +343,7 @@ export default {
         } = this.usersPosition[this.userId].position;
         this.chatterManager.style.left = left;
         this.chatterManager.style.top = top;
-        this.dialogSide = this.findClosestDivPosition(this.userId);
+        this.dialogSide = this.userId !== 'default_avatar_character_12345' ? this.findClosestDivPosition(this.userId) : 'position-left';
       }
     },
   },
@@ -349,7 +358,7 @@ export default {
 
   z-index: 10;
   width: 80px;
-  height: 200px;
+  height: 220px;
   min-height: 200px;
   display: flex;
   align-items: center;

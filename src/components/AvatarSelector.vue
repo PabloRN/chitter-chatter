@@ -10,7 +10,8 @@
               <!-- slideritem wrapped package with the components you need -->
               <slideritem class="slider-item-custom" v-for="(item, index) in avatarsList" :key="index"
                  style="width:10%;margin-right: 2%;">
-                <v-img @click="(event) => { avatarSelected(event, item) }" class="chatter" height="200" width="70" :src="item.url"></v-img>
+                <v-img contain style="background-size: contain;"
+                 @click="(event) => { avatarSelected(event, item) }" class="chatter" height="200" width="70" :src="item.url"></v-img>
               </slideritem>
               <!-- Customizable loading -->
               <div slot="loading">loading...</div>

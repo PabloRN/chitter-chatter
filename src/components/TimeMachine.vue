@@ -13,9 +13,13 @@
           v-for="(item, index) in getText"
           :key="index"
         >
-          <v-list-item-icon v-if="index%2 === 0">
-            <v-icon>mdi-account</v-icon>
-          </v-list-item-icon>
+          <v-list-item-avatar v-if="index%2 === 0" color="grey darken-3">
+          <v-img contain
+            class="elevation-6 pa-1"
+            alt=""
+            :src="item.miniAvatar"
+          ></v-img>
+        </v-list-item-avatar>
 
           <v-list-item-content :class="{ 'text-right': index % 2 !== 0 }">
             <v-list-item-title style="font-size: 1.3rem;" class="chat-text">
@@ -27,9 +31,13 @@
            </v-list-item-subtitle>
           </v-list-item-content>
 
-          <v-list-item-icon v-if="index % 2 !== 0">
-            <v-icon>mdi-account</v-icon>
-          </v-list-item-icon>
+          <v-list-item-avatar  v-if="index % 2 !== 0" color="grey darken-3">
+          <v-img contain
+            class="elevation-6  pa-1"
+            alt=""
+            :src="item.miniAvatar"
+          ></v-img>
+        </v-list-item-avatar>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>

@@ -20,9 +20,9 @@
           <RoomThumbnail :room="room" :id="key" :key="key" />
         </div>
       </div>
-      <div class="panel" style="width: 25%; height: 80vh;">
-        <Chatter v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="userId"
-        :avatar="avatar" :nickname="nickname" :room="roomId" v-show="true"/>
+      <div class="panel panelcolor" style="width: 25%; height: 85vh;display: flex;justify-content: center;align-items: center">
+        <Chatter class="ttalker" :userId="userId" key="default_avatar_character_12345"
+        :avatar="avatar" :nickname="nickname" v-show="true"/>
       </div>
     </div>
     <v-footer
@@ -54,8 +54,11 @@ export default {
   components: { RoomThumbnail, Chatter },
   data: () => ({
     usersOnline: 0,
-    flexBasisValues: ['25%', '35%', '30%'],
+    flexBasisValues: ['25%'],
     variant: 'absolute',
+    nickname: 'ttalker',
+    userId: 'default_avatar_character_12345',
+    avatar: 'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fkimetsu_1%2Favatars%2FL1%2Ftanjiro.png?alt=media&token=ebf9e68d-c0e2-4019-a201-24e6553aad0a',
   }),
   computed: {
     ...mapGetters('rooms', ['getAllRooms']),
@@ -81,7 +84,7 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style>
 .panel-container {
   display: flex;
   flex-wrap: wrap;
@@ -99,5 +102,22 @@ export default {
   overflow: hidden;
   position: relative;
   flex: 1 1 auto;
+}
+div#default_avatar_character_12345 .avatar-image {
+  z-index: 1000!important;
+  width: 200px!important;
+  height: 500px!important;
+}
+.panelcolor {
+  width: 300px; /* Adjust size as needed */
+            height: 400px; /* Adjust size as needed */
+            background-image:
+                /* linear-gradient(to bottom, rgba(250, 250, 248, 0.9), rgba(230, 192, 70, 0)), */
+                url("../assets/Screenshot 2024-07-04 at 22.05.41.png");
+            background-size: cover, cover;
+            background-repeat: no-repeat, no-repeat;
+            position: relative;
+            overflow: hidden;
+
 }
 </style>

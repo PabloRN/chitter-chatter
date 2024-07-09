@@ -2,6 +2,7 @@
 /* eslint-disable no-shadow */
 import * as firebase from 'firebase';
 import router from '@/router/index';
+import extractImageName from '@/utils/avatarName';
 
 const state = {
   avatarsList: [],
@@ -41,12 +42,12 @@ const actions = {
 
         if (user.isAnonymous) {
           const uidSnippet = user.uid.substring(0, 4);
-          const nickname = `anonymous${uidSnippet}`;
+          const nickname = `anon_${uidSnippet}`;
           ref.set({
             nickname,
             avatar: '',
             age: 0,
-            miniavatar: '',
+            miniAvatar: '',
             level: 'L1',
             userId: user.uid,
             onlineState: true,
@@ -59,7 +60,7 @@ const actions = {
           onlineState: false,
           status: 'offline',
         });
-        firebase.database().ref(`users/${user.uid}`).once('value', (snapshot) => {
+        firebase.database().ref(`users/${user.uid}`).on('value', (snapshot) => {
           commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
         });
       } else {
@@ -89,8 +90,12 @@ const actions = {
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
     const privateMessage = firebase.database().ref(`users/${state.currentUser.userId}/privateMessage/requestedBy`);
     const userAvatar = firebase.database().ref(`users/${userId}/avatar`);
-    userAvatar.on('value', (snapAvatar) => {
+    const userMiniAvatar = firebase.database().ref(`users/${userId}/miniAvatar`);
+    userAvatar.on('value', async (snapAvatar) => {
       commit('SET_USER_AVATAR_SUCCESS', { url: snapAvatar.val(), userId });
+    });
+    userMiniAvatar.on('value', async (snapMiniAvatar) => {
+      commit('SET_USER_MINIAVATAR_SUCCESS', { miniAvatarUrl: snapMiniAvatar.val(), userId });
     });
     userPosition.on('value', (snapPosition) => {
       commit('SET_USER_POSITION', { position: snapPosition.val(), userId });
@@ -112,7 +117,7 @@ const actions = {
       nickname,
       avatar,
       age,
-      miniavatar,
+      miniAvatar,
     } = data;
     firebase.auth().createUserWithEmailAndPassword(state.email, state.password)
       .then((credentials) => {
@@ -120,7 +125,7 @@ const actions = {
           nickname,
           avatar,
           age,
-          miniavatar,
+          miniAvatar,
         });
         commit('main/setSnackbar',
           {
@@ -172,16 +177,24 @@ const actions = {
         );
     });
   },
-  async changeAvatar({ state }, url) {
+  async changeAvatar({ state, rootState, commit }, url) {
     // commit('SET_USER_AVATAR');
+    console.log(rootState.route.fullPath);
+    const storageRef = firebase.storage().ref();
+    const miniAvatarsRef = storageRef.child(`${rootState.route.fullPath}/avatars/L1/miniavatars`);
     try {
       const { currentUser } = state;
       // eslint-disable-next-line no-undef
       // const tempUser = structuredClone(currentUser);
       // console.log('tempUser before', tempUser);
       // Object.assign(tempUser, { avatar: url });
-      // console.log('tempUser after', tempUser);
+      console.log('url', url);
+      const avatarNameWithExt = extractImageName(url);
+      const avatarName = avatarNameWithExt.replace('.png', '');
       await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(url);
+      const miniavatarRefUrl = await miniAvatarsRef.child(`${avatarName}_head.png`).getDownloadURL();
+      await firebase.database().ref(`users/${currentUser.userId}/miniAvatar/`).set(miniavatarRefUrl);
+      commit('SET_CURRENT_USER_AVATAR', { avatar: url, miniAvatar: miniavatarRefUrl });
     } catch (error) {
       // commit('SET_USER_AVATAR_FAILED');
       console.log(error);
@@ -222,6 +235,13 @@ const mutations = {
   },
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };
+  },
+  SET_USER_MINIAVATAR_SUCCESS(state, { userId, miniAvatarUrl }) {
+    state.userData[userId].miniAvatar = miniAvatarUrl;
+  },
+  SET_CURRENT_USER_AVATAR(state, { avatar, miniAvatar }) {
+    state.currentUser.miniAvatar = miniAvatar;
+    state.currentUser.avatar = avatar;
   },
   PRIVATE_REQUESTED(state, { requestedBy, userId }) {
     state.requestedBy = requestedBy;

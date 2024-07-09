@@ -98,7 +98,8 @@ export default {
 </script>
 <style lang="scss">
 .menu-item {
-  top: 50;
+  top: 65px;
+  left: 15px;
    margin-left: -40px;
    position: absolute;
    -webkit-transform: translate3d(0, 0, 0);
@@ -138,15 +139,15 @@ export default {
    transition-duration: 180ms;
    opacity: 0;
 }
-.menu-item {
-  -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-  transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-  position: absolute;
-  top: 50px;
-  left: -5px;
-  z-index: 1000;
-  border: 2px solid white;
-}
+// .menu-item {
+//   -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
+//   transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
+//   position: absolute;
+//   top: 50px;
+//   left: -5px;
+//   z-index: 1000;
+//   border: 2px solid white;
+// }
 .nothidden:nth-child(2) {
    transition-duration: 180ms;
    -webkit-transition-duration: 180ms;
