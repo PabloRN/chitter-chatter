@@ -36,10 +36,6 @@ export default {
   },
   watch: {
     message(value) {
-      this.$nextTick(() => {
-        console.log('value', value);
-      });
-
       // this.removeTimer();
       if (value && value.length > 0) {
         this.text = value;

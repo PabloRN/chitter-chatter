@@ -235,7 +235,7 @@ export default {
   },
   methods: {
     ...mapActions('user', ['initPosition', 'changePosition', 'userSignOut']),
-    ...mapActions('messages', ['sendPrivateMessageRequest', 'showMessages']),
+    ...mapActions('messages', ['sendPrivateMessageRequest', 'showMessages', 'cleanMessages']),
     ...mapActions('rooms', ['removeUser']),
     keyboardCLicked(e) {
       e.preventDefault();
@@ -303,6 +303,7 @@ export default {
         roomId: this.$route.params.roomId,
         roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
       });
+      this.cleanMessages();
       this.$router.push({
         name: 'rooms',
       });
