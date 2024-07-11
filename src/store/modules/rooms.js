@@ -70,25 +70,25 @@ const actions = {
   },
   async pushUser({ commit, dispatch, rootState }, { roomId, userId }) {
     commit('PUSH_USER');
-    const { currentUser } = rootState.user;
-    const storageRef = firebase.storage().ref();
-    const defaultAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/defaultAvatar/defaultAvatar.png`);
-    const defaultMiniAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/miniavatars/kento_head.png`);
-    const defaultUrl = await defaultAvatarRef.getDownloadURL();
-    const defaultMiniUrl = await defaultMiniAvatarRef.getDownloadURL();
-    if (defaultUrl) {
-      // eslint-disable-next-line no-undef
-      // const tempUser = structuredClone(currentUser);
-      // Object.assign(tempUser, { avatar: defaultUrl });
-      await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(defaultUrl);
-    }
-    if (defaultMiniUrl) {
-      // eslint-disable-next-line no-undef
-      // const tempUser = structuredClone(currentUser);
-      // Object.assign(tempUser, { avatar: defaultUrl });
-      await firebase.database().ref(`users/${currentUser.userId}/miniAvatar/`).set(defaultMiniUrl);
-    }
     try {
+      const { currentUser } = rootState.user;
+      const storageRef = firebase.storage().ref();
+      const defaultAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/defaultAvatar/defaultAvatar.png`);
+      const defaultMiniAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/miniavatars/defaultAvatar_head.png`);
+      const defaultUrl = await defaultAvatarRef.getDownloadURL();
+      const defaultMiniUrl = await defaultMiniAvatarRef.getDownloadURL();
+      if (defaultUrl) {
+      // eslint-disable-next-line no-undef
+      // const tempUser = structuredClone(currentUser);
+      // Object.assign(tempUser, { avatar: defaultUrl });
+        await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(defaultUrl);
+      }
+      if (defaultMiniUrl) {
+      // eslint-disable-next-line no-undef
+      // const tempUser = structuredClone(currentUser);
+      // Object.assign(tempUser, { avatar: defaultUrl });
+        await firebase.database().ref(`users/${currentUser.userId}/miniAvatar/`).set(defaultMiniUrl);
+      }
       const roomUsersKey = firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
       const updates = {};
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = { userId };

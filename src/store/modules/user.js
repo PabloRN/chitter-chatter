@@ -179,16 +179,10 @@ const actions = {
   },
   async changeAvatar({ state, rootState, commit }, url) {
     // commit('SET_USER_AVATAR');
-    console.log(rootState.route.fullPath);
     const storageRef = firebase.storage().ref();
     const miniAvatarsRef = storageRef.child(`${rootState.route.fullPath}/avatars/L1/miniavatars`);
     try {
       const { currentUser } = state;
-      // eslint-disable-next-line no-undef
-      // const tempUser = structuredClone(currentUser);
-      // console.log('tempUser before', tempUser);
-      // Object.assign(tempUser, { avatar: url });
-      console.log('url', url);
       const avatarNameWithExt = extractImageName(url);
       const avatarName = avatarNameWithExt.replace('.png', '');
       await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(url);
