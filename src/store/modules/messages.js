@@ -167,17 +167,22 @@ const actions = {
       console.log(error);
     }
   },
-  removeDialogs({ commit }, roomId) {
+  async removeDialogs({ commit }, roomId) {
     const updates = {};
     updates[`/rooms/${roomId}/messages/`] = null;
     try {
       firebase.database()
         .ref(`rooms/${roomId}/messages/`)
         .off();
+      await firebase.database().ref().update(updates);
+      commit('REMOVE_DIALOGS_SUCCESS');
     } catch (error) {
       commit('SET_ROOMS_FAIL');
       console.log(error);
     }
+  },
+  async cleanMessages({ commit }) {
+    commit('REMOVE_DIALOGS_SUCCESS');
   },
   async closePrivate({ commit, state }) {
     const updates = {};
@@ -220,6 +225,9 @@ const mutations = {
   },
   MESSAGE_REMOVED_SUCCESS(state, messageId) {
     state.roomMessages = state.roomMessages.filter((message) => message.roomUsersKey !== messageId);
+  },
+  REMOVE_DIALOGS_SUCCESS(state) {
+    state.roomMessages = [];
   },
   SET_PRIVATE_USERS(state, { users }) {
     state.privateUsers = users;
