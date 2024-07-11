@@ -1,17 +1,20 @@
 <template>
-<div style="text-align:center;height:200;z-index:1000">
-  <v-btn height="200" class="mx-2 menu-activator" dark
+  <div style="text-align: center; height: 200; z-index: 1000">
+    <v-btn
+      height="200"
+      class="mx-2 menu-activator"
+      dark
       @click.prevent.stop="toggleMenu"
       v-touch="{
-        start: () => movingTouch = false,
+        start: () => (movingTouch = false),
         end: () => toggleMenuTouch,
-        left: () => movingTouch = true,
-        down: () => movingTouch = true,
-        right: () => movingTouch = true,
-        up: () => movingTouch = true,
-        move: () => movingTouch = true,
-
-}">
+        left: () => (movingTouch = true),
+        down: () => (movingTouch = true),
+        right: () => (movingTouch = true),
+        up: () => (movingTouch = true),
+        move: () => (movingTouch = true),
+      }"
+    >
     </v-btn>
     <v-btn
       :class="hideMenu ? 'hidden' : 'nothidden'"
@@ -20,11 +23,14 @@
       dark
       small
       @click.prevent.stop="emit('showAvatarList')"
-            v-touch="{
-      end: () => emit('showAvatarList'),
-    }"
+      v-touch="{
+        end: () => emit('showAvatarList'),
+      }"
     >
-      <v-icon> mdi mdi-account-switch </v-icon>
+      <div>
+        <v-icon> mdi mdi-account-switch </v-icon>
+      </div>
+      <div class="icon-caption">Switch Avatar</div>
     </v-btn>
     <v-btn
       class="mx-2 menu-item"
@@ -34,10 +40,14 @@
       small
       @click.prevent.stop="emit('privateMessage')"
       v-touch="{
-      end: () => emit('privateMessage'),
-    }"
+        end: () => emit('privateMessage'),
+      }"
     >
-      <v-icon> mdi-forum-outline </v-icon>
+    <div>
+      <v-icon>  mdi-account-cog</v-icon>
+      </div>
+      <div class="icon-caption">Profile</div>
+
     </v-btn>
     <v-btn
       :class="hideMenu ? 'hidden' : 'nothidden'"
@@ -48,10 +58,13 @@
       @click.prevent.stop="emit('exitRoom')"
       @touchstart.native.prevent="emit('exitRoom')"
       v-touch="{
-      end: () => toggleMenu,
-    }"
+        end: () => toggleMenu,
+      }"
     >
-      <v-icon> mdi-door-open </v-icon>
+      <div>
+        <v-icon> mdi-door-open </v-icon>
+      </div>
+      <div class="icon-caption">Exit Room</div>
     </v-btn>
     <v-btn
       :class="hideMenu ? 'hidden' : 'nothidden'"
@@ -62,10 +75,13 @@
       @click.prevent.stop="toggleMenu"
       @touchstart.native.prevent="toggleMenu"
       v-touch="{
-      end: () => toggleMenu,
-    }"
+        end: () => toggleMenu,
+      }"
     >
+    <div>
       <v-icon> mdi mdi-eye-off </v-icon>
+      </div>
+      <div class="icon-caption">Hide</div>
     </v-btn>
     <v-btn
       :class="hideMenu ? 'hidden' : 'nothidden'"
@@ -76,10 +92,13 @@
       @click.prevent.stop="emit('signOut')"
       @touchstart.native.prevent="emit('signOut')"
       v-touch="{
-      end: () => toggleMenu,
-    }"
+        end: () => toggleMenu,
+      }"
     >
+    <div>
       <v-icon> mdi mdi-logout-variant </v-icon>
+      </div>
+      <div class="icon-caption">Logout</div>
     </v-btn>
     <v-btn
       :class="hideMenu ? 'hidden' : 'nothidden'"
@@ -87,13 +106,24 @@
       fab
       dark
       small
-      @click.prevent.stop="()=>{if(!hideMenu){emit('showMessages')}else{toggleMenu()}}"
+      @click.prevent.stop="
+        () => {
+          if (!hideMenu) {
+            emit('showMessages');
+          } else {
+            toggleMenu();
+          }
+        }
+      "
       @touchstart.native.prevent="emit('showMessages')"
-            v-touch="{
-      end: () => emit('showMessages'),
-    }"
+      v-touch="{
+        end: () => emit('showMessages'),
+      }"
     >
-      <v-icon> mdi-alpha-f-circle-outline </v-icon>
+      <div>
+        <v-icon> mdi-timeline-text-outline </v-icon>
+      </div>
+      <div class="icon-caption">Messages</div>
     </v-btn>
   </div>
 </template>
@@ -168,49 +198,50 @@ export default {
 <style lang="scss">
 .menu-item {
   z-index: 1000;
+  width: min-content;
   top: 65px;
   left: 15px;
-   margin-left: -40px;
-   position: absolute;
-   -webkit-transform: translate3d(0, 0, 0);
-   transform: translate3d(0, 0, 0);
-   -webkit-transition: -webkit-transform ease-out 200ms;
-   transition: -webkit-transform ease-out 200ms;
-   transition: opacity transform ease-out 200ms;
-   transition: opacity transform ease-out 200ms, -webkit-transform ease-out 200ms;
-    -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
+  margin-left: -40px;
+  position: absolute;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transition: -webkit-transform ease-out 200ms;
+  transition: -webkit-transform ease-out 200ms;
+  transition: opacity transform ease-out 200ms;
+  transition: opacity transform ease-out 200ms, -webkit-transform ease-out 200ms;
+  -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
   transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-    border: 2px solid white;
+  border: 2px solid white;
 }
 .menu-item:nth-child(2) {
-   -webkit-transition-duration: 180ms;
-   transition-duration: 180ms;
-   opacity: 0;
+  -webkit-transition-duration: 180ms;
+  transition-duration: 180ms;
+  opacity: 0;
 }
 .menu-item:nth-child(3) {
-   -webkit-transition-duration: 180ms;
-   transition-duration: 180ms;
-   opacity: 0;
+  -webkit-transition-duration: 180ms;
+  transition-duration: 180ms;
+  opacity: 0;
 }
 .menu-item:nth-child(4) {
-   -webkit-transition-duration: 180ms;
-   transition-duration: 180ms;
-   opacity: 0;
+  -webkit-transition-duration: 180ms;
+  transition-duration: 180ms;
+  opacity: 0;
 }
 .menu-item:nth-child(5) {
-   -webkit-transition-duration: 180ms;
-   transition-duration: 180ms;
-   opacity: 0;
+  -webkit-transition-duration: 180ms;
+  transition-duration: 180ms;
+  opacity: 0;
 }
 .menu-item:nth-child(6) {
-   -webkit-transition-duration: 180ms;
-   transition-duration: 180ms;
-   opacity: 0;
+  -webkit-transition-duration: 180ms;
+  transition-duration: 180ms;
+  opacity: 0;
 }
 .menu-item:nth-child(7) {
-   -webkit-transition-duration: 180ms;
-   transition-duration: 180ms;
-   opacity: 0;
+  -webkit-transition-duration: 180ms;
+  transition-duration: 180ms;
+  opacity: 0;
 }
 // .menu-item {
 //   -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
@@ -222,50 +253,50 @@ export default {
 //   border: 2px solid white;
 // }
 .nothidden:nth-child(2) {
-   transition-duration: 180ms;
-   -webkit-transition-duration: 180ms;
-   -webkit-transform: translate3d(0.08361px, -104.99997px, 0);
-   transform: translate3d(0.08361px, -104.99997px, 0);
-   opacity: 1;
+  transition-duration: 180ms;
+  -webkit-transition-duration: 180ms;
+  -webkit-transform: translate3d(0.08361px, -104.99997px, 0);
+  transform: translate3d(0.08361px, -104.99997px, 0);
+  opacity: 1;
 }
 .nothidden:nth-child(3) {
-   transition-duration: 280ms;
-   -webkit-transition-duration: 280ms;
-   -webkit-transform: translate3d(90.9466px, -52.47586px, 0);
-   transform: translate3d(90.9466px, -52.47586px, 0);
-   opacity: 1;
+  transition-duration: 280ms;
+  -webkit-transition-duration: 280ms;
+  -webkit-transform: translate3d(90.9466px, -52.47586px, 0);
+  transform: translate3d(90.9466px, -52.47586px, 0);
+  opacity: 1;
 }
 
 .nothidden:nth-child(4) {
-   transition-duration: 380ms;
-   -webkit-transition-duration: 380ms;
-   -webkit-transform: translate3d(90.9466px, 52.47586px, 0);
-   transform: translate3d(90.9466px, 52.47586px, 0);
-   opacity: 1;
+  transition-duration: 380ms;
+  -webkit-transition-duration: 380ms;
+  -webkit-transform: translate3d(90.9466px, 52.47586px, 0);
+  transform: translate3d(90.9466px, 52.47586px, 0);
+  opacity: 1;
 }
 
 .nothidden:nth-child(5) {
-   transition-duration: 480ms;
-   -webkit-transition-duration: 480ms;
-   -webkit-transform: translate3d(0.08361px, 104.99997px, 0);
-   transform: translate3d(0.08361px, 104.99997px, 0);
-   opacity: 1;
+  transition-duration: 480ms;
+  -webkit-transition-duration: 480ms;
+  -webkit-transform: translate3d(0.08361px, 104.99997px, 0);
+  transform: translate3d(0.08361px, 104.99997px, 0);
+  opacity: 1;
 }
 
 .nothidden:nth-child(6) {
-   transition-duration: 580ms;
-   -webkit-transition-duration: 580ms;
-   -webkit-transform: translate3d(-90.86291px, 52.62064px, 0);
-   transform: translate3d(-90.86291px, 52.62064px, 0);
-   opacity: 1;
+  transition-duration: 580ms;
+  -webkit-transition-duration: 580ms;
+  -webkit-transform: translate3d(-90.86291px, 52.62064px, 0);
+  transform: translate3d(-90.86291px, 52.62064px, 0);
+  opacity: 1;
 }
 
 .nothidden:nth-child(7) {
-   transition-duration: 680ms;
-   -webkit-transition-duration: 680ms;
-   -webkit-transform: translate3d(-91.03006px, -52.33095px, 0);
-   transform: translate3d(-91.03006px, -52.33095px, 0);
-   opacity: 1;
+  transition-duration: 680ms;
+  -webkit-transition-duration: 680ms;
+  -webkit-transform: translate3d(-91.03006px, -52.33095px, 0);
+  transform: translate3d(-91.03006px, -52.33095px, 0);
+  opacity: 1;
 }
 .menu-activator {
   opacity: 0;
@@ -274,8 +305,13 @@ export default {
   height: 200px;
   left: 5px;
   z-index: 1000;
-  -webkit-transform:translate3d(0,0,0);
+  -webkit-transform: translate3d(0, 0, 0);
   // touch-action: none;
 }
-
+.icon-caption {
+  position: absolute;
+  text-shadow: 1px 1px 2px black;
+  top: 35px;
+  font-weight: bold;
+}
 </style>
