@@ -28,7 +28,8 @@ new Vue({
     firebase.initializeApp(
       {
         apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
-        authDomain: 'chitter-chatter-f762a.firebaseapp.com',
+        authDomain: 'toonstalk.com',
+        // authDomain: 'chitter-chatter-f762a.firebaseapp.com',
         databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
         projectId: 'chitter-chatter-f762a',
         storageBucket: 'chitter-chatter-f762a.appspot.com',
