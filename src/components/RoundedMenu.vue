@@ -29,7 +29,7 @@
       dark
       small
       @click.prevent.stop="emit('privateMessage')"
-      @touchstart.native.prevent.stop="toggleMenu"
+      @touchstart.native.prevent.stop="emit('privateMessage')"
     >
 
       <div>

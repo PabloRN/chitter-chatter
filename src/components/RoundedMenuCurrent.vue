@@ -23,9 +23,7 @@
       dark
       small
       @click.prevent.stop="emit('showAvatarList')"
-      v-touch="{
-        end: () => emit('showAvatarList'),
-      }"
+      @touchstart.native.prevent="emit('showAvatarList')"
     >
       <div>
         <v-icon> mdi mdi-account-switch </v-icon>
@@ -39,9 +37,7 @@
       dark
       small
       @click.prevent.stop="emit('privateMessage')"
-      v-touch="{
-        end: () => emit('privateMessage'),
-      }"
+      @touchstart.native.prevent="emit('privateMessage')"
     >
     <div>
       <v-icon>  mdi-account-cog</v-icon>
@@ -57,9 +53,6 @@
       small
       @click.prevent.stop="emit('exitRoom')"
       @touchstart.native.prevent="emit('exitRoom')"
-      v-touch="{
-        end: () => toggleMenu,
-      }"
     >
       <div>
         <v-icon> mdi-door-open </v-icon>
@@ -106,24 +99,34 @@
       fab
       dark
       small
-      @click.prevent.stop="
-        () => {
-          if (!hideMenu) {
-            emit('showMessages');
-          } else {
-            toggleMenu();
-          }
-        }
-      "
+      @click.prevent.stop="emit('showMessages')"
       @touchstart.native.prevent="emit('showMessages')"
-      v-touch="{
-        end: () => emit('showMessages'),
-      }"
     >
       <div>
         <v-icon> mdi-timeline-text-outline </v-icon>
       </div>
       <div class="icon-caption">Messages</div>
+    </v-btn>
+    <v-btn
+      :class="'oculted'"
+      class="mx-2 menu-item"
+      fab
+      dark
+      small
+      @click.prevent.stop="toggleMenu"
+      v-touch="{
+        start: () => (movingTouch = false),
+        end: () => toggleMenuTouch,
+        left: () => (movingTouch = true),
+        down: () => (movingTouch = true),
+        right: () => (movingTouch = true),
+        up: () => (movingTouch = true),
+        move: () => (movingTouch = true),
+      }"
+    >
+      <div>
+      </div>
+      <div class="icon-caption">toggle</div>
     </v-btn>
   </div>
 </template>
@@ -151,7 +154,6 @@ export default {
   methods: {
     ...mapActions('messages', ['sendMessage']),
     toggleMenu() {
-      console.log('toggle');
       this.$nextTick(() => {
         if (this.moving === false) {
           this.hideMenu = !this.hideMenu;
@@ -313,5 +315,11 @@ export default {
   text-shadow: 1px 1px 2px black;
   top: 35px;
   font-weight: bold;
+}
+.oculted {
+  opacity: 0;
+  height: 200px!important;
+  z-index: 1000;
+  top: 0;
 }
 </style>
