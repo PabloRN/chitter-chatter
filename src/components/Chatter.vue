@@ -19,7 +19,25 @@
       ['showMessages']: () =>  toggleMessages(),
     }" />
     <TypeBox :ref="`keyboard_${userId}`"  :id="`keyboard_${userId}`" v-if="isCurrentUser" :moving="mouseMoved" />
-    <AvatarSelector :ref="`avatar-selector_${userId}`"  :id="`avatar-selector_${userId}`" v-show="showAvatarSelector" :showAvatarSelector="showAvatarSelector"   @onClose="() => this.showAvatarSelector = false"/>
+    <AvatarSelector :ref="`avatar-selector_${userId}`"  :id="`avatar-selector_${userId}`" :showAvatarSelector="showAvatarSelector"  v-on="{
+      ['onClose']: () => {
+        showAvatarSelector = false;
+      },
+      ['onShowLoginDialog']: () => {
+        showLoginDialog = true;
+      },
+    }"/>
+      <v-dialog
+      persistent
+      scrollable
+      v-if="showLoginDialog"
+      v-model="showLoginDialog"
+      width="600"
+      min-height="80vh"
+      class="pa-5 ma-5 private-dialog"
+    >
+      <LoginDialogBubble @onCloseLoginDialog="showLoginDialog = false" />
+    </v-dialog>
   </div>
 </template>
 
@@ -34,6 +52,7 @@ import DialogBubble from '@/components/DialogBubble.vue';
 import RoundedMenu from '@/components/RoundedMenu.vue';
 import RoundedMenuCurrent from '@/components/RoundedMenuCurrent.vue';
 import AvatarSelector from '@/components/AvatarSelector.vue';
+import LoginDialogBubble from '@/components/LoginDialogBubble.vue';
 
 export default {
   name: 'chatter',
@@ -43,6 +62,7 @@ export default {
     RoundedMenu,
     RoundedMenuCurrent,
     AvatarSelector,
+    LoginDialogBubble,
   },
   props: {
     userId: String,
@@ -51,6 +71,7 @@ export default {
     room: String,
   },
   data: () => ({
+    showLoginDialog: false,
     chatterManager: {},
     dialogs: '',
     expresion: {

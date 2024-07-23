@@ -115,7 +115,7 @@ export default {
   }),
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList']),
-    ...mapState('user', ['userData', 'currentUser', 'requestedBy', 'avatarUpdated']),
+    ...mapState('user', ['currentUser', 'requestedBy', 'avatarUpdated']),
     ...mapState('messages', ['privateMessage', 'privateUsers', 'showMessagesStatus']),
     ...mapGetters('user', ['getCurrentUser']),
     chattersArray() {
@@ -132,29 +132,31 @@ export default {
       'cleanPrivateMessages',
     ]),
     async initUsers() {
-      // eslint-disable-next-line max-len
-      if (this.$route.params.roomId && this.getCurrentUser.userId) {
-        this.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
-        this.getAvatars(this.$route.params.roomId);
-      }
-      if (
-        Object.keys(this.roomList).length > 0
+      setTimeout(async () => {
+        if (
+          Object.keys(this.roomList).length > 0
         && this.roomList[this.$route.params.roomId].users
         && Object.keys(this.roomList[this.$route.params.roomId].users).length > 0
-      ) {
-        const userIDs = Object.keys(this.roomList[this.$route.params.roomId].users);
+        ) {
+          const userIDs = Object.keys(this.roomList[this.$route.params.roomId].users);
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const roomUserID of userIDs) {
-          const { userId } = this.roomList[this.$route.params.roomId].users[roomUserID];
-          // eslint-disable-next-line no-await-in-loop
-          const userDataNew = await this.getUserData(userId);
-          if (Object.keys(userDataNew).length > 0) {
-            this.chatters.set(userId, userDataNew);
-            this.chattersCounter += 1;
+          // eslint-disable-next-line no-restricted-syntax
+          for (const roomUserID of userIDs) {
+            const { userId } = this.roomList[this.$route.params.roomId].users[roomUserID];
+            // eslint-disable-next-line no-await-in-loop
+            const userDataNew = await this.getUserData(userId);
+            if (Object.keys(userDataNew).length > 0) {
+              this.chatters.set(userId, userDataNew);
+              this.chattersCounter += 1;
+            }
           }
         }
-      }
+        // eslint-disable-next-line max-len
+        if (this.$route.params.roomId && this.getCurrentUser.userId) {
+          this.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
+          this.getAvatars(this.$route.params.roomId);
+        }
+      }, 100);
     },
     confirmPrivateRequest() {
       this.confirmPrivate({

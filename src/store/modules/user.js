@@ -1,6 +1,10 @@
 /* eslint-disable max-len */
 /* eslint-disable no-shadow */
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
+import * as firebaseui from 'firebaseui';
+import 'firebase/auth'; // Import the auth module explicitly if needed
+import 'firebase/database'; // Import other Firebase modules as needed
+import 'firebase/storage';
 import router from '@/router/index';
 import extractImageName from '@/utils/avatarName';
 
@@ -39,11 +43,10 @@ const actions = {
       if (user) {
         // eslint-disable-next-line no-template-curly-in-string
         const ref = firebase.database().ref(`users/${user.uid}`);
-
         if (user.isAnonymous) {
           const uidSnippet = user.uid.substring(0, 4);
           const nickname = `anon_${uidSnippet}`;
-          ref.set({
+          const initialUser = {
             nickname,
             avatar: '',
             age: 0,
@@ -52,8 +55,17 @@ const actions = {
             userId: user.uid,
             onlineState: true,
             status: 'online',
-          });
+            isAnonymous: true,
+          };
+          ref.set(initialUser);
           // ref.onDisconnect().remove();
+        } else {
+          ref.update({
+            onlineState: true,
+            status: 'online',
+            isAnonymous: false,
+            userId: user.uid,
+          });
         }
 
         ref.onDisconnect().update({
@@ -194,6 +206,108 @@ const actions = {
       console.log(error);
     }
   },
+  async setFirebaseUiInstance({ commit }) {
+    // Temp variable to hold the anonymous user data if needed.
+    let data = null;
+    // Hold a reference to the anonymous current user.
+    const anonymousUser = firebase.auth().currentUser;
+    const ui = new firebaseui.auth.AuthUI(firebase.auth());
+    try {
+      const uiConfig = {
+        callbacks: {
+          signInSuccessWithAuthResult(authResult, redirectUrl) {
+            console.log({ redirectUrl, authResult });
+            console.log('(authResult.emailVerified', authResult.user.emailVerified);
+            if (authResult.user.emailVerified) {
+              commit('USER_UPGRADED', authResult.user.uid);
+            }
+            // User successfully signed in.
+            // Return type determines whether we continue the redirect automatically
+            // or whether we leave that to developer to handle.
+            return false;
+          },
+          uiShown() {
+            // The widget is rendered.
+            // Hide the loader.
+            document.getElementById('loader').style.display = 'none';
+          },
+          async signInFailure(error) {
+            console.log('signInFailure error:', error);
+            // For merge conflicts, the error.code will be
+            // 'firebaseui/anonymous-upgrade-merge-conflict'.
+            if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
+              return Promise.resolve();
+            }
+            // The credential the user tried to sign in with.
+            const cred = error.credential;
+            console.log('credential:', cred);
+            // If using Firebase Realtime Database. The anonymous user data has to be
+            // copied to the non-anonymous user.
+            // Save anonymous user data first.
+            return firebase.database().ref(`users/${firebase.auth().currentUser.uid}`)
+              .once('value')
+              .then((snapshot) => {
+                data = snapshot.val();
+                console.log('anonymous user data:', data);
+                if (!data) {
+                  throw new Error('No anonymous user data found.');
+                }
+                // This will trigger onAuthStateChanged listener which
+                // could trigger a redirect to another page.
+                // Ensure the upgrade flow is not interrupted by that callback
+                // and that this is given enough time to complete before
+                // redirection.
+                return firebase.auth().signInWithCredential(cred);
+              })
+              .then((userCredential) => {
+                const { user } = userCredential;
+                data.isAnonymous = false;
+                console.log('dataXXX', data);
+                return firebase.database().ref(`users/${user.uid}`).set(data);
+              })
+              // Original Anonymous Auth instance now has the new user.
+              .then(() => anonymousUser.delete()) // Delete anonymous user.
+              .then(() => {
+                // Clear data in case a new user signs in, and the state change
+                // triggers.
+                data = null;
+                // FirebaseUI will reset and the UI cleared when this promise
+                // resolves.
+                // signInSuccessWithAuthResult will not run. Successful sign-in
+                // logic has to be run explicitly.
+                // window.location.assign('<url-to-redirect-to-on-success>');
+              })
+              .catch((err) => {
+                console.error('Error during sign-in failure handling:', err);
+              });
+          },
+        },
+        // Will use popup for IDP Providers sign-in flow instead of the default, redirect.
+        signInFlow: 'popup',
+        signInOptions: [
+          // Leave the lines as is for the providers you want to offer your users.
+          firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          // firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+          // firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+          // firebase.auth.GithubAuthProvider.PROVIDER_ID,
+          firebase.auth.EmailAuthProvider.PROVIDER_ID,
+          // firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+        ],
+        credentialHelper: firebaseui.auth.CredentialHelper.GOOGLE_YOLO, // Enable Google One Tap
+        autoUpgradeAnonymousUsers: true,
+        // Terms of service url.
+        tosUrl: '<your-tos-url>',
+        // Privacy policy url.
+        privacyPolicyUrl: '<your-privacy-policy-url>',
+      };
+      // The start method will wait until the DOM is loaded.
+      ui.start('#firebaseui-auth-container', uiConfig);
+    } catch (error) {
+      // commit('SET_USER_AVATAR_FAILED');
+      console.log(error);
+    }
+  },
+
   async loginAnonymously() {
     // commit('SET_USER_AVATAR');
     firebase.auth().signInAnonymously()
@@ -230,8 +344,14 @@ const mutations = {
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };
   },
+  USER_UPGRADED(state, uid) {
+    state.currentUser.isAnonymous = false;
+    state.userData[uid].isAnonymous = false;
+  },
   SET_USER_MINIAVATAR_SUCCESS(state, { userId, miniAvatarUrl }) {
-    state.userData[userId].miniAvatar = miniAvatarUrl;
+    if (state.userData[userId]) {
+      state.userData[userId].miniAvatar = miniAvatarUrl;
+    }
   },
   SET_CURRENT_USER_AVATAR(state, { avatar, miniAvatar }) {
     state.currentUser.miniAvatar = miniAvatar;

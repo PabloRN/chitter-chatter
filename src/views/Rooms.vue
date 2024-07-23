@@ -20,10 +20,9 @@
           <RoomThumbnail :room="room" :id="key" :key="key" />
         </div>
       </div>
-      <div class="panel panelcolor" style="width: 25%; height: 85vh;display: flex;justify-content: center;align-items: center">
-        <Chatter class="ttalker" :userId="userId" key="default_avatar_character_12345"
-        :avatar="avatar" :nickname="nickname" v-show="true"/>
-      </div>
+      <!-- <div class="panel" style="width: 25%; height: 85vh;display: flex;justify-content: center;align-items: center">
+
+      </div> -->
     </div>
     <v-footer
       padless
@@ -47,11 +46,10 @@
 // @ is an alias to /src
 import { mapActions, mapGetters, mapState } from 'vuex';
 import RoomThumbnail from '@/components/RoomThumbnail.vue';
-import Chatter from '@/components/Chatter.vue';
 
 export default {
   name: 'Home',
-  components: { RoomThumbnail, Chatter },
+  components: { RoomThumbnail },
   data: () => ({
     usersOnline: 0,
     flexBasisValues: ['25%'],
@@ -66,7 +64,7 @@ export default {
     ...mapGetters('user', ['getCurrentUser']),
   },
   methods: {
-    ...mapActions('rooms', ['getRooms', 'pushUser']),
+    ...mapActions('rooms', ['getRooms']),
     getRandomFlexBasis() {
       const randomFlexBasis = this.flexBasisValues[Math.floor(Math.random()
         * this.flexBasisValues.length)];
@@ -89,7 +87,7 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5vmin;
-  width: 75%;
+  width: 100%;
   height: fit-content
 }
 .panel {

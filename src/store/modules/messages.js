@@ -1,5 +1,8 @@
 /* eslint no-shadow: ["error", { "allow": ["state"] }] */
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
+import 'firebase/auth'; // Import the auth module explicitly if needed
+import 'firebase/database'; // Import other Firebase modules as needed
+import 'firebase/storage';
 
 // State object
 const state = {

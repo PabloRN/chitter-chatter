@@ -14,7 +14,7 @@
             <v-footer absolute bottom padless>
               <v-row no-gutters class="d-flex">
                <v-col class="text-start pl-3" sm="9" md="9" lg="11">
-                <strong>© CHAVATAR {{ new Date().getFullYear() }}</strong>
+                <strong>© TOONSTALK {{ new Date().getFullYear() }}</strong>
               </v-col>
               <v-col class="text-end pr-3" sm="3" md="3" lg="1" >
                 <language-switcher />

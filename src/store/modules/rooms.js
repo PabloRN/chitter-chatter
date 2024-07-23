@@ -1,6 +1,9 @@
 /* eslint-disable max-len */
 /* eslint-disable no-shadow */
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
+import 'firebase/auth'; // Import the auth module explicitly if needed
+import 'firebase/database'; // Import other Firebase modules as needed
+import 'firebase/storage';
 
 const state = {
   roomList: {},
@@ -78,15 +81,9 @@ const actions = {
       const defaultUrl = await defaultAvatarRef.getDownloadURL();
       const defaultMiniUrl = await defaultMiniAvatarRef.getDownloadURL();
       if (defaultUrl) {
-      // eslint-disable-next-line no-undef
-      // const tempUser = structuredClone(currentUser);
-      // Object.assign(tempUser, { avatar: defaultUrl });
         await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(defaultUrl);
       }
       if (defaultMiniUrl) {
-      // eslint-disable-next-line no-undef
-      // const tempUser = structuredClone(currentUser);
-      // Object.assign(tempUser, { avatar: defaultUrl });
         await firebase.database().ref(`users/${currentUser.userId}/miniAvatar/`).set(defaultMiniUrl);
       }
       const roomUsersKey = firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
@@ -103,6 +100,7 @@ const actions = {
       usersRoom.on('child_added', async (userSnap) => { // Get the user that enter to the room
         if (userSnap.val() !== null) {
           commit('ENTER_ROOM', {
+
             roomId, userId: userSnap.val(), roomUsersKey: userSnap.key, rootState,
           });
         }
@@ -164,16 +162,16 @@ const actions = {
       const storageRef = firebase.storage().ref();
       const avatarsRef = storageRef.child(`rooms/${roomId}/avatars/${rootState.user.currentUser.level}`);
       const tempRefs = await avatarsRef.listAll();
+
       await Promise.all(tempRefs.items.map((async (ref, index) => {
-        const starsRef = storageRef.child(ref.location.path);
-        // const miniavatarurl = await storageRef.child(`miniavatars/${ref.name}`);
+        const starsRef = storageRef.child(ref.fullPath);
         // const metadata = await starsRef.getMetadata();
         const url = await starsRef.getDownloadURL();
-        // const miniurl = await miniavatarurl.getDownloadURL();
         urlList.push({ avatarId: index, url });
       })));
       commit('GET_AVATARS_SUCCEED', urlList);
     } catch (error) {
+      console.log(error);
       commit('GET_AVATARS_FAILED');
     }
   },

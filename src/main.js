@@ -2,7 +2,7 @@ import Vue from 'vue';
 import { sync } from 'vuex-router-sync';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
 import App from './App.vue';
 import './registerServiceWorker';
 import router from './router';
