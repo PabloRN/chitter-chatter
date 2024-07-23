@@ -3,7 +3,7 @@
     <div class="login-dialog text-body-2 pa-4" style="width:100%; height:80vh;">
 <!-- The surrounding HTML is left untouched by FirebaseUI.
      Your app may use that space for branding, controls and other customizations.-->
-     <h1>Welcome to My Awesome App</h1>
+     <h1>Welcome toonstalker</h1>
      <div id="firebaseui-auth-container"></div>
      <div id="loader">Loading...</div>
 
@@ -28,7 +28,6 @@ export default {
   }),
   mounted() {
     this.setFirebaseUiInstance();
-    console.log('fue llamado');
   },
   computed: {
     // ...mapGetters('messages', ['getText']),

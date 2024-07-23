@@ -35,12 +35,13 @@ const actions = {
   userSignOut() {
     // const auth = firebase.auth().getAuth();
     firebase.auth().signOut().then(
-      () => router.push({ name: 'login' }),
+      () => router.push({ name: 'rooms' }),
     );
   },
   getUser({ commit, dispatch }) {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
+        console.log('useruseruseruser', user);
         // eslint-disable-next-line no-template-curly-in-string
         const ref = firebase.database().ref(`users/${user.uid}`);
         if (user.isAnonymous) {
@@ -64,7 +65,6 @@ const actions = {
             onlineState: true,
             status: 'online',
             isAnonymous: false,
-            userId: user.uid,
           });
         }
 
@@ -206,22 +206,27 @@ const actions = {
       console.log(error);
     }
   },
-  async setFirebaseUiInstance({ commit }) {
+  async setFirebaseUiInstance({ commit, rootState }) {
     // Temp variable to hold the anonymous user data if needed.
     let data = null;
     // Hold a reference to the anonymous current user.
     const anonymousUser = firebase.auth().currentUser;
+    console.log(anonymousUser);
     const ui = new firebaseui.auth.AuthUI(firebase.auth());
     try {
       const uiConfig = {
         callbacks: {
-          signInSuccessWithAuthResult(authResult, redirectUrl) {
+          async signInSuccessWithAuthResult(authResult, redirectUrl) {
             console.log({ redirectUrl, authResult });
             console.log('(authResult.emailVerified', authResult.user.emailVerified);
             if (authResult.user.emailVerified) {
-              commit('USER_UPGRADED', authResult.user.uid);
+              commit('USER_UPGRADED', { verifiedUser: authResult.user.uid, unverifiedUser: anonymousUser.uid });
             }
             // User successfully signed in.
+            await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
+            const { roomUsersKey } = state.currentUser.rooms[rootState.route.params.roomId];
+            await firebase.database().ref(`rooms/${rootState.route.params.roomId}/users/${roomUsersKey}/userId`).set(authResult.user.uid);
+            await anonymousUser.delete();
             // Return type determines whether we continue the redirect automatically
             // or whether we leave that to developer to handle.
             return false;
@@ -259,14 +264,20 @@ const actions = {
                 // redirection.
                 return firebase.auth().signInWithCredential(cred);
               })
-              .then((userCredential) => {
+              .then(async (userCredential) => {
                 const { user } = userCredential;
                 data.isAnonymous = false;
+                data.userId = user.uid;
                 console.log('dataXXX', data);
+                const { roomUsersKey } = state.currentUser.rooms[rootState.route.params.roomId];
+                await firebase.database().ref(`rooms/${rootState.route.params.roomId}/users/${roomUsersKey}/userId`).set(user.uid);
                 return firebase.database().ref(`users/${user.uid}`).set(data);
               })
               // Original Anonymous Auth instance now has the new user.
-              .then(() => anonymousUser.delete()) // Delete anonymous user.
+              .then(async () => {
+                anonymousUser.delete();
+                await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
+              }) // Delete anonymous user.
               .then(() => {
                 // Clear data in case a new user signs in, and the state change
                 // triggers.
@@ -344,9 +355,12 @@ const mutations = {
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };
   },
-  USER_UPGRADED(state, uid) {
+  USER_UPGRADED(state, { verifiedUser, unverifiedUser }) {
     state.currentUser.isAnonymous = false;
-    state.userData[uid].isAnonymous = false;
+    state.currentUser.userId = verifiedUser;
+    state.userData[verifiedUser] = state.userData[unverifiedUser];
+    state.userData[verifiedUser].isAnonymous = false;
+    state.userData[verifiedUser].delete();
   },
   SET_USER_MINIAVATAR_SUCCESS(state, { userId, miniAvatarUrl }) {
     if (state.userData[userId]) {

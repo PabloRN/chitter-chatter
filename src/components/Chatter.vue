@@ -342,6 +342,7 @@ export default {
         isAnonymous: this.getCurrentUser.nickname === 'anonymous',
       });
       this.userSignOut(this.userId);
+      this.cleanMessages();
     },
     chatterClicked(e) {
       e.preventDefault();
