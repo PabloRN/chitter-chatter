@@ -1,13 +1,38 @@
 <template>
   <v-scroll-y-reverse-transition>
-    <div class="login-dialog text-body-2 pa-4" style="width:100%; height:80vh;">
-<!-- The surrounding HTML is left untouched by FirebaseUI.
-     Your app may use that space for branding, controls and other customizations.-->
-     <h1>Welcome toonstalker</h1>
-     <div id="firebaseui-auth-container"></div>
-     <div id="loader">Loading...</div>
-
-    </div>
+    <v-card :loading="loading" class="mx-auto my-12" max-width="374"
+     transition="scale-transition" height="fit-content">
+      <template slot="progress">
+        <v-progress-linear color="deep-purple" height="10" indeterminate></v-progress-linear>
+      </template>
+      <v-img height="250" src="https://cdn.vuetifyjs.com/images/cards/cooking.png"></v-img>
+      <v-card-title> Naniii!?You are not logged in?</v-card-title>
+      <v-card-text>
+        <div class="my-4 text-subtitle-1">Hey, you need to log in to use this feature.</div>
+      </v-card-text>
+      <div id="firebaseui-auth-container"></div>
+      <div id="loader">Loading...</div>
+      <v-divider class="mx-4"></v-divider>
+      <v-card-title v-if="showProfileForm">Welcome toonstalker</v-card-title>
+      <div v-if="showProfileForm">
+        <v-card-text>
+          <p>This is your Nickname. You can change it now or anytime later in your profile</p>
+          <v-text-field
+            label="Your nickname"
+            :hint="`${userNickName} will be assigned if empty`"
+            persistent-hint
+            outlined
+            :value="userNickName"
+          ></v-text-field>
+        </v-card-text>
+      </div>
+      <v-card-actions>
+        <v-btn color="deep-purple lighten-2" text @click="closeDialogLogin"> Close </v-btn>
+        <v-btn v-if="showProfileForm" color="deep-purple lighten-2" text @click="updateNickName">
+          Save and close
+        </v-btn>
+      </v-card-actions>
+    </v-card>
   </v-scroll-y-reverse-transition>
 </template>
 
@@ -17,14 +42,14 @@ import 'firebaseui/dist/firebaseui.css';
 
 export default {
   name: 'privatedialogbubble',
-  components: {
-
-  },
+  components: {},
   props: {
     message: Array,
   },
   data: () => ({
-    text: '',
+    showProfileForm: false,
+    userNickName: '',
+    loading: false,
   }),
   mounted() {
     this.setFirebaseUiInstance();
@@ -32,35 +57,48 @@ export default {
   computed: {
     // ...mapGetters('messages', ['getText']),
     ...mapGetters('user', ['getCurrentUser']),
-    ...mapState('user', ['userData']),
+    ...mapState('user', ['userData', 'currentUser', 'signingInUpgraded']),
   },
   methods: {
-    ...mapActions('user', ['setFirebaseUiInstance']),
+    ...mapActions('user', ['setFirebaseUiInstance', 'updateUserNickName']),
 
     closeDialogLogin() {
       this.$emit('onCloseLoginDialog');
     },
+    updateNickName() {
+      if (this.userNickName !== '') this.updateUserNickName(this.userNickName);
+      this.$emit('onCloseLoginDialog');
+    },
   },
   watch: {
-
+    signingInUpgraded: {
+      handler(newVal, oldVal) {
+        // here having access to the new and old value
+        // do stuff
+        console.log({ newVal, oldVal });
+        if (newVal === true) {
+          this.userNickName = this.currentUser.nickname;
+          this.showProfileForm = true;
+        }
+      },
+    },
   },
 };
 </script>
 <style scoped>
-
-.closedialog{
+.closedialog {
   position: absolute;
-    right: 1px;
-    top: 1px;
-    z-index: 1;
+  right: 1px;
+  top: 1px;
+  z-index: 1;
 }
-.private-text{
+.private-text {
   margin: 10px;
   font-family: 'Nanum Pen Script', cursive !important;
-  font-size: 1.3rem ;
+  font-size: 1.3rem;
   line-height: 1.1;
 }
-.login-dialog{
+.login-dialog {
   display: flex;
   flex-direction: column;
   justify-content: center;

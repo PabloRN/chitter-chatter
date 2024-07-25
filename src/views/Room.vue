@@ -115,7 +115,7 @@ export default {
   }),
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList']),
-    ...mapState('user', ['currentUser', 'requestedBy', 'avatarUpdated']),
+    ...mapState('user', ['currentUser', 'requestedBy', 'avatarUpdated', 'userUpgraded', 'usersSwitched', 'userData']),
     ...mapState('messages', ['privateMessage', 'privateUsers', 'showMessagesStatus']),
     ...mapGetters('user', ['getCurrentUser']),
     chattersArray() {
@@ -204,6 +204,20 @@ export default {
         if (Object.keys(userDataNew).length > 0) {
           this.chatters.set(newUser.userId, userDataNew);
           this.chattersCounter += 1;
+        }
+      }
+    },
+    async userUpgraded(newVal) {
+      console.log('this.userData[this.usersSwitched.verifiedUser]', this.userData[this.usersSwitched.verifiedUser]);
+      const { rooms } = this.userData[this.usersSwitched.verifiedUser];
+      if (newVal === true && Object.keys(rooms).length > 0) {
+        if (Object.keys(rooms)[0] === this.$route.params.roomId) {
+          const userDataNew = await this.getUserData(this.usersSwitched.verifiedUser);
+          if (Object.keys(userDataNew).length > 0) {
+            this.chatters.delete(this.usersSwitched.unverifiedUser);
+            this.chatters.set(this.usersSwitched.verifiedUser, userDataNew);
+            this.chattersCounter += 1;
+          }
         }
       }
     },
