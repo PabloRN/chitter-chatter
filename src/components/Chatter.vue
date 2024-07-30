@@ -139,7 +139,6 @@ export default {
       'usersPosition',
       'userPositionModified',
       'userData',
-      'avatarUpdated',
       'userUpgraded',
       'currentUser',
     ]),

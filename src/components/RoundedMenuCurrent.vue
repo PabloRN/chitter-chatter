@@ -89,9 +89,9 @@
       }"
     >
     <div>
-      <v-icon> mdi mdi-logout-variant </v-icon>
+      <v-icon :disabled="getCurrentUser.isAnonymous"> mdi mdi-logout-variant </v-icon>
       </div>
-      <div class="icon-caption">Logout</div>
+      <div class="icon-caption" :disabled="getCurrentUser.isAnonymous">Logout</div>
     </v-btn>
     <v-btn
       :class="hideMenu ? 'hidden' : 'nothidden'"
@@ -183,7 +183,7 @@ export default {
           break;
         case 'signOut':
           this.toggleMenu();
-          this.$emit('signOut');
+          if (this.getCurrentUser.isAnonymous === false) this.$emit('signOut');
           break;
         case 'showMessages':
           this.toggleMenu();

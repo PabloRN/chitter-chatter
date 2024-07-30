@@ -19,15 +19,16 @@
           <p>This is your Nickname. You can change it now or anytime later in your profile</p>
           <v-text-field
             label="Your nickname"
-            :hint="`${userNickName} will be assigned if empty`"
+            :hint="`${tempNickName} will be assigned if empty`"
             persistent-hint
             outlined
-            :value="userNickName"
+            v-model="userNickName"
           ></v-text-field>
         </v-card-text>
       </div>
       <v-card-actions>
-        <v-btn color="deep-purple lighten-2" text @click="closeDialogLogin"> Close </v-btn>
+        <v-btn v-if = "!showProfileForm" color="deep-purple lighten-2"
+         text @click="closeDialogLogin"> Close </v-btn>
         <v-btn v-if="showProfileForm" color="deep-purple lighten-2" text @click="updateNickName">
           Save and close
         </v-btn>
@@ -49,6 +50,7 @@ export default {
   data: () => ({
     showProfileForm: false,
     userNickName: '',
+    tempNickName: '',
     loading: false,
   }),
   mounted() {
@@ -78,6 +80,8 @@ export default {
         console.log({ newVal, oldVal });
         if (newVal === true) {
           this.userNickName = this.currentUser.nickname;
+          this.tempNickName = JSON.parse(JSON.stringify(this.userNickName))
+            || this.currentUser.nickname;
           this.showProfileForm = true;
         }
       },

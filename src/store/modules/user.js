@@ -36,23 +36,27 @@ const getters = {
   },
 };
 const actions = {
-  userSignOut() {
+  userSignOut({ commit, state }) {
     // const auth = firebase.auth().getAuth();
     const { currentUser } = firebase.auth();
     const ref = firebase.database().ref(`users/${currentUser.uid}`);
     ref.update({ onlineState: false, status: 'offline' });
     firebase.auth().signOut().then(
       () => {
+        firebase.database().ref(`users/${state.currentUser.unverified}`).update({ [state.currentUser.unverified]: null });
+        firebase.database().ref(`users/${state.currentUser.unverified}`).off();
+        firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).update({ unverified: null });
+        ref.update({ unverified: null });
+        commit('SET_USER_SIGNED_OUT');
         router.push({ name: 'rooms' });
       },
     );
   },
   getUser({ commit, dispatch }) {
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(async (user) => {
       if (user) {
         // eslint-disable-next-line no-template-curly-in-string
         const ref = firebase.database().ref(`users/${user.uid}`);
-        console.log('onAuthStateChanged', user);
         if (user.isAnonymous) {
           const uidSnippet = user.uid.substring(0, 4);
           const nickname = `anon_${uidSnippet}`;
@@ -70,13 +74,14 @@ const actions = {
           ref.set(initialUser);
           // ref.onDisconnect().remove();
         } else {
+          // const snap = await ref.get();
+          // console.log('reffffff', snap.val());
           ref.update({
             onlineState: true,
             status: 'online',
             isAnonymous: false,
           });
         }
-
         ref.onDisconnect().update({
           onlineState: false,
           status: 'offline',
@@ -220,7 +225,7 @@ const actions = {
     const anonymousUser = firebase.auth().currentUser;
     console.log('Anonymous User:', anonymousUser);
 
-    const ui = new firebaseui.auth.AuthUI(firebase.auth());
+    const ui = firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(firebase.auth());
 
     try {
       const uiConfig = {
@@ -265,9 +270,6 @@ const actions = {
               // Sign in with the new credential
               const userCredential = await firebase.auth().signInWithCredential(cred);
               const { user } = userCredential;
-              console.log('userCredential:', user);
-              console.log('Anonymous User ID:', anonymousUser.uid);
-              console.log('State Current User ID:', state.currentUser.userId);
 
               // Ensure the data being transferred belongs to the anonymous user
               if (data.userId !== anonymousUser.uid) {
@@ -280,14 +282,16 @@ const actions = {
 
               // Transfer the user data to the new user ID
               await firebase.database().ref(`users/${user.uid}`).set(data);
+              await firebase.database().ref(`users/${user.uid}`).update({ unverified: anonymousUser.uid });
 
               // Transfer the room user data
               const { roomUsersKey } = state.currentUser.rooms[rootState.route.params.roomId];
               await firebase.database().ref(`rooms/${rootState.route.params.roomId}/users/${roomUsersKey}/userId`).set(user.uid);
 
               // Delete the anonymous user and its data
-              await anonymousUser.delete();
+
               await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
+              await anonymousUser.delete();
 
               // Commit the Vuex mutation
               commit('USER_UPGRADED', { verifiedUser: user.uid, unverifiedUser: anonymousUser.uid });
@@ -359,6 +363,7 @@ const mutations = {
     // Update currentUser
     Vue.set(state.currentUser, 'isAnonymous', false);
     Vue.set(state.currentUser, 'userId', verifiedUser);
+    Vue.set(state.currentUser, 'unverified', unverifiedUser);
 
     // Transfer user data
     Vue.set(state.userData, verifiedUser, {
@@ -382,8 +387,14 @@ const mutations = {
   },
   SET_USER_NICKNAME(state, nickName) {
     state.currentUser.nickname = nickName;
+    firebase.database().ref(`users/${state.currentUser.userId}`).update({ nickname: nickName });
     state.userData[state.currentUser.userId].nickname = nickName;
     state.userUpgraded = true;
+  },
+  SET_USER_SIGNED_OUT(state) {
+    state.signingInUpgraded = false;
+    state.userUpgraded = false;
+    state.currentUser.unverified = null;
   },
   SET_USER_MINIAVATAR_SUCCESS(state, { userId, miniAvatarUrl }) {
     if (state.userData[userId]) {
