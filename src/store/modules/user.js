@@ -1,6 +1,11 @@
 /* eslint-disable max-len */
 /* eslint-disable no-shadow */
-import * as firebase from 'firebase';
+import Vue from 'vue';
+import firebase from 'firebase/app';
+import * as firebaseui from 'firebaseui';
+import 'firebase/auth'; // Import the auth module explicitly if needed
+import 'firebase/database'; // Import other Firebase modules as needed
+import 'firebase/storage';
 import router from '@/router/index';
 import extractImageName from '@/utils/avatarName';
 
@@ -20,6 +25,9 @@ const state = {
   requestedBy: '',
   avatarUpdated: {},
   roomIn: {},
+  signingInUpgraded: false,
+  userUpgraded: false,
+  usersSwitched: {},
 };
 
 const getters = {
@@ -28,22 +36,31 @@ const getters = {
   },
 };
 const actions = {
-  userSignOut() {
+  userSignOut({ commit, state }) {
     // const auth = firebase.auth().getAuth();
+    const { currentUser } = firebase.auth();
+    const ref = firebase.database().ref(`users/${currentUser.uid}`);
+    ref.update({ onlineState: false, status: 'offline' });
     firebase.auth().signOut().then(
-      () => router.push({ name: 'login' }),
+      () => {
+        firebase.database().ref(`users/${state.currentUser.unverified}`).update({ [state.currentUser.unverified]: null });
+        firebase.database().ref(`users/${state.currentUser.unverified}`).off();
+        firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).update({ unverified: null });
+        ref.update({ unverified: null });
+        commit('SET_USER_SIGNED_OUT');
+        router.push({ name: 'rooms' });
+      },
     );
   },
   getUser({ commit, dispatch }) {
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(async (user) => {
       if (user) {
         // eslint-disable-next-line no-template-curly-in-string
         const ref = firebase.database().ref(`users/${user.uid}`);
-
         if (user.isAnonymous) {
           const uidSnippet = user.uid.substring(0, 4);
           const nickname = `anon_${uidSnippet}`;
-          ref.set({
+          const initialUser = {
             nickname,
             avatar: '',
             age: 0,
@@ -52,10 +69,19 @@ const actions = {
             userId: user.uid,
             onlineState: true,
             status: 'online',
-          });
+            isAnonymous: true,
+          };
+          ref.set(initialUser);
           // ref.onDisconnect().remove();
+        } else {
+          // const snap = await ref.get();
+          // console.log('reffffff', snap.val());
+          ref.update({
+            onlineState: true,
+            status: 'online',
+            isAnonymous: false,
+          });
         }
-
         ref.onDisconnect().update({
           onlineState: false,
           status: 'offline',
@@ -194,6 +220,106 @@ const actions = {
       console.log(error);
     }
   },
+  async setFirebaseUiInstance({ commit, rootState, state }) {
+    let data = null;
+    const anonymousUser = firebase.auth().currentUser;
+    console.log('Anonymous User:', anonymousUser);
+
+    const ui = firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(firebase.auth());
+
+    try {
+      const uiConfig = {
+        callbacks: {
+          async signInSuccessWithAuthResult(authResult, redirectUrl) {
+            console.log({ redirectUrl, authResult });
+            console.log('authResult.emailVerified:', authResult.user.emailVerified);
+
+            if (authResult.user.emailVerified) {
+              commit('USER_UPGRADED', { verifiedUser: authResult.user.uid, unverifiedUser: anonymousUser.uid });
+            }
+
+            await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
+            const { roomUsersKey } = state.currentUser.rooms[rootState.route.params.roomId];
+            await firebase.database().ref(`rooms/${rootState.route.params.roomId}/users/${roomUsersKey}/userId`).set(authResult.user.uid);
+            await anonymousUser.delete();
+
+            return false;
+          },
+          uiShown() {
+            document.getElementById('loader').style.display = 'none';
+          },
+          async signInFailure(error) {
+            console.log('1 signInFailure error:', error);
+            if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
+              return Promise.resolve();
+            }
+
+            const cred = error.credential;
+            console.log('2 credential:', cred);
+
+            try {
+              // Save anonymous user data
+              const snapshot = await firebase.database().ref(`users/${anonymousUser.uid}`).once('value');
+              data = snapshot.val();
+              console.log('3 anonymous user data:', data);
+
+              if (!data) {
+                throw new Error('No anonymous user data found.');
+              }
+
+              // Sign in with the new credential
+              const userCredential = await firebase.auth().signInWithCredential(cred);
+              const { user } = userCredential;
+
+              // Ensure the data being transferred belongs to the anonymous user
+              if (data.userId !== anonymousUser.uid) {
+                throw new Error('Data does not belong to the anonymous user.');
+              }
+
+              // Update the user data with the new user ID
+              data.isAnonymous = false;
+              data.userId = user.uid;
+
+              // Transfer the user data to the new user ID
+              await firebase.database().ref(`users/${user.uid}`).set(data);
+              await firebase.database().ref(`users/${user.uid}`).update({ unverified: anonymousUser.uid });
+
+              // Transfer the room user data
+              const { roomUsersKey } = state.currentUser.rooms[rootState.route.params.roomId];
+              await firebase.database().ref(`rooms/${rootState.route.params.roomId}/users/${roomUsersKey}/userId`).set(user.uid);
+
+              // Delete the anonymous user and its data
+
+              await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
+              await anonymousUser.delete();
+
+              // Commit the Vuex mutation
+              commit('USER_UPGRADED', { verifiedUser: user.uid, unverifiedUser: anonymousUser.uid });
+
+              return Promise.resolve(); // Return a resolved promise to indicate successful handling
+            } catch (err) {
+              console.error('Error during sign-in failure handling:', err);
+              return Promise.reject(err); // Return a rejected promise to indicate an error
+            }
+          },
+        },
+        signInFlow: 'popup',
+        signInOptions: [
+          firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          firebase.auth.EmailAuthProvider.PROVIDER_ID,
+        ],
+        credentialHelper: firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
+        autoUpgradeAnonymousUsers: true,
+        tosUrl: '<your-tos-url>',
+        privacyPolicyUrl: '<your-privacy-policy-url>',
+      };
+
+      ui.start('#firebaseui-auth-container', uiConfig);
+    } catch (error) {
+      console.log(error);
+    }
+  },
+
   async loginAnonymously() {
     // commit('SET_USER_AVATAR');
     firebase.auth().signInAnonymously()
@@ -209,6 +335,9 @@ const actions = {
           console.error(errorMessage);
         }
       });
+  },
+  updateUserNickName({ commit }, nickName) {
+    commit('SET_USER_NICKNAME', nickName);
   },
 };
 
@@ -230,8 +359,47 @@ const mutations = {
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };
   },
+  USER_UPGRADED(state, { verifiedUser, unverifiedUser }) {
+    // Update currentUser
+    Vue.set(state.currentUser, 'isAnonymous', false);
+    Vue.set(state.currentUser, 'userId', verifiedUser);
+    Vue.set(state.currentUser, 'unverified', unverifiedUser);
+
+    // Transfer user data
+    Vue.set(state.userData, verifiedUser, {
+      ...state.userData[unverifiedUser],
+      userId: verifiedUser,
+      isAnonymous: false,
+    });
+
+    // Transfer user position
+    Vue.set(state.usersPosition, verifiedUser, state.currentUser.position);
+    Vue.set(state.avatarUpdated, 'url', state.currentUser.avatar);
+    Vue.set(state.avatarUpdated, 'userId', state.currentUser.userId);
+
+    // Object.assign(state.avatarUpdated, { url: state.userData[verifiedUser].avatar, userId: verifiedUser });
+
+    // Remove unverified user data
+    Vue.delete(state.userData, unverifiedUser);
+    Vue.delete(state.usersPosition, unverifiedUser);
+    state.usersSwitched = { verifiedUser, unverifiedUser };
+    state.signingInUpgraded = true;
+  },
+  SET_USER_NICKNAME(state, nickName) {
+    state.currentUser.nickname = nickName;
+    firebase.database().ref(`users/${state.currentUser.userId}`).update({ nickname: nickName });
+    state.userData[state.currentUser.userId].nickname = nickName;
+    state.userUpgraded = true;
+  },
+  SET_USER_SIGNED_OUT(state) {
+    state.signingInUpgraded = false;
+    state.userUpgraded = false;
+    state.currentUser.unverified = null;
+  },
   SET_USER_MINIAVATAR_SUCCESS(state, { userId, miniAvatarUrl }) {
-    state.userData[userId].miniAvatar = miniAvatarUrl;
+    if (state.userData[userId]) {
+      state.userData[userId].miniAvatar = miniAvatarUrl;
+    }
   },
   SET_CURRENT_USER_AVATAR(state, { avatar, miniAvatar }) {
     state.currentUser.miniAvatar = miniAvatar;

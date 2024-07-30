@@ -14,9 +14,9 @@
             </v-list-item-content>
 
             <v-row align="center" justify="end">
-              <v-icon class="mr-1 roomtitle"> mdi-account-multiple-plus </v-icon>
+              <!-- <v-icon class="mr-1 roomtitle"> mdi-account-multiple-plus </v-icon>
               <span class="subheading mr-2 roomtitle">{{ usersOnline || 0 }}</span>
-              <span class="mr-1">·</span>
+              <span class="mr-1">·</span> -->
               <v-icon class="mr-1 roomtitle"> mdi-account-group </v-icon>
               <span class="subheading roomtitle">{{ usersOnline || 0 }}</span>
             </v-row>

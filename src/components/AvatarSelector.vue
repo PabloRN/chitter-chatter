@@ -4,14 +4,62 @@
     <v-bottom-sheet v-model="sheet" width="50%">
       <v-sheet class="text-center" height="250px">
         <div class="py-1">
-          <div style="width:95%;margin:20px auto;height:200px">
+          <div style="width: 95%; margin: 20px auto; height: 200px">
+            <v-dialog v-model="showLoginDialog" persistent max-width="290">
+              <v-card>
+                <v-card-title class="text-h5"> Naniii!?You are not logged in? </v-card-title>
+                <v-card-text>Hey, you need to log in to use this feature.</v-card-text>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn
+                    color="green darken-1"
+                    text
+                    @click="
+                      () => {
+                        showLoginDialog = false;
+                        $emit('onClose');
+                      }
+                    "
+                  >
+                    Not now
+                  </v-btn>
+                  <v-btn
+                    color="green darken-1"
+                    text
+                    @click="
+                      () => {
+                        showLoginDialog = false;
+                        $emit('onShowLoginDialog');
+                      }
+                    "
+                  >
+                    Log in
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
             <!-- Using the slider component -->
-            <slider ref="slider" :options="options" style=" width:100%">
+            <slider ref="slider" :options="options" style="width: 100%">
               <!-- slideritem wrapped package with the components you need -->
-              <slideritem class="slider-item-custom" v-for="(item, index) in avatarsList" :key="index"
-                 style="width:10%;margin-right: 2%;">
-                <v-img contain style="background-size: contain;"
-                 @click="(event) => { avatarSelected(event, item) }" class="chatter" height="200" width="70" :src="item.url"></v-img>
+              <slideritem
+                class="slider-item-custom"
+                v-for="(item, index) in avatarsList"
+                :key="index"
+                style="width: 10%; margin-right: 2%"
+              >
+                <v-img
+                  contain
+                  style="background-size: contain"
+                  @click="
+                    (event) => {
+                      avatarSelected(event, item);
+                    }
+                  "
+                  class="chatter"
+                  height="200"
+                  width="70"
+                  :src="item.url"
+                ></v-img>
               </slideritem>
               <!-- Customizable loading -->
               <div slot="loading">loading...</div>
@@ -28,7 +76,6 @@ import { mapActions, mapState } from 'vuex';
 import { slider, slideritem } from 'vue-concise-slider';
 
 export default {
-
   components: {
     slider,
     slideritem,
@@ -40,8 +87,10 @@ export default {
     },
   },
   data: () => ({
+    showLoginDialog: false,
     isLoading: false,
     sheet: false,
+    itemSelectedUrl: '',
     // Slider configuration [obj]
     options: {
       currentPage: 0,
@@ -58,6 +107,7 @@ export default {
   }),
   computed: {
     ...mapState('rooms', ['avatarsList']),
+    ...mapState('user', ['currentUser', 'userUpgraded']),
   },
   created() {
     this.avatars = this.avatarsList;
@@ -82,8 +132,13 @@ export default {
     avatarSelected(e, itemSelected) {
       e.stopPropagation();
       e.preventDefault();
-      this.changeAvatar(itemSelected.url);
-      this.$emit('onClose');
+      if (!this.currentUser.isAnonymous) {
+        this.changeAvatar(itemSelected.url);
+        this.$emit('onClose');
+      } else {
+        this.itemSelectedUrl = itemSelected.url;
+        this.showLoginDialog = true;
+      }
     },
     // onInit(data) {
     //   console.log(data);
@@ -93,10 +148,16 @@ export default {
     showAvatarSelector(newVal) {
       this.sheet = newVal;
     },
+    async userUpgraded(newVal) {
+      console.log('userUpgraded', this.itemSelectedUrl);
+      if (newVal === true && this.itemSelectedUrl !== '') {
+        this.changeAvatar(this.itemSelectedUrl);
+      }
+    },
   },
 };
 </script>
-<style >
+<style>
 .login_card {
   background-color: transparent !important;
 }
@@ -105,6 +166,6 @@ export default {
   width: '12%' !important;
   margin-right: '2%' !important;
   border: 1px solid #000000;
-  cursor: pointer!important;
+  cursor: pointer !important;
 }
 </style>
