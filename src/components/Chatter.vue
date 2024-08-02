@@ -369,7 +369,7 @@ export default {
   },
   watch: {
     roomMessages(newVal) {
-      if (newVal[newVal.length - 1].userId === this.actualUserId) {
+      if (newVal.length > 0 && newVal[newVal.length - 1].userId === this.actualUserId) {
         this.message = newVal[newVal.length - 1].text;
       }
     },

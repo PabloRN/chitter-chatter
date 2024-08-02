@@ -208,7 +208,6 @@ export default {
       }
     },
     async userUpgraded(newVal) {
-      console.log('this.userData[this.usersSwitched.verifiedUser]', this.userData[this.usersSwitched.verifiedUser]);
       const { rooms } = this.userData[this.usersSwitched.verifiedUser];
       if (newVal === true && Object.keys(rooms).length > 0) {
         if (Object.keys(rooms)[0] === this.$route.params.roomId) {

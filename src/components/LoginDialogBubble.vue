@@ -68,7 +68,7 @@ export default {
       this.$emit('onCloseLoginDialog');
     },
     updateNickName() {
-      if (this.userNickName !== '') this.updateUserNickName(this.userNickName);
+      this.updateUserNickName(this.userNickName !== '' ? this.userNickName : this.tempNickName);
       this.$emit('onCloseLoginDialog');
     },
   },
