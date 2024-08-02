@@ -149,10 +149,11 @@ export default {
       this.sheet = newVal;
     },
     async userUpgraded(newVal) {
-      console.log('userUpgraded', this.itemSelectedUrl);
-      if (newVal === true && this.itemSelectedUrl !== '') {
-        this.changeAvatar(this.itemSelectedUrl);
-      }
+      setTimeout(() => {
+        if (newVal === true && this.itemSelectedUrl !== '') {
+          this.changeAvatar(this.itemSelectedUrl);
+        }
+      }, 1000);
     },
   },
 };
