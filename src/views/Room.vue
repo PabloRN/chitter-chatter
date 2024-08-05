@@ -114,7 +114,7 @@ export default {
     chattersCounter: 0,
   }),
   computed: {
-    ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList']),
+    ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList', 'currentRoom']),
     ...mapState('user', ['currentUser', 'requestedBy', 'avatarUpdated', 'userUpgraded', 'usersSwitched', 'userData']),
     ...mapState('messages', ['privateMessage', 'privateUsers', 'showMessagesStatus']),
     ...mapGetters('user', ['getCurrentUser']),
@@ -124,7 +124,7 @@ export default {
   },
   methods: {
     ...mapActions('user', ['getUserData']),
-    ...mapActions('rooms', ['getRooms', 'removeUser', 'getAvatars', 'pushUser']),
+    ...mapActions('rooms', ['getRooms', 'removeUser', 'getAvatars', 'pushUser', 'getRoomDetails']),
     ...mapActions('messages', [
       'getDialogs',
       'confirmPrivate',
@@ -134,15 +134,15 @@ export default {
     async initUsers() {
       setTimeout(async () => {
         if (
-          Object.keys(this.roomList).length > 0
-        && this.roomList[this.$route.params.roomId].users
-        && Object.keys(this.roomList[this.$route.params.roomId].users).length > 0
+          Object.keys(this.currentRoom).length > 0
+        && this.currentRoom.users
+        && Object.keys(this.currentRoom.users).length > 0
         ) {
-          const userIDs = Object.keys(this.roomList[this.$route.params.roomId].users);
-
+          const userIDs = Object.keys(this.currentRoom.users);
+          console.log('userIDs', userIDs);
           // eslint-disable-next-line no-restricted-syntax
           for (const roomUserID of userIDs) {
-            const { userId } = this.roomList[this.$route.params.roomId].users[roomUserID];
+            const { userId } = this.currentRoom.users[roomUserID];
             // eslint-disable-next-line no-await-in-loop
             const userDataNew = await this.getUserData(userId);
             if (Object.keys(userDataNew).length > 0) {
@@ -175,15 +175,15 @@ export default {
   mounted() {
     // eslint-disable-next-line max-len
     this.innerHeight = window.innerHeight;
-    if (Object.keys(this.roomList).length === 0) {
-      this.getRooms()
+    if (Object.keys(this.currentRoom).length === 0) {
+      this.getRoomDetails(this.$route.params.roomId)
         // eslint-disable-next-line max-len
         .then(() => {
-          this.background = this.roomList[this.$route.params.roomId].picture;
+          this.background = this.currentRoom.picture;
           this.initUsers();
         });
     } else {
-      this.background = this.roomList[this.$route.params.roomId].picture;
+      this.background = this.currentRoom.picture;
       this.initUsers();
     }
     this.getDialogs(this.$route.params.roomId);
@@ -213,12 +213,32 @@ export default {
         if (Object.keys(rooms)[0] === this.$route.params.roomId) {
           const userDataNew = await this.getUserData(this.usersSwitched.verifiedUser);
           if (Object.keys(userDataNew).length > 0) {
+            console.log('userUpgradedXXXX', userDataNew);
             this.chatters.delete(this.usersSwitched.unverifiedUser);
             this.chatters.set(this.usersSwitched.verifiedUser, userDataNew);
             this.chattersCounter += 1;
           }
         }
       }
+    },
+    async otherUserUpdated(newVal) {
+      console.log('other user updated', newVal, this.currentUser);
+      if (newVal !== '' && this.currentUser !== newVal) {
+        // const { rooms } = this.userData[this.usersSwitched.verifiedUser];
+        console.log('other user updated', newVal);
+      }
+
+      // if (newVal === true && Object.keys(rooms).length > 0) {
+      //   if (Object.keys(rooms)[0] === this.$route.params.roomId) {
+      //     const userDataNew = await this.getUserData(this.usersSwitched.verifiedUser);
+      //     if (Object.keys(userDataNew).length > 0) {
+      //       console.log('userUpgradedXXXX', userDataNew);
+      //       this.chatters.delete(this.usersSwitched.unverifiedUser);
+      //       this.chatters.set(this.usersSwitched.verifiedUser, userDataNew);
+      //       this.chattersCounter += 1;
+      //     }
+      //   }
+      // }
     },
     userExit({ roomId, userId }) {
       if (roomId === this.$route.params.roomId) {

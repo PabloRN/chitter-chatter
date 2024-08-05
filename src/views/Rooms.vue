@@ -72,7 +72,7 @@ export default {
     },
   },
   created() {
-    this.getRooms();
+    this.getRooms();// TODO: we don't need all the data for all rooms
   },
   mounted() {
     // console.log('usersOnline', this.usersOnline);

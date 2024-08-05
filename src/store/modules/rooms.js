@@ -13,6 +13,7 @@ const state = {
   avatarsList: [],
   userDisconnected: false,
   usersOnlineNow: 0,
+  currentRoom: {},
 };
 
 const getters = {
@@ -71,10 +72,24 @@ const actions = {
     }
     return 'ready';
   },
+  async getRoomDetails({ commit }, roomId) {
+    // commit('GET_ROOM_DETAILS');
+    try {
+      const roomReference = await firebase.database().ref(`rooms/${roomId}`);
+      const snapshot = await roomReference.once('value');
+      commit('SET_ROOM_DETAILS_SUCCESS', snapshot.val());
+      return snapshot.val();
+    } catch (error) {
+      commit('SET_ROOMS_FAIL');
+      console.log(error);
+      return error;
+    }
+  },
   async pushUser({ commit, dispatch, rootState }, { roomId, userId }) {
     commit('PUSH_USER');
     try {
       const { currentUser } = rootState.user;
+      console.log('currentUser', currentUser);
       const storageRef = firebase.storage().ref();
       const defaultAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/defaultAvatar/defaultAvatar.png`);
       const defaultMiniAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/miniavatars/defaultAvatar_head.png`);
@@ -205,6 +220,9 @@ const mutations = {
   PUSH_USER_SUCCESS(state) {
     state.pushingUser = false;
   },
+  SET_ROOM_DETAILS_SUCCESS(state, roomDetails) {
+    state.currentRoom = roomDetails;
+  },
   ADD_ONLINE_1(state, { roomId }) {
     Object.assign(state.roomList[roomId], { usersOnline: state.roomList[roomId].usersOnline ? state.roomList[roomId].usersOnline += 1 : 1 });
     state.usersOnlineNow += 1;
@@ -225,23 +243,29 @@ const mutations = {
   ENTER_ROOM(state, {
     roomId, userId, roomUsersKey,
   }) {
-    if (state.roomList[roomId].users) {
-      Object.assign(state.roomList[roomId].users, { [roomUsersKey]: userId });
+    // if (state.roomList[roomId].users) {
+    //   Object.assign(state.roomList[roomId].users, { [roomUsersKey]: userId });
+    // } else {
+    //   Object.assign(state.roomList[roomId], { users: { [roomUsersKey]: userId } });
+    // }
+    if (state.currentRoom.users) {
+      Object.assign(state.currentRoom.users, { [roomUsersKey]: userId });
     } else {
-      Object.assign(state.roomList[roomId], { users: { [roomUsersKey]: userId } });
+      Object.assign(state.currentRoom, { users: { [roomUsersKey]: userId } });
     }
     state.userAdded = { roomId, ...userId };
     this.state.user.roomIn = { roomId, roomUsersKey };
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
-    delete state.roomList[roomId].users[roomUsersKey];
     if (userId === this.state.user.currentUser.userId) {
       this.state.user.userData = {};
       this.state.user.usersPosition = {};
       this.state.user.roomIn = {};
+      state.currentRoom = {};
     } else {
       delete this.state.user.userData[userId];
       delete this.state.user.usersPosition[userId];
+      delete state.currentRoom.users[roomUsersKey];
     }
 
     this.state.user.userPositionModified = true;
