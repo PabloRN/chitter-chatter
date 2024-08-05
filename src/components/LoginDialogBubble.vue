@@ -13,7 +13,7 @@
       <div id="firebaseui-auth-container"></div>
       <div id="loader">Loading...</div>
       <v-divider class="mx-4"></v-divider>
-      <v-card-title v-if="showProfileForm">Welcome toonstalker</v-card-title>
+      <v-card-title v-if="showProfileForm">Welcome {{ ` ${tempNickName}` }}</v-card-title>
       <div v-if="showProfileForm">
         <v-card-text>
           <p>This is your Nickname. You can change it now or anytime later in your profile</p>
@@ -23,6 +23,8 @@
             persistent-hint
             outlined
             v-model="userNickName"
+            :maxlength="12"
+            :minlength="3"
           ></v-text-field>
         </v-card-text>
       </div>

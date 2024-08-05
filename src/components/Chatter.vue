@@ -1,33 +1,63 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div style="text-align: center;" :class="isCurrentUser ? 'current-user' : 'user'" :id="actualUserId" :ref="actualUserId" @click="chatterClicked">
-    <DialogBubble :ref="`$bubble_${actualUserId}`" :id="`$bubble_${actualUserId}`" :message="message" :class="dialogSide"/>
-    <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" style="position: absolute;top: -32px;left: -14px; color: #ffffff;
-       text-shadow: 1px 1px 2px rgba(0,0,0,1);font-family: 'Nanum Pen Script', cursive!important;font-size: 1.5em;">{{nickname}}</div>
-    <v-img
-    contain
-     :id="`img-${actualUserId}`"
-     class="avatar-image"
-     :src="avatar"></v-img>
-    <RoundedMenu v-on="{
-      ['privateMessage']: invitePrivate,
-    }" ref="roundedmenu" v-show="!isCurrentUser" />
-    <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-show="isCurrentUser" v-on="{
-      ['exitRoom']: leaveRoom,
-      ['signOut']: () => userSignOutCall(),
-      ['showAvatarList']: () => this.showAvatarSelector = !this.showAvatarSelector,
-      ['showMessages']: () =>  toggleMessages(),
-    }" />
-    <TypeBox :ref="`keyboard_${actualUserId}`"  :id="`keyboard_${actualUserId}`" v-if="isCurrentUser" :moving="mouseMoved" />
-    <AvatarSelector :ref="`avatar-selector_${actualUserId}`"  :id="`avatar-selector_${actualUserId}`" :showAvatarSelector="showAvatarSelector"  v-on="{
-      ['onClose']: () => {
-        showAvatarSelector = false;
-      },
-      ['onShowLoginDialog']: () => {
-        showLoginDialog = true;
-      },
-    }"/>
-      <v-dialog
+  <div
+    style="text-align: center"
+    :class="isCurrentUser ? 'current-user' : 'user'"
+    :id="actualUserId"
+    :ref="actualUserId"
+    @click="chatterClicked"
+  >
+    <DialogBubble
+      :ref="`$bubble_${actualUserId}`"
+      :id="`$bubble_${actualUserId}`"
+      :message="message"
+      :class="dialogSide"
+    />
+    <div
+      v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'"
+      class="nicknameWrapper"
+    >
+      <div class="nickname">{{ nickname }}</div>
+    </div>
+    <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
+    <RoundedMenu
+      v-on="{
+        ['privateMessage']: invitePrivate,
+      }"
+      ref="roundedmenu"
+      v-show="!isCurrentUser"
+    />
+    <RoundedMenuCurrent
+      :moving="mouseMoved"
+      ref="roundedmenucurrent"
+      v-show="isCurrentUser"
+      v-on="{
+        ['exitRoom']: leaveRoom,
+        ['signOut']: () => userSignOutCall(),
+        ['showAvatarList']: () => (this.showAvatarSelector = !this.showAvatarSelector),
+        ['showMessages']: () => toggleMessages(),
+      }"
+    />
+    <TypeBox
+      :ref="`keyboard_${actualUserId}`"
+      :id="`keyboard_${actualUserId}`"
+      v-if="isCurrentUser"
+      :moving="mouseMoved"
+    />
+    <AvatarSelector
+      :ref="`avatar-selector_${actualUserId}`"
+      :id="`avatar-selector_${actualUserId}`"
+      :showAvatarSelector="showAvatarSelector"
+      v-on="{
+        ['onClose']: () => {
+          showAvatarSelector = false;
+        },
+        ['onShowLoginDialog']: () => {
+          showLoginDialog = true;
+        },
+      }"
+    />
+    <v-dialog
       persistent
       scrollable
       v-if="showLoginDialog"
@@ -36,7 +66,10 @@
       min-height="80vh"
       class="pa-5 ma-5 private-dialog"
     >
-      <LoginDialogBubble @onCloseLoginDialog="showLoginDialog = false" @onSavedNickName="updateNickName" />
+      <LoginDialogBubble
+        @onCloseLoginDialog="showLoginDialog = false"
+        @onSavedNickName="updateNickName"
+      />
     </v-dialog>
   </div>
 </template>
@@ -147,7 +180,12 @@ export default {
     },
   },
   methods: {
-    ...mapActions('user', ['initPosition', 'changePosition', 'userSignOut', 'updateNickNameByUser']),
+    ...mapActions('user', [
+      'initPosition',
+      'changePosition',
+      'userSignOut',
+      'updateNickNameByUser',
+    ]),
     ...mapActions('messages', ['sendPrivateMessageRequest', 'showMessages', 'cleanMessages']),
     ...mapActions('rooms', ['removeUser']),
     updateNickName() {
@@ -382,13 +420,12 @@ export default {
     // },
     userPositionModified() {
       if (this.usersPosition[this.actualUserId] && this.usersPosition[this.actualUserId].position) {
-        const {
-          left,
-          top,
-        } = this.usersPosition[this.actualUserId].position;
+        const { left, top } = this.usersPosition[this.actualUserId].position;
         this.chatterManager.style.left = left;
         this.chatterManager.style.top = top;
-        this.dialogSide = this.actualUserId !== 'default_avatar_character_12345' ? this.findClosestDivPosition(this.actualUserId) : 'position-left';
+        this.dialogSide = this.actualUserId !== 'default_avatar_character_12345'
+          ? this.findClosestDivPosition(this.actualUserId)
+          : 'position-left';
       }
     },
   },
@@ -427,7 +464,22 @@ export default {
 .private-dialog {
   height: 80vh;
 }
-.current-user{
+.current-user {
   z-index: 990;
+}
+.nicknameWrapper {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  width: 100%;
+
+}
+.nickname{
+  color: #ffffff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 1);
+  font-family: 'Nanum Pen Script', cursive !important;
+  font-size: 1.5em;
+  word-wrap: none;
+
 }
 </style>
