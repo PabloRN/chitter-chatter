@@ -72,11 +72,29 @@ const actions = {
     }
     return 'ready';
   },
-  async getRoomDetails({ commit }, roomId) {
+  async getRoomDetails({ commit, dispatch, rootState }, roomId) {
     // commit('GET_ROOM_DETAILS');
     try {
       const roomReference = await firebase.database().ref(`rooms/${roomId}`);
       const snapshot = await roomReference.once('value');
+
+      const usersReference = firebase.database().ref(`rooms/${roomId}/users`);
+
+      usersReference.on('child_added', async (userSnap) => { // Get the user that enter to the room
+        if (userSnap.val() !== null) {
+          commit('ENTER_ROOM', {
+
+            roomId, userId: userSnap.val(), roomUsersKey: userSnap.key, rootState,
+          });
+        }
+      });
+      usersReference.on('child_removed', (userSnap) => {
+        const { userId } = userSnap.val();
+        dispatch('removeUser', { roomId, userId, roomUsersKey: userSnap.key });
+      });
+      usersReference.on('value', (userSnap) => {
+        console.log('xxxx', userSnap.val());
+      });
       commit('SET_ROOM_DETAILS_SUCCESS', snapshot.val());
       return snapshot.val();
     } catch (error) {
@@ -85,7 +103,7 @@ const actions = {
       return error;
     }
   },
-  async pushUser({ commit, dispatch, rootState }, { roomId, userId }) {
+  async pushUser({ commit, rootState }, { roomId, userId }) {
     commit('PUSH_USER');
     try {
       const { currentUser } = rootState.user;
@@ -109,21 +127,7 @@ const actions = {
       refRoom.onDisconnect().update({
         userId: null,
       });
-      const usersRoom = firebase.database()
-        .ref(`rooms/${roomId}/users/`);
 
-      usersRoom.on('child_added', async (userSnap) => { // Get the user that enter to the room
-        if (userSnap.val() !== null) {
-          commit('ENTER_ROOM', {
-
-            roomId, userId: userSnap.val(), roomUsersKey: userSnap.key, rootState,
-          });
-        }
-      });
-      usersRoom.on('child_removed', (userSnap) => {
-        const { userId } = userSnap.val();
-        dispatch('removeUser', { roomId, userId, roomUsersKey: userSnap.key });
-      });
       await firebase.database().ref().update(updates);
 
       commit('PUSH_USER_SUCCESS');
