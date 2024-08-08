@@ -5,39 +5,6 @@
       <v-sheet class="text-center" height="250px">
         <div class="py-1">
           <div style="width: 95%; margin: 20px auto; height: 200px">
-            <v-dialog v-model="showLoginDialog" persistent max-width="290">
-              <v-card>
-                <v-card-title class="text-h5"> Naniii!?You are not logged in? </v-card-title>
-                <v-card-text>Hey, you need to log in to use this feature.</v-card-text>
-                <v-card-actions>
-                  <v-spacer></v-spacer>
-                  <v-btn
-                    color="green darken-1"
-                    text
-                    @click="
-                      () => {
-                        showLoginDialog = false;
-                        $emit('onClose');
-                      }
-                    "
-                  >
-                    Not now
-                  </v-btn>
-                  <v-btn
-                    color="green darken-1"
-                    text
-                    @click="
-                      () => {
-                        showLoginDialog = false;
-                        $emit('onShowLoginDialog');
-                      }
-                    "
-                  >
-                    Log in
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-dialog>
             <!-- Using the slider component -->
             <slider ref="slider" :options="options" style="width: 100%">
               <!-- slideritem wrapped package with the components you need -->
@@ -137,7 +104,7 @@ export default {
         this.$emit('onClose');
       } else {
         this.itemSelectedUrl = itemSelected.url;
-        this.showLoginDialog = true;
+        this.$emit('onShowLoginDialog');
       }
     },
     // onInit(data) {

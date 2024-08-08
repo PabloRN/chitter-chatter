@@ -5,14 +5,14 @@
       <template slot="progress">
         <v-progress-linear color="deep-purple" height="10" indeterminate></v-progress-linear>
       </template>
-      <v-img height="250" src="https://cdn.vuetifyjs.com/images/cards/cooking.png"></v-img>
-      <v-card-title> Naniii!?You are not logged in?</v-card-title>
-      <v-card-text>
+      <v-img height="250" src="../assets/naniii.jpg"></v-img>
+      <v-card-title v-if="!showProfileForm"> Naniii!?You are not logged in?</v-card-title>
+      <v-card-text v-if="!showProfileForm">
         <div class="my-4 text-subtitle-1">Hey, you need to log in to use this feature.</div>
       </v-card-text>
       <div id="firebaseui-auth-container"></div>
-      <div id="loader">Loading...</div>
-      <v-divider class="mx-4"></v-divider>
+      <div v-if="!showProfileForm" id="loader">Loading...</div>
+      <v-divider v-if="!showProfileForm" class="mx-4"></v-divider>
       <v-card-title v-if="showProfileForm">Welcome {{ ` ${tempNickName}` }}</v-card-title>
       <div v-if="showProfileForm">
         <v-card-text>
@@ -23,7 +23,7 @@
             persistent-hint
             outlined
             v-model="userNickName"
-            :maxlength="12"
+            :maxlength="10"
             :minlength="3"
           ></v-text-field>
         </v-card-text>
@@ -111,5 +111,8 @@ export default {
   align-items: center;
   height: 100%;
   background-color: aliceblue;
+}
+ul.firebaseui-idp-list{
+  padding: 1px !important;
 }
 </style>
