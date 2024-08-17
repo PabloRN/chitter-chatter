@@ -74,7 +74,7 @@ export default {
   }),
   computed: {
     ...mapState('rooms', ['avatarsList']),
-    ...mapState('user', ['currentUser', 'userUpgraded']),
+    ...mapState('user', ['currentUser', 'signingInUpgraded']),
   },
   created() {
     this.avatars = this.avatarsList;
@@ -115,7 +115,7 @@ export default {
     showAvatarSelector(newVal) {
       this.sheet = newVal;
     },
-    async userUpgraded(newVal) {
+    async signingInUpgraded(newVal) {
       setTimeout(() => {
         if (newVal === true && this.itemSelectedUrl !== '') {
           this.changeAvatar(this.itemSelectedUrl);
