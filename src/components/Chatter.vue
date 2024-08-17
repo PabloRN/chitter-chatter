@@ -172,7 +172,6 @@ export default {
       'usersPosition',
       'userPositionModified',
       'userData',
-      'userUpgraded',
       'currentUser',
     ]),
     isCurrentUser() {
@@ -411,13 +410,6 @@ export default {
         this.message = newVal[newVal.length - 1].text;
       }
     },
-    // userUpgraded(newVal) {
-    //   if (newVal === true) {
-    //     console.log('oldUser', this.userId);
-    //     this.initUserData(this.currentUser.userId);
-    //     console.log('userUpgraded', this.actualUserId);
-    //   }
-    // },
     userPositionModified() {
       if (this.usersPosition[this.actualUserId] && this.usersPosition[this.actualUserId].position) {
         const { left, top } = this.usersPosition[this.actualUserId].position;
@@ -467,19 +459,21 @@ export default {
 .current-user {
   z-index: 990;
 }
+.user {
+  z-index: 980;
+}
 .nicknameWrapper {
   position: absolute;
-  top: -20px;
+  top: -25px;
   left: 0;
   width: 100%;
-
+  display: flex;
+  justify-content: center;
 }
 .nickname{
   color: #ffffff;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 1);
   font-family: 'Nanum Pen Script', cursive !important;
   font-size: 1.5em;
-  word-wrap: none;
-
 }
 </style>

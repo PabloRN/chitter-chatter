@@ -115,7 +115,7 @@ export default {
   }),
   computed: {
     ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList', 'currentRoom']),
-    ...mapState('user', ['currentUser', 'requestedBy', 'avatarUpdated', 'userUpgraded', 'usersSwitched', 'userData']),
+    ...mapState('user', ['currentUser', 'requestedBy', 'avatarUpdated', 'usersSwitched', 'userData', 'signingInUpgraded']),
     ...mapState('messages', ['privateMessage', 'privateUsers', 'showMessagesStatus']),
     ...mapGetters('user', ['getCurrentUser']),
     chattersArray() {
@@ -139,7 +139,6 @@ export default {
         && Object.keys(this.currentRoom.users).length > 0
         ) {
           const userIDs = Object.keys(this.currentRoom.users);
-          console.log('userIDs', userIDs);
           // eslint-disable-next-line no-restricted-syntax
           for (const roomUserID of userIDs) {
             const { userId } = this.currentRoom.users[roomUserID];
@@ -207,38 +206,20 @@ export default {
         }
       }
     },
-    async userUpgraded(newVal) {
-      const { rooms } = this.userData[this.usersSwitched.verifiedUser];
-      if (newVal === true && Object.keys(rooms).length > 0) {
-        if (Object.keys(rooms)[0] === this.$route.params.roomId) {
-          const userDataNew = await this.getUserData(this.usersSwitched.verifiedUser);
-          if (Object.keys(userDataNew).length > 0) {
-            console.log('userUpgradedXXXX', userDataNew);
-            this.chatters.delete(this.usersSwitched.unverifiedUser);
-            this.chatters.set(this.usersSwitched.verifiedUser, userDataNew);
-            this.chattersCounter += 1;
+    async signingInUpgraded(newVal) {
+      if (this.userData[this.usersSwitched.verifiedUser]) {
+        const { rooms } = this.userData[this.usersSwitched.verifiedUser];
+        if (newVal === true && Object.keys(rooms).length > 0) {
+          if (Object.keys(rooms)[0] === this.$route.params.roomId) {
+            const userDataNew = await this.getUserData(this.usersSwitched.verifiedUser);
+            if (Object.keys(userDataNew).length > 0) {
+              this.chatters.delete(this.usersSwitched.unverifiedUser);
+              this.chatters.set(this.usersSwitched.verifiedUser, userDataNew);
+              this.chattersCounter += 1;
+            }
           }
         }
       }
-    },
-    async otherUserUpdated(newVal) {
-      console.log('other user updated', newVal, this.currentUser);
-      if (newVal !== '' && this.currentUser !== newVal) {
-        // const { rooms } = this.userData[this.usersSwitched.verifiedUser];
-        console.log('other user updated', newVal);
-      }
-
-      // if (newVal === true && Object.keys(rooms).length > 0) {
-      //   if (Object.keys(rooms)[0] === this.$route.params.roomId) {
-      //     const userDataNew = await this.getUserData(this.usersSwitched.verifiedUser);
-      //     if (Object.keys(userDataNew).length > 0) {
-      //       console.log('userUpgradedXXXX', userDataNew);
-      //       this.chatters.delete(this.usersSwitched.unverifiedUser);
-      //       this.chatters.set(this.usersSwitched.verifiedUser, userDataNew);
-      //       this.chattersCounter += 1;
-      //     }
-      //   }
-      // }
     },
     userExit({ roomId, userId }) {
       if (roomId === this.$route.params.roomId) {

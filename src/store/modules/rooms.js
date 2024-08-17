@@ -79,6 +79,7 @@ const actions = {
       const snapshot = await roomReference.once('value');
 
       const usersReference = firebase.database().ref(`rooms/${roomId}/users`);
+      const usersUpgradedReference = firebase.database().ref(`rooms/${roomId}/usersUpgraded`);
 
       usersReference.on('child_added', async (userSnap) => { // Get the user that enter to the room
         if (userSnap.val() !== null) {
@@ -88,12 +89,16 @@ const actions = {
           });
         }
       });
-      usersReference.on('child_removed', (userSnap) => {
+      usersReference.on('child_removed', (userSnap) => { // Get the user that leaved the room
         const { userId } = userSnap.val();
         dispatch('removeUser', { roomId, userId, roomUsersKey: userSnap.key });
       });
-      usersReference.on('value', (userSnap) => {
-        console.log('xxxx', userSnap.val());
+      usersUpgradedReference.on('value', (userSnap) => {
+        const userUpgraded = userSnap.val();
+        if (userUpgraded !== null && userUpgraded.verifiedUser !== null && userUpgraded.unverifiedUser !== null && userUpgraded.verifiedUser !== rootState.user.currentUser.userId && userUpgraded.unverifiedUser !== rootState.user.currentUser.userId) {
+          dispatch('user/upgradeNonCurrentUser', { verifiedUser: userUpgraded.verifiedUser, unverifiedUser: userUpgraded.unverifiedUser }, { root: true });
+          usersUpgradedReference.set({ verifiedUser: null, unverifiedUser: null });
+        }
       });
       commit('SET_ROOM_DETAILS_SUCCESS', snapshot.val());
       return snapshot.val();
@@ -107,7 +112,6 @@ const actions = {
     commit('PUSH_USER');
     try {
       const { currentUser } = rootState.user;
-      console.log('currentUser', currentUser);
       const storageRef = firebase.storage().ref();
       const defaultAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/defaultAvatar/defaultAvatar.png`);
       const defaultMiniAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/miniavatars/defaultAvatar_head.png`);

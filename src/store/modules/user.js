@@ -27,6 +27,7 @@ const state = {
   roomIn: {},
   signingInUpgraded: false,
   userUpgraded: false,
+  updatedUser: false,
   usersSwitched: {},
 };
 
@@ -38,17 +39,19 @@ const getters = {
 const actions = {
   userSignOut({ commit, state }) {
     // const auth = firebase.auth().getAuth();
+
     const { currentUser } = firebase.auth();
     const ref = firebase.database().ref(`users/${currentUser.uid}`);
     ref.update({ onlineState: false, status: 'offline' });
+    firebase.database().ref(`users/${state.currentUser.unverified}`).update({ [state.currentUser.unverified]: null });
+    firebase.database().ref(`users/${state.currentUser.unverified}`).off();
+    firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).update({ unverified: null });
+    firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).off();
+    ref.update({ unverified: null });
     firebase.auth().signOut().then(
       () => {
-        firebase.database().ref(`users/${state.currentUser.unverified}`).update({ [state.currentUser.unverified]: null });
-        firebase.database().ref(`users/${state.currentUser.unverified}`).off();
-        firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).update({ unverified: null });
-        ref.update({ unverified: null });
-        commit('SET_USER_SIGNED_OUT');
         router.push({ name: 'rooms' });
+        commit('SET_USER_SIGNED_OUT');
       },
     );
   },
@@ -115,6 +118,9 @@ const actions = {
     const privateMessage = firebase.database().ref(`users/${state.currentUser.userId}/privateMessage/requestedBy`);
     const userAvatar = firebase.database().ref(`users/${userId}/avatar`);
     const userMiniAvatar = firebase.database().ref(`users/${userId}/miniAvatar`);
+    const userSwitched = firebase.database().ref(`users/${userId}/unverified`);
+    const userNickname = firebase.database().ref(`users/${userId}/nickname`);
+
     userAvatar.on('value', async (snapAvatar) => {
       commit('SET_USER_AVATAR_SUCCESS', { url: snapAvatar.val(), userId });
     });
@@ -126,6 +132,12 @@ const actions = {
     });
     privateMessage.on('value', (snapPrivate) => {
       commit('PRIVATE_REQUESTED', { requestedBy: state.userData[snapPrivate.val()], userId: snapPrivate.val() });
+    });
+    userSwitched.on('value', (snapUnverified) => {
+      if (snapUnverified.val()) commit('SET_USER_UPGRADE_SUCCESS', { userId: snapUnverified.val() });
+    });
+    userNickname.on('value', (snapNickname) => {
+      commit('SET_USER_NICKNAME', { nickname: snapNickname.val(), userId });
     });
     return { ...userDataTemp, userId };
   },
@@ -216,7 +228,9 @@ const actions = {
       console.log(error);
     }
   },
-
+  upgradeNonCurrentUser({ commit }, { verifiedUser, unverifiedUser }) {
+    commit('USER_UPGRADED', { verifiedUser, unverifiedUser, isCurrent: false });
+  },
   async setFirebaseUiInstance({ commit, rootState, state }) {
     let data = null;
     const anonymousUser = firebase.auth().currentUser;
@@ -243,16 +257,19 @@ const actions = {
         data.userId = user.uid;
 
         // Transfer the user data to the new user ID
-        await firebase.database().ref(`users/${user.uid}`).set(data);
         if (anonymousUser.uid !== user.uid) {
-          await firebase.database().ref(`users/${user.uid}`).update({ unverified: anonymousUser.uid });
+          data.unverified = anonymousUser.uid;
+          // await firebase.database().ref(`users/${user.uid}`).update({ unverified: anonymousUser.uid });
           // Delete the anonymous user and its data
           await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
           await anonymousUser.delete();
           // Transfer the room user data
           const { roomUsersKey } = state.currentUser.rooms[rootState.route.params.roomId];
           await firebase.database().ref(`rooms/${rootState.route.params.roomId}/users/${roomUsersKey}/userId`).set(user.uid);
+          await firebase.database().ref(`rooms/${rootState.route.params.roomId}/usersUpgraded`).update({ verifiedUser: user.uid, unverifiedUser: anonymousUser.uid });
         }
+        await firebase.database().ref(`users/${user.uid}`).set(data);
+        await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
       } catch (error) {
         console.error('Error during user upgrade:', error);
         throw error;
@@ -270,7 +287,7 @@ const actions = {
             // Call handleUpgrade without awaiting it to ensure we return false immediately
             handleUpgrade(user).then(() => {
               if (authResult && authResult.user.isAnonymous === false) {
-                commit('USER_UPGRADED', { verifiedUser: authResult.user.uid, unverifiedUser: anonymousUser.uid });
+                commit('USER_UPGRADED', { verifiedUser: authResult.user.uid, unverifiedUser: anonymousUser.uid, isCurrent: true });
               }
             }).catch((error) => {
               console.error('Error during user upgrade:', error);
@@ -296,7 +313,7 @@ const actions = {
 
               // Call handleUpgrade with the user
               await handleUpgrade(user);
-              commit('USER_UPGRADED', { verifiedUser: user.uid, unverifiedUser: anonymousUser.uid });
+              commit('USER_UPGRADED', { verifiedUser: user.uid, unverifiedUser: anonymousUser.uid, isCurrent: true });
               return Promise.resolve(); // Return a resolved promise to indicate successful handling
             } catch (err) {
               console.error('Error during sign-in failure handling:', err);
@@ -341,8 +358,9 @@ const actions = {
         }
       });
   },
-  updateUserNickName({ commit }, nickName) {
-    commit('SET_USER_NICKNAME', nickName);
+  updateUserNickName(_, nickName) {
+    firebase.database().ref(`users/${state.currentUser.userId}`).update({ nickname: nickName });
+    // commit('UPDATE_USER');
   },
 };
 
@@ -364,11 +382,14 @@ const mutations = {
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };
   },
-  USER_UPGRADED(state, { verifiedUser, unverifiedUser }) {
+  USER_UPGRADED(state, { verifiedUser, unverifiedUser, isCurrent }) {
     // Update currentUser
-    Vue.set(state.currentUser, 'isAnonymous', false);
-    Vue.set(state.currentUser, 'userId', verifiedUser);
-    if (verifiedUser !== unverifiedUser)Vue.set(state.currentUser, 'unverified', unverifiedUser);
+    if (isCurrent) {
+      Vue.set(state.currentUser, 'isAnonymous', false);
+      Vue.set(state.currentUser, 'userId', verifiedUser);
+    }
+
+    if (verifiedUser !== unverifiedUser && isCurrent)Vue.set(state.currentUser, 'unverified', unverifiedUser);
 
     // Transfer user data
     Vue.set(state.userData, verifiedUser, {
@@ -378,10 +399,9 @@ const mutations = {
     });
 
     // Transfer user position
-    Vue.set(state.usersPosition, verifiedUser, state.currentUser.position);
-    Vue.set(state.avatarUpdated, 'url', state.currentUser.avatar);
-    Vue.set(state.avatarUpdated, 'userId', state.currentUser.userId);
-
+    Vue.set(state.usersPosition, verifiedUser, state.userData[verifiedUser].position);
+    Vue.set(state.avatarUpdated, 'url', state.userData[verifiedUser].avatar);
+    Vue.set(state.avatarUpdated, 'userId', state.userData[verifiedUser].userId);
     // Object.assign(state.avatarUpdated, { url: state.userData[verifiedUser].avatar, userId: verifiedUser });
 
     // Remove unverified user data
@@ -392,16 +412,15 @@ const mutations = {
     state.usersSwitched = { verifiedUser, unverifiedUser };
     state.signingInUpgraded = true;
   },
-  SET_USER_NICKNAME(state, nickName) {
-    state.currentUser.nickname = nickName;
-    firebase.database().ref(`users/${state.currentUser.userId}`).update({ nickname: nickName });
-    state.userData[state.currentUser.userId].nickname = nickName;
-    state.userUpgraded = true;
+  SET_USER_NICKNAME(state, { nickname, userId }) {
+    if (state.currentUser.userId === userId) state.currentUser.nickname = nickname;
+    state.userData[userId].nickname = nickname;
   },
   SET_USER_SIGNED_OUT(state) {
     state.signingInUpgraded = false;
     state.userUpgraded = false;
     state.currentUser.unverified = null;
+    state.usersSwitched = null;
   },
   SET_USER_MINIAVATAR_SUCCESS(state, { userId, miniAvatarUrl }) {
     if (state.userData[userId]) {
@@ -411,6 +430,14 @@ const mutations = {
   SET_CURRENT_USER_AVATAR(state, { avatar, miniAvatar }) {
     state.currentUser.miniAvatar = miniAvatar;
     state.currentUser.avatar = avatar;
+  },
+  SET_USER_UPGRADE_SUCCESS(state, { userId }) {
+    if (state.userData[userId]) {
+      state.otherUserUpdated = true;
+    }
+  },
+  UPDATE_USER(state) {
+    state.updatedUser = true;
   },
   PRIVATE_REQUESTED(state, { requestedBy, userId }) {
     state.requestedBy = requestedBy;
