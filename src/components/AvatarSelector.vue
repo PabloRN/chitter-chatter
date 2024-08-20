@@ -99,7 +99,7 @@ export default {
     avatarSelected(e, itemSelected) {
       e.stopPropagation();
       e.preventDefault();
-      if (!this.currentUser.isAnonymous) {
+      if (this.currentUser.isAnonymous) {
         this.changeAvatar(itemSelected.url);
         this.$emit('onClose');
       } else {
