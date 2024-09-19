@@ -7,6 +7,7 @@ import 'firebase/storage';
 // State object
 const state = {
   roomMessages: [],
+  roomMessagesToShow: [],
   privateMessage: [],
   privateUsers: '',
   showMessagesStatus: false,
@@ -15,7 +16,7 @@ const state = {
 // Getter functions
 const getters = {
   getText(state) {
-    return state.roomMessages;
+    return state.roomMessagesToShow;
   },
 };
 
@@ -33,6 +34,9 @@ const actions = {
   showMessages({ commit }, payload) {
     commit('SHOW_MESSAGES', payload);
   },
+  showUserMessages({ commit }, payload) {
+    commit('SHOW_USER_MESSAGES', payload);
+  },
   async sendMessage(_, {
     message, roomId, userId, nickname, miniAvatar,
   }) {
@@ -44,7 +48,7 @@ const actions = {
       };
       const updates = {};
       updates[`/rooms/${roomId}/messages/${roomMessagesKey}`] = messageData;
-      updates[`/users/${userId}/messages/${roomId}`] = {
+      updates[`/users/${userId}/messages/${roomId}/${roomMessagesKey}`] = {
         roomMessagesKey, message, timestamp: utcTimestamp, nickname, miniAvatar,
       };
       await firebase.database().ref().update(updates);
@@ -66,7 +70,7 @@ const actions = {
     }
   },
   async confirmPrivate({ commit }, { requestedBy, currentUser }) {
-    commit('CONFIRM_REQUEST');
+    // commit('CONFIRM_REQUEST');
     try {
       const privateMessagesKey = await firebase.database().ref().child(`privateMessages/${requestedBy}_${currentUser}`).push().key;
       const updates = {};
@@ -89,7 +93,7 @@ const actions = {
         .on('child_removed', () => { // Get the private message sent
           commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
         });
-      commit('CONFIRM__REQUEST_SUCCESS');
+      // commit('CONFIRM_REQUEST_SUCCESS');
     } catch (error) {
       console.log(error);
     }
@@ -150,15 +154,17 @@ const actions = {
             miniAvatar: messageVal?.miniAvatar,
           });
         }
-        let extraMessages = state.roomMessages.length - 10;
-        if (extraMessages > 0) {
-          const updateMessage = {};
-          while (extraMessages !== 0) {
-            updateMessage[`rooms/${roomId}/messages/${state.roomMessages[extraMessages - 1].roomUsersKey}`] = null;
-            extraMessages -= 1;
-          }
-          await firebase.database().ref().update(updateMessage);
-        }
+        // let extraMessages = state.roomMessages.length - 10;
+        // if (extraMessages > 0) {
+        //   const updateMessage = {};
+        //   while (extraMessages !== 0) {
+        // updateMessage[`rooms/${roomId}/messages/${state.roomMessages[extraMessages - 1]
+        // .roomUsersKey
+        // }`] = null;
+        //     extraMessages -= 1;
+        //   }
+        //   await firebase.database().ref().update(updateMessage);
+        // }
       });
       messagesListRef.on('child_removed', (messageSnap) => {
         if (messageSnap.val() !== null) {
@@ -218,7 +224,13 @@ const mutations = {
     state.privateMessage.push(message);
   },
   SHOW_MESSAGES(state, payload) {
+    if (payload === true) state.roomMessagesToShow = state.roomMessages;
     state.showMessagesStatus = payload;
+  },
+  SHOW_USER_MESSAGES(state, payload) {
+    state.roomMessagesToShow = state.roomMessages
+      .filter(({ userId }) => userId === payload);
+    state.showMessagesStatus = true;
   },
   SEND_TEXT_ERROR() {
     console.log('Error sending text');

@@ -87,14 +87,15 @@
       fab
       dark
       small
-      @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu"
+      @click.prevent.stop="emit('showUserMessages')"
+      @touchstart.native.prevent="emit('showUserMessages')"
     >
 
       <div>
-        <v-icon> mdi-account-lock </v-icon>
+        <v-icon> mdi-timeline-text-outline </v-icon>
+        <!-- <v-icon> mdi-account-lock </v-icon> -->
       </div>
-      <div class="icon-caption">Block User</div>
+      <div class="icon-caption">User Messages</div>
     </v-btn>
   </div>
 </template>
@@ -132,6 +133,11 @@ export default {
         case 'privateMessage':
           this.toggleMenu();
           this.$emit('privateMessage');
+          break;
+        case 'showUserMessages':
+          this.toggleMenu();
+          this.$emit('showUserMessages');
+          console.log('caseshowUserMessages');
           break;
 
         default:

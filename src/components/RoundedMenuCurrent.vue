@@ -105,7 +105,7 @@
       <div>
         <v-icon> mdi-timeline-text-outline </v-icon>
       </div>
-      <div class="icon-caption">Messages</div>
+      <div class="icon-caption">Room Messages</div>
     </v-btn>
     <v-btn
       :class="'oculted'"

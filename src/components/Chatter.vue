@@ -22,7 +22,8 @@
     <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
     <RoundedMenu
       v-on="{
-        ['privateMessage']: invitePrivate,
+  ['privateMessage']: invitePrivate,
+  ['showUserMessages']: () => toggleUserMessages(),
       }"
       ref="roundedmenu"
       v-show="!isCurrentUser"
@@ -185,7 +186,7 @@ export default {
       'userSignOut',
       'updateNickNameByUser',
     ]),
-    ...mapActions('messages', ['sendPrivateMessageRequest', 'showMessages', 'cleanMessages']),
+    ...mapActions('messages', ['sendPrivateMessageRequest', 'showMessages', 'showUserMessages', 'cleanMessages']),
     ...mapActions('rooms', ['removeUser']),
     updateNickName() {
       this.updateNickNameByUser();
@@ -198,6 +199,9 @@ export default {
     },
     toggleMessages() {
       this.showMessages(true);
+    },
+    toggleUserMessages() {
+      this.showUserMessages(this.userId);
     },
     findClosestDivPosition(givenDivId) {
       const divPositions = this.usersPosition;

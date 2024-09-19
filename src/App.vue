@@ -49,6 +49,8 @@ export default Vue.extend({
     //   // Screen orientation API not supported
     //   console.error('Screen orientation API is not supported on this device.');
     // }
+    // eslint-disable-next-line no-restricted-globals, dot-notation
+    // window.screen.orientation['lock']('landscape');
     this.SET_LANG();
     this.getUser();
     // this.checkLoggedIn();
