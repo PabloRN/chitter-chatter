@@ -13,10 +13,11 @@
     <v-expand-transition>
       <v-row v-if="!hideKeyboard" no-gutters class="pa-1 typebox mt-3">
         <v-col class="" cols="9" style="background: rgba(255,255,255,0.5);border-radius: 10px 0px 0px 10px;">
-          <v-textarea @keypress.enter.prevent="enterPress" @input="checkValue" class="text-area-input text-body-2"
-            no-resize hide-details rows="1" row-height="2" max="10" :maxlength="61" counter ref="refDialog"
-            :value="message" v-model="message" outlined style="border-radius: 10px 0px 0px 10px;line-height: 1.3;">
-          </v-textarea>
+          <v-text-field @keypress.enter.prevent="enterPress" @input="checkValue" class="text-area-input type-box text-body-2"
+             rows="1" row-height="2" max="10" :maxlength="61" ref="refDialog"
+            :value="message" v-model="message" counter="61" outlined :rules="[ rules.length(61)]"
+             style="border-radius: 10px 0px 0px 10px;line-height: 1.3;">
+          </v-text-field>
         </v-col>
         <v-spacer></v-spacer>
         <v-col cols="3" style="background: rgba(255,255,255,0.5);border-radius: 0px 10px 10px 0px;">
@@ -44,7 +45,10 @@ export default {
   },
   data: () => ({
     message: '',
-    hideKeyboard: true,
+    hideKeyboard: false,
+    rules: {
+      length: (len) => (v) => (v || '').length < len || '',
+    },
 
   }),
   mounted() {
@@ -112,10 +116,10 @@ export default {
   width: 300px;
 }
 
-.text-area-input textarea {
+.text-area-input {
   line-height: 1.3rem !important;
-  margin-top: 3px !important;
-  padding-top: 5px !important;
+  // margin-top: 3px !important;
+  // padding-top: 5px !important;
   z-index: 999;
 }
 .talk-button {
@@ -123,5 +127,25 @@ export default {
 }
 .keyboard-icon {
   border: 2px solid white;
+}
+.v-text-field__details {
+    display: flex;
+    flex: 1 0 auto;
+    max-width: 100%;
+    min-height: 14px;
+    overflow: hidden;
+    position: absolute;
+    bottom: -3px;
+    right: 1px;
+}
+.v-input__slot {
+    align-items: center;
+    display: flex;
+    margin-bottom: 0px;
+    min-height: inherit;
+    position: relative;
+    transition: 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
+    transition-property: height, min-height;
+    width: 100%;
 }
 </style>
