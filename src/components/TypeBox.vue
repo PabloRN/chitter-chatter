@@ -32,6 +32,7 @@ text-shadow: 1px 1px 1px rgba(255,255,255,.5);">Talk</span></v-btn>
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
+import isMobile from '@/utils/mobileDetection';
 
 export default {
   name: 'typebox',
@@ -72,7 +73,7 @@ export default {
         },
       );
       this.message = '';
-      this.$refs.refDialog.blur();
+      if (isMobile()) this.$refs.refDialog.blur();
     },
     toggleKeyBoard(e) {
       e.preventDefault();
