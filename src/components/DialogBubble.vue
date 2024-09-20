@@ -11,7 +11,7 @@
 import { mapGetters } from 'vuex';
 
 export default {
-  name: 'dialogbubble',
+  name: 'DialogBubble',
   props: {
     id: String,
     message: String,

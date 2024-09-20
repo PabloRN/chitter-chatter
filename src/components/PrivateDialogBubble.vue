@@ -39,7 +39,7 @@ import PrivateTypeBox from '@/components/PrivateTypeBox.vue';
 import { mapGetters, mapState } from 'vuex';
 
 export default {
-  name: 'privatedialogbubble',
+  name: 'PrivateDialogBubble',
   components: {
     PrivateTypeBox,
   },

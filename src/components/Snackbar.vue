@@ -5,15 +5,12 @@
     :timeout="snackbar.timeout"
     right
   >
-    <VIcon
-      :dark="snackbar.type !== 'warning'"
-      class="mr-2"
-      v-text="icon"
-    />
+  <VIcon :dark="snackbar.type !== 'warning'" class="mr-2">
+  {{ icon }}
+</VIcon>
     <span
       :class="snackbar.type === 'warning' ? 'black--text' : 'white--text'"
-      v-text="snackbar.msg"
-    />
+    >{{ snackbar.msg }}</span>
   </v-snackbar>
 </template>
 
@@ -31,6 +28,7 @@ const ICON_MAP = {
 };
 
 export default {
+  name: 'SnackBar',
   data: () => ({
     model: false,
   }),

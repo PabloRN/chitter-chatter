@@ -24,6 +24,7 @@ import { ValidationProvider } from 'vee-validate';
 import { mapActions } from 'vuex';
 
 export default {
+  name: 'EmailComponent',
   components: {
     ValidationProvider,
   },

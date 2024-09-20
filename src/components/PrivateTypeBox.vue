@@ -36,7 +36,7 @@ text-shadow: 1px 1px 1px rgba(255,255,255,1);">Talk</span></v-btn>
 import { mapActions, mapGetters } from 'vuex';
 
 export default {
-  name: 'typebox',
+  name: 'PrivateTypeBox',
   props: {
 
   },

@@ -44,7 +44,7 @@ import { mapGetters, mapState, mapActions } from 'vuex';
 import 'firebaseui/dist/firebaseui.css';
 
 export default {
-  name: 'privatedialogbubble',
+  name: 'LoginDialogBubble',
   components: {},
   props: {
     message: Array,

@@ -135,7 +135,7 @@
 import { mapActions, mapGetters } from 'vuex';
 
 export default {
-  name: 'roundedmenucurrent',
+  name: 'RoundedMenuCurrent',
   props: {
     moving: {
       default: false,

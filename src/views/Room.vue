@@ -8,10 +8,10 @@
         class="white--text align-end"
         height="100vh"
       >
-        <Chatter
+        <chatter-component
           v-for="[key, { userId, avatar, nickname }] in chattersArray"
           :userId="userId"
-          :key="userId"
+          :key="key"
           :avatar="avatar"
           :nickname="nickname"
           :room="roomId"
@@ -88,14 +88,14 @@
 
 <script>
 import { mapState, mapActions, mapGetters } from 'vuex';
-import Chatter from '@/components/Chatter.vue';
+import ChatterComponent from '@/components/Chatter.vue';
 import TimeMachine from '@/components/TimeMachine.vue';
 import PrivateDialogBubble from '@/components/PrivateDialogBubble.vue';
 
 export default {
-  name: 'Home',
+  name: 'RoomComponent',
   components: {
-    Chatter,
+    ChatterComponent,
     PrivateDialogBubble,
     TimeMachine,
   },

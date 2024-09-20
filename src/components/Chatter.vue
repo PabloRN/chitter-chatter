@@ -85,7 +85,7 @@ import AvatarSelector from '@/components/AvatarSelector.vue';
 import LoginDialogBubble from '@/components/LoginDialogBubble.vue';
 
 export default {
-  name: 'chatter',
+  name: 'ChatterComponent',
   components: {
     TypeBox,
     DialogBubble,
