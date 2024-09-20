@@ -36,7 +36,7 @@ import { mapActions, mapGetters } from 'vuex';
 import isMobile from '@/utils/mobileDetection';
 
 export default {
-  name: 'typebox',
+  name: 'TypeBox',
   props: {
     moving: {
       default: false,

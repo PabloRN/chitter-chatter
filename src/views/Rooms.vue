@@ -48,7 +48,7 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import RoomThumbnail from '@/components/RoomThumbnail.vue';
 
 export default {
-  name: 'Home',
+  name: 'RoomsComponent',
   components: { RoomThumbnail },
   data: () => ({
     usersOnline: 0,

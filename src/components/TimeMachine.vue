@@ -49,7 +49,7 @@ import { mapState, mapActions, mapGetters } from 'vuex';
 import formatDate from '@/utils/timeTools';
 
 export default {
-  name: 'timeMachine',
+  name: 'TimeMachine',
   components: {
   },
   props: {

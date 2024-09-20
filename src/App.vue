@@ -7,7 +7,7 @@
       <router-view />
       </v-fade-transition>
     </v-main>
-     <Snackbar />
+     <snack-bar />
   </v-app>
 </template>
 
@@ -18,14 +18,14 @@ import {
   mapActions,
 } from 'vuex';
 // import Drawer from './components/layout/Drawer.vue';
-import Snackbar from './components/Snackbar.vue';
+import SnackBar from './components/Snackbar.vue';
 // Utilities
 export default Vue.extend({
   name: 'App',
 
   components: {
     // Drawer,
-    Snackbar,
+    SnackBar,
   },
   mounted() {
     // this.checkLoggedIn();

@@ -97,6 +97,27 @@
       </div>
       <div class="icon-caption">User Messages</div>
     </v-btn>
+    <v-btn
+      :class="'oculted'"
+      class="mx-2 menu-item"
+      fab
+      dark
+      small
+      @click.prevent.stop="toggleMenu"
+      v-touch="{
+        start: () => (movingTouch = false),
+        end: () => toggleMenuTouch,
+        left: () => (movingTouch = true),
+        down: () => (movingTouch = true),
+        right: () => (movingTouch = true),
+        up: () => (movingTouch = true),
+        move: () => (movingTouch = true),
+      }"
+    >
+      <div>
+      </div>
+      <div class="icon-caption">toggle</div>
+    </v-btn>
   </div>
 </template>
 
@@ -104,7 +125,7 @@
 import { mapActions, mapGetters } from 'vuex';
 
 export default {
-  name: 'roundedmenu',
+  name: 'RoundedMenu',
   props: {},
   data: () => ({
     message: '',
@@ -253,5 +274,17 @@ export default {
   left: 0;
   z-index: 1000;
   -webkit-transform: translate3d(0, 0, 0);
+}
+.icon-caption {
+  position: absolute;
+  text-shadow: 1px 1px 2px black;
+  top: 35px;
+  font-weight: bold;
+}
+.oculted {
+  opacity: 0;
+  height: 200px!important;
+  z-index: 1000;
+  top: 0;
 }
 </style>

@@ -35,7 +35,7 @@ import {
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher.vue';
 
 export default {
-
+  name: 'LoginComponent',
   components: {
     LanguageSwitcher,
   },
