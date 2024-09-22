@@ -1,7 +1,13 @@
 /* eslint-disable max-len */
 /* eslint-disable no-shadow */
-import * as firebase from 'firebase';
+import Vue from 'vue';
+import firebase from 'firebase/app';
+import * as firebaseui from 'firebaseui';
+import 'firebase/auth'; // Import the auth module explicitly if needed
+import 'firebase/database'; // Import other Firebase modules as needed
+import 'firebase/storage';
 import router from '@/router/index';
+import extractImageName from '@/utils/avatarName';
 
 const state = {
   avatarsList: [],
@@ -19,6 +25,10 @@ const state = {
   requestedBy: '',
   avatarUpdated: {},
   roomIn: {},
+  signingInUpgraded: false,
+  userUpgraded: false,
+  updatedUser: false,
+  usersSwitched: {},
 };
 
 const getters = {
@@ -27,41 +37,57 @@ const getters = {
   },
 };
 const actions = {
-  userSignOut() {
-    console.log('signOut');
+  userSignOut({ commit, state }) {
     // const auth = firebase.auth().getAuth();
+
+    const { currentUser } = firebase.auth();
+    const ref = firebase.database().ref(`users/${currentUser.uid}`);
+    ref.update({ onlineState: false, status: 'offline' });
+    firebase.database().ref(`users/${state.currentUser.unverified}`).update({ [state.currentUser.unverified]: null });
+    firebase.database().ref(`users/${state.currentUser.unverified}`).off();
+    firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).update({ unverified: null });
+    firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).off();
+    ref.update({ unverified: null });
     firebase.auth().signOut().then(
-      () => router.push({ name: 'login' }),
+      () => {
+        router.push({ name: 'rooms' });
+        commit('SET_USER_SIGNED_OUT');
+      },
     );
   },
-  getUser({ commit, dispatch, state }) {
-    firebase.auth().onAuthStateChanged((user) => {
-      console.log('ceck user', user);
+  getUser({ commit, dispatch }) {
+    firebase.auth().onAuthStateChanged(async (user) => {
       if (user) {
         // eslint-disable-next-line no-template-curly-in-string
-        console.log('rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}', `rooms/${state.roomIn.roomId}/users/${state.roomUsersKey}`);
         const ref = firebase.database().ref(`users/${user.uid}`);
-
         if (user.isAnonymous) {
-          ref.set({
-            nickname: 'anonymous',
-            avatar: 'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fyk7XJwBbTJPFkDJ92vZF9bv1Od45%2Favatars%2FL1%2Fbills-200-70.png?alt=media&token=cdb26e62-d3b6-4af1-9279-c0e733159008',
+          const uidSnippet = user.uid.substring(0, 4);
+          const nickname = `anon_${uidSnippet}`;
+          const initialUser = {
+            nickname,
+            avatar: '',
             age: 0,
-            miniavatar: '',
+            miniAvatar: '',
             level: 'L1',
             userId: user.uid,
             onlineState: true,
             status: 'online',
-          });
+            isAnonymous: true,
+          };
+          ref.set(initialUser);
           // ref.onDisconnect().remove();
+        } else {
+          ref.update({
+            onlineState: true,
+            status: 'online',
+            isAnonymous: false,
+          });
         }
-
         ref.onDisconnect().update({
           onlineState: false,
           status: 'offline',
         });
-        firebase.database().ref(`users/${user.uid}`).once('value', (snapshot) => {
-          console.log('snapshot from getUser', snapshot.val());
+        firebase.database().ref(`users/${user.uid}`).on('value', (snapshot) => {
           commit('setCurrentUser', { data: snapshot.val(), userId: user.uid });
         });
       } else {
@@ -91,8 +117,15 @@ const actions = {
     const userPosition = firebase.database().ref(`users/${userId}/position/`);
     const privateMessage = firebase.database().ref(`users/${state.currentUser.userId}/privateMessage/requestedBy`);
     const userAvatar = firebase.database().ref(`users/${userId}/avatar`);
-    userAvatar.on('value', (snapAvatar) => {
+    const userMiniAvatar = firebase.database().ref(`users/${userId}/miniAvatar`);
+    const userSwitched = firebase.database().ref(`users/${userId}/unverified`);
+    const userNickname = firebase.database().ref(`users/${userId}/nickname`);
+
+    userAvatar.on('value', async (snapAvatar) => {
       commit('SET_USER_AVATAR_SUCCESS', { url: snapAvatar.val(), userId });
+    });
+    userMiniAvatar.on('value', async (snapMiniAvatar) => {
+      commit('SET_USER_MINIAVATAR_SUCCESS', { miniAvatarUrl: snapMiniAvatar.val(), userId });
     });
     userPosition.on('value', (snapPosition) => {
       commit('SET_USER_POSITION', { position: snapPosition.val(), userId });
@@ -100,7 +133,12 @@ const actions = {
     privateMessage.on('value', (snapPrivate) => {
       commit('PRIVATE_REQUESTED', { requestedBy: state.userData[snapPrivate.val()], userId: snapPrivate.val() });
     });
-
+    userSwitched.on('value', (snapUnverified) => {
+      if (snapUnverified.val()) commit('SET_USER_UPGRADE_SUCCESS', { userId: snapUnverified.val() });
+    });
+    userNickname.on('value', (snapNickname) => {
+      commit('SET_USER_NICKNAME', { nickname: snapNickname.val(), userId });
+    });
     return { ...userDataTemp, userId };
   },
   setEmailAction: async ({ commit }, payload) => {
@@ -115,7 +153,7 @@ const actions = {
       nickname,
       avatar,
       age,
-      miniavatar,
+      miniAvatar,
     } = data;
     firebase.auth().createUserWithEmailAndPassword(state.email, state.password)
       .then((credentials) => {
@@ -123,7 +161,7 @@ const actions = {
           nickname,
           avatar,
           age,
-          miniavatar,
+          miniAvatar,
         });
         commit('main/setSnackbar',
           {
@@ -157,10 +195,8 @@ const actions = {
               { root: true });
             router.push({ name: 'rooms' });
           } else {
-            // No user is signed in.
+            console.log('No user is signed in.');
           }
-          // console.log(user);
-          // commit('setUser', newUser);
         })
         .catch(
           (error) => {
@@ -175,21 +211,137 @@ const actions = {
         );
     });
   },
-  async changeAvatar({ state }, url) {
+  async changeAvatar({ state, rootState, commit }, url) {
     // commit('SET_USER_AVATAR');
+    const storageRef = firebase.storage().ref();
+    const miniAvatarsRef = storageRef.child(`${rootState.route.fullPath}/avatars/L1/miniavatars`);
     try {
       const { currentUser } = state;
-      // eslint-disable-next-line no-undef
-      const tempUser = structuredClone(currentUser);
-      console.log('tempUser before', tempUser);
-      Object.assign(tempUser, { avatar: url });
-      console.log('tempUser after', tempUser);
-      await firebase.database().ref(`users/${state.currentUser.userId}`).set(tempUser);
+      const avatarNameWithExt = extractImageName(url);
+      const avatarName = avatarNameWithExt.replace('.png', '');
+      await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(url);
+      const miniavatarRefUrl = await miniAvatarsRef.child(`${avatarName}_head.png`).getDownloadURL();
+      await firebase.database().ref(`users/${currentUser.userId}/miniAvatar/`).set(miniavatarRefUrl);
+      commit('SET_CURRENT_USER_AVATAR', { avatar: url, miniAvatar: miniavatarRefUrl });
     } catch (error) {
       // commit('SET_USER_AVATAR_FAILED');
       console.log(error);
     }
   },
+  upgradeNonCurrentUser({ commit }, { verifiedUser, unverifiedUser }) {
+    commit('USER_UPGRADED', { verifiedUser, unverifiedUser, isCurrent: false });
+  },
+  async setFirebaseUiInstance({ commit, rootState, state }) {
+    let data = null;
+    const anonymousUser = firebase.auth().currentUser;
+
+    const ui = firebaseui.auth.AuthUI.getInstance() || new firebaseui.auth.AuthUI(firebase.auth());
+
+    const handleUpgrade = async (user) => {
+      try {
+        // Save anonymous user data
+        const snapshot = await firebase.database().ref(`users/${anonymousUser.uid}`).once('value');
+        data = snapshot.val();
+
+        if (!data) {
+          throw new Error('No anonymous user data found.');
+        }
+
+        // Ensure the data being transferred belongs to the anonymous user
+        if (data.userId !== anonymousUser.uid) {
+          throw new Error('Data does not belong to the anonymous user.');
+        }
+
+        // Update the user data with the new user ID
+        data.isAnonymous = false;
+        data.userId = user.uid;
+
+        // Transfer the user data to the new user ID
+        if (anonymousUser.uid !== user.uid) {
+          data.unverified = anonymousUser.uid;
+          // await firebase.database().ref(`users/${user.uid}`).update({ unverified: anonymousUser.uid });
+          // Delete the anonymous user and its data
+          await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
+          await anonymousUser.delete();
+          // Transfer the room user data
+          const { roomUsersKey } = state.currentUser.rooms[rootState.route.params.roomId];
+          await firebase.database().ref(`rooms/${rootState.route.params.roomId}/users/${roomUsersKey}/userId`).set(user.uid);
+          await firebase.database().ref(`rooms/${rootState.route.params.roomId}/usersUpgraded`).update({ verifiedUser: user.uid, unverifiedUser: anonymousUser.uid });
+        }
+        await firebase.database().ref(`users/${user.uid}`).set(data);
+        await firebase.database().ref(`users/${anonymousUser.uid}`).set(null);
+      } catch (error) {
+        console.error('Error during user upgrade:', error);
+        throw error;
+      }
+    };
+
+    try {
+      const uiConfig = {
+        callbacks: {
+          signInSuccessWithAuthResult: (authResult, redirectUrl) => {
+            console.log({ redirectUrl });
+
+            const { user } = authResult;
+
+            // Call handleUpgrade without awaiting it to ensure we return false immediately
+            handleUpgrade(user).then(() => {
+              if (authResult && authResult.user.isAnonymous === false) {
+                commit('USER_UPGRADED', { verifiedUser: authResult.user.uid, unverifiedUser: anonymousUser.uid, isCurrent: true });
+              }
+            }).catch((error) => {
+              console.error('Error during user upgrade:', error);
+            });
+
+            return false; // Ensure this function returns false to prevent automatic redirection
+          },
+
+          uiShown() {
+            document.getElementById('loader').style.display = 'none';
+          },
+          signInFailure: async (error) => {
+            if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
+              return Promise.resolve();
+            }
+
+            const cred = error.credential;
+
+            try {
+              // Sign in with the new credential
+              const userCredential = await firebase.auth().signInWithCredential(cred);
+              const { user } = userCredential;
+
+              // Call handleUpgrade with the user
+              await handleUpgrade(user);
+              commit('USER_UPGRADED', { verifiedUser: user.uid, unverifiedUser: anonymousUser.uid, isCurrent: true });
+              return Promise.resolve(); // Return a resolved promise to indicate successful handling
+            } catch (err) {
+              console.error('Error during sign-in failure handling:', err);
+              return Promise.reject(err); // Return a rejected promise to indicate an error
+            }
+          },
+        },
+        signInFlow: 'popup',
+        signInOptions: [
+          firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          {
+            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+            requireDisplayName: false,
+            signInMethod: 'password',
+          },
+        ],
+        credentialHelper: firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
+        autoUpgradeAnonymousUsers: true,
+        tosUrl: '<your-tos-url>',
+        privacyPolicyUrl: '<your-privacy-policy-url>',
+      };
+
+      ui.start('#firebaseui-auth-container', uiConfig);
+    } catch (error) {
+      console.log(error);
+    }
+  },
+
   async loginAnonymously() {
     // commit('SET_USER_AVATAR');
     firebase.auth().signInAnonymously()
@@ -205,6 +357,10 @@ const actions = {
           console.error(errorMessage);
         }
       });
+  },
+  updateUserNickName(_, nickName) {
+    firebase.database().ref(`users/${state.currentUser.userId}`).update({ nickname: nickName });
+    // commit('UPDATE_USER');
   },
 };
 
@@ -225,6 +381,63 @@ const mutations = {
   },
   SET_USER_AVATAR_SUCCESS(state, { url, userId }) {
     state.avatarUpdated = { url, userId };
+  },
+  USER_UPGRADED(state, { verifiedUser, unverifiedUser, isCurrent }) {
+    // Update currentUser
+    if (isCurrent) {
+      Vue.set(state.currentUser, 'isAnonymous', false);
+      Vue.set(state.currentUser, 'userId', verifiedUser);
+    }
+
+    if (verifiedUser !== unverifiedUser && isCurrent)Vue.set(state.currentUser, 'unverified', unverifiedUser);
+
+    // Transfer user data
+    Vue.set(state.userData, verifiedUser, {
+      ...state.userData[unverifiedUser],
+      userId: verifiedUser,
+      isAnonymous: false,
+    });
+
+    // Transfer user position
+    Vue.set(state.usersPosition, verifiedUser, state.userData[verifiedUser].position);
+    Vue.set(state.avatarUpdated, 'url', state.userData[verifiedUser].avatar);
+    Vue.set(state.avatarUpdated, 'userId', state.userData[verifiedUser].userId);
+    // Object.assign(state.avatarUpdated, { url: state.userData[verifiedUser].avatar, userId: verifiedUser });
+
+    // Remove unverified user data
+    if (verifiedUser !== unverifiedUser) {
+      Vue.delete(state.userData, unverifiedUser);
+      Vue.delete(state.usersPosition, unverifiedUser);
+    }
+    state.usersSwitched = { verifiedUser, unverifiedUser };
+    state.signingInUpgraded = true;
+  },
+  SET_USER_NICKNAME(state, { nickname, userId }) {
+    if (state.currentUser.userId === userId) state.currentUser.nickname = nickname;
+    state.userData[userId].nickname = nickname;
+  },
+  SET_USER_SIGNED_OUT(state) {
+    state.signingInUpgraded = false;
+    state.userUpgraded = false;
+    state.currentUser.unverified = null;
+    state.usersSwitched = null;
+  },
+  SET_USER_MINIAVATAR_SUCCESS(state, { userId, miniAvatarUrl }) {
+    if (state.userData[userId]) {
+      state.userData[userId].miniAvatar = miniAvatarUrl;
+    }
+  },
+  SET_CURRENT_USER_AVATAR(state, { avatar, miniAvatar }) {
+    state.currentUser.miniAvatar = miniAvatar;
+    state.currentUser.avatar = avatar;
+  },
+  SET_USER_UPGRADE_SUCCESS(state, { userId }) {
+    if (state.userData[userId]) {
+      state.otherUserUpdated = true;
+    }
+  },
+  UPDATE_USER(state) {
+    state.updatedUser = true;
   },
   PRIVATE_REQUESTED(state, { requestedBy, userId }) {
     state.requestedBy = requestedBy;

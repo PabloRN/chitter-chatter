@@ -1,6 +1,9 @@
 /* eslint-disable max-len */
 /* eslint-disable no-shadow */
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
+import 'firebase/auth'; // Import the auth module explicitly if needed
+import 'firebase/database'; // Import other Firebase modules as needed
+import 'firebase/storage';
 
 const state = {
   roomList: {},
@@ -9,6 +12,8 @@ const state = {
   gettingRoomsLoading: false,
   avatarsList: [],
   userDisconnected: false,
+  usersOnlineNow: 0,
+  currentRoom: {},
 };
 
 const getters = {
@@ -45,26 +50,21 @@ const actions = {
       //   });
       // For each room created we will create a listener to each user's
       // folder listenning for new users that enter to the room
-      // Object.keys(snapshot.val())
-      //   .map((singleRoom) => firebase.database()
-      //     .ref(`rooms/${singleRoom}/users/`)
-      //     .on('child_added', async (userSnap) => { // Get the user that enter to the room
-      //       if (userSnap.val() !== null) {
-      //         commit('ENTER_ROOM', { roomId: singleRoom, userId: userSnap.val(), roomUsersKey: userSnap.key });
-      //         console.log('child_added', { singleRoom, ...userSnap.val(), roomUsersKey: userSnap.key }, snapshot.val());
-      //       }
-      //     }));
-      // Object.keys(snapshot.val())
-      //   .map((singleRoom) => firebase.database()
-      //     .ref(`rooms/${singleRoom}/users`)
-      //     .on('child_removed', (userSnap) => {
-      //       console.log(singleRoom, userSnap.val()); // Get the user that exit to the room
-      //       const { userId } = userSnap.val();
-      //       dispatch('removeUser', { roomId: singleRoom, userId, roomUsersKey: userSnap.key });
-      //       console.log('child_removed', { singleRoom, ...userSnap.val(), roomUsersKey: userSnap.key });
-      //     }));
-      // const singleRoom = firebase.database().ref()
+
       commit('SET_ROOMS', snapshot.val());
+      Object.keys(snapshot.val())
+        .map((singleRoom) => {
+          const usersRoom = firebase.database()
+            .ref(`rooms/${singleRoom}/users/`);
+
+          usersRoom.on('child_added', async () => { // Get the user that enter to the room
+            commit('ADD_ONLINE_1', { roomId: singleRoom });
+          });
+          usersRoom.on('child_removed', async () => { // Get the user that enter to the room
+            commit('SUB_ONLINE_1', { roomId: singleRoom });
+          });
+          return Object.keys(snapshot.val()).length;
+        });
       return 'rooms ready';
     } catch (error) {
       commit('SET_ROOMS_FAIL');
@@ -72,35 +72,66 @@ const actions = {
     }
     return 'ready';
   },
-  async pushUser({ commit, dispatch, rootState }, { roomId, userId }) {
+  async getRoomDetails({ commit, dispatch, rootState }, roomId) {
+    // commit('GET_ROOM_DETAILS');
+    try {
+      const roomReference = await firebase.database().ref(`rooms/${roomId}`);
+      const snapshot = await roomReference.once('value');
+
+      const usersReference = firebase.database().ref(`rooms/${roomId}/users`);
+      const usersUpgradedReference = firebase.database().ref(`rooms/${roomId}/usersUpgraded`);
+
+      usersReference.on('child_added', async (userSnap) => { // Get the user that enter to the room
+        if (userSnap.val() !== null) {
+          commit('ENTER_ROOM', {
+
+            roomId, userId: userSnap.val(), roomUsersKey: userSnap.key, rootState,
+          });
+        }
+      });
+      usersReference.on('child_removed', (userSnap) => { // Get the user that leaved the room
+        const { userId } = userSnap.val();
+        dispatch('removeUser', { roomId, userId, roomUsersKey: userSnap.key });
+      });
+      usersUpgradedReference.on('value', (userSnap) => {
+        const userUpgraded = userSnap.val();
+        if (userUpgraded !== null && userUpgraded.verifiedUser !== null && userUpgraded.unverifiedUser !== null && userUpgraded.verifiedUser !== rootState.user.currentUser.userId && userUpgraded.unverifiedUser !== rootState.user.currentUser.userId) {
+          dispatch('user/upgradeNonCurrentUser', { verifiedUser: userUpgraded.verifiedUser, unverifiedUser: userUpgraded.unverifiedUser }, { root: true });
+          usersUpgradedReference.set({ verifiedUser: null, unverifiedUser: null });
+        }
+      });
+      commit('SET_ROOM_DETAILS_SUCCESS', snapshot.val());
+      return snapshot.val();
+    } catch (error) {
+      commit('SET_ROOMS_FAIL');
+      console.log(error);
+      return error;
+    }
+  },
+  async pushUser({ commit, rootState }, { roomId, userId }) {
     commit('PUSH_USER');
     try {
+      const { currentUser } = rootState.user;
+      const storageRef = firebase.storage().ref();
+      const defaultAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/defaultAvatar/defaultAvatar.png`);
+      const defaultMiniAvatarRef = storageRef.child(`rooms/${roomId}/avatars/${currentUser.level}/miniavatars/defaultAvatar_head.png`);
+      const defaultUrl = await defaultAvatarRef.getDownloadURL();
+      const defaultMiniUrl = await defaultMiniAvatarRef.getDownloadURL();
+      if (defaultUrl) {
+        await firebase.database().ref(`users/${currentUser.userId}/avatar/`).set(defaultUrl);
+      }
+      if (defaultMiniUrl) {
+        await firebase.database().ref(`users/${currentUser.userId}/miniAvatar/`).set(defaultMiniUrl);
+      }
       const roomUsersKey = firebase.database().ref().child(`rooms/${roomId}/users/`).push().key;
       const updates = {};
-      console.log('pushed user', { roomId, userId });
       updates[`/rooms/${roomId}/users/${roomUsersKey}`] = { userId };
       updates[`/users/${userId}/rooms/${roomId}`] = { roomUsersKey };
       const refRoom = firebase.database().ref(`rooms/${roomId}/users/${roomUsersKey}/`);
       refRoom.onDisconnect().update({
         userId: null,
       });
-      firebase.database()
-        .ref(`rooms/${roomId}/users/`)
-        .on('child_added', async (userSnap) => { // Get the user that enter to the room
-          if (userSnap.val() !== null) {
-            console.log('User enter room', { roomId, userId: userSnap.val(), roomUsersKey: userSnap.key });
-            commit('ENTER_ROOM', {
-              roomId, userId: userSnap.val(), roomUsersKey: userSnap.key, rootState,
-            });
-          }
-        });
-      firebase.database()
-        .ref(`rooms/${roomId}/users`)
-        .on('child_removed', (userSnap) => {
-          const { userId } = userSnap.val();
-          dispatch('removeUser', { roomId, userId, roomUsersKey: userSnap.key });
-          console.log('child_removed', { roomId, user: userSnap.val(), roomUsersKey: userSnap.key });
-        });
+
       await firebase.database().ref().update(updates);
 
       commit('PUSH_USER_SUCCESS');
@@ -149,21 +180,21 @@ const actions = {
     commit('GET_AVATARS');
     try {
       const urlList = [];
-      const storage = firebase.storage();
+
       // Create a storage reference from our storage service
-      const storageRef = storage.ref();
+      const storageRef = firebase.storage().ref();
       const avatarsRef = storageRef.child(`rooms/${roomId}/avatars/${rootState.user.currentUser.level}`);
       const tempRefs = await avatarsRef.listAll();
+
       await Promise.all(tempRefs.items.map((async (ref, index) => {
-        const starsRef = storageRef.child(ref.location.path);
-        // const miniavatarurl = await storageRef.child(`miniavatars/${ref.name}`);
+        const starsRef = storageRef.child(ref.fullPath);
         // const metadata = await starsRef.getMetadata();
         const url = await starsRef.getDownloadURL();
-        // const miniurl = await miniavatarurl.getDownloadURL();
         urlList.push({ avatarId: index, url });
       })));
       commit('GET_AVATARS_SUCCEED', urlList);
     } catch (error) {
+      console.log(error);
       commit('GET_AVATARS_FAILED');
     }
   },
@@ -197,6 +228,17 @@ const mutations = {
   PUSH_USER_SUCCESS(state) {
     state.pushingUser = false;
   },
+  SET_ROOM_DETAILS_SUCCESS(state, roomDetails) {
+    state.currentRoom = roomDetails;
+  },
+  ADD_ONLINE_1(state, { roomId }) {
+    Object.assign(state.roomList[roomId], { usersOnline: state.roomList[roomId].usersOnline ? state.roomList[roomId].usersOnline += 1 : 1 });
+    state.usersOnlineNow += 1;
+  },
+  SUB_ONLINE_1(state, { roomId }) {
+    Object.assign(state.roomList[roomId], { usersOnline: state.roomList[roomId].usersOnline ? state.roomList[roomId].usersOnline -= 1 : 1 });
+    state.usersOnlineNow -= 1;
+  },
   // SET_USER_POSITION(state, { position, userId }) {
   //   console.log(this.state);
   //   if (this.state.user.usersPosition[userId]) {
@@ -209,18 +251,31 @@ const mutations = {
   ENTER_ROOM(state, {
     roomId, userId, roomUsersKey,
   }) {
-    if (state.roomList[roomId].users) {
-      Object.assign(state.roomList[roomId].users, { [roomUsersKey]: userId });
+    // if (state.roomList[roomId].users) {
+    //   Object.assign(state.roomList[roomId].users, { [roomUsersKey]: userId });
+    // } else {
+    //   Object.assign(state.roomList[roomId], { users: { [roomUsersKey]: userId } });
+    // }
+    if (state.currentRoom.users) {
+      Object.assign(state.currentRoom.users, { [roomUsersKey]: userId });
     } else {
-      Object.assign(state.roomList[roomId], { users: { [roomUsersKey]: userId } });
+      Object.assign(state.currentRoom, { users: { [roomUsersKey]: userId } });
     }
     state.userAdded = { roomId, ...userId };
     this.state.user.roomIn = { roomId, roomUsersKey };
   },
   EXIT_ROOM(state, { roomId, userId, roomUsersKey }) {
-    delete state.roomList[roomId].users[roomUsersKey];
-    delete this.state.user.userData[userId];
-    delete this.state.user.usersPosition[userId];
+    if (userId === this.state.user.currentUser.userId) {
+      this.state.user.userData = {};
+      this.state.user.usersPosition = {};
+      this.state.user.roomIn = {};
+      state.currentRoom = {};
+    } else {
+      delete this.state.user.userData[userId];
+      delete this.state.user.usersPosition[userId];
+      delete state.currentRoom.users[roomUsersKey];
+    }
+
     this.state.user.userPositionModified = true;
     state.userExit = { roomId, userId };
     state.userAdded = null;

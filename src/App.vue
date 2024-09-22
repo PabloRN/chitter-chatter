@@ -7,7 +7,7 @@
       <router-view />
       </v-fade-transition>
     </v-main>
-     <Snackbar />
+     <snack-bar />
   </v-app>
 </template>
 
@@ -18,14 +18,14 @@ import {
   mapActions,
 } from 'vuex';
 // import Drawer from './components/layout/Drawer.vue';
-import Snackbar from './components/Snackbar.vue';
+import SnackBar from './components/Snackbar.vue';
 // Utilities
 export default Vue.extend({
   name: 'App',
 
   components: {
     // Drawer,
-    Snackbar,
+    SnackBar,
   },
   mounted() {
     // this.checkLoggedIn();
@@ -37,10 +37,23 @@ export default Vue.extend({
     // console.log(this.$router.beforeEach());
   },
   created() {
+  // eslint-disable-next-line
+    // const orientation = screen.orientation;
+    // // eslint-disable-next-line
+    // console.log(orientation)
+    // if (orientation && orientation.lock) {
+    //   // Lock the screen orientation to landscape
+    //   // eslint-disable-next-line dot-notation
+    //   orientation['lock']('landscape');
+    // } else {
+    //   // Screen orientation API not supported
+    //   console.error('Screen orientation API is not supported on this device.');
+    // }
+    // eslint-disable-next-line no-restricted-globals, dot-notation
+    // window.screen.orientation['lock']('landscape');
     this.SET_LANG();
     this.getUser();
     // this.checkLoggedIn();
-    console.log('ENV:', process.env.NODE_ENV);
     window.addEventListener(
       'beforeunload',
       this.leaveBrowser,

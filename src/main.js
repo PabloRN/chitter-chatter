@@ -2,7 +2,7 @@ import Vue from 'vue';
 import { sync } from 'vuex-router-sync';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
 import App from './App.vue';
 import './registerServiceWorker';
 import router from './router';
@@ -10,6 +10,7 @@ import store from './store';
 import vuetify from './plugins/vuetify';
 import i18n from './i18n';
 import './utils/vee-validate';
+import './assets/scss/main.scss';
 
 // Sync store with router
 sync(store, router);
@@ -27,7 +28,8 @@ new Vue({
     firebase.initializeApp(
       {
         apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
-        authDomain: 'chitter-chatter-f762a.firebaseapp.com',
+        authDomain: 'toonstalk.com',
+        // authDomain: 'chitter-chatter-f762a.firebaseapp.com',
         databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
         projectId: 'chitter-chatter-f762a',
         storageBucket: 'chitter-chatter-f762a.appspot.com',

@@ -16,6 +16,7 @@ import { ValidationProvider } from 'vee-validate';
 import { mapActions } from 'vuex';
 
 export default {
+  name: 'PasswordComponent',
   components: {
     ValidationProvider,
   },
