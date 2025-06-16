@@ -13,6 +13,7 @@
         />
       </v-toolbar-title>
     </v-app-bar>
+
     <div class="d-flex flex-nowrap flex-direction-row pa-2">
       <div class="panel-container">
         <div class="panel" v-for="(room, key) in getAllRooms" :key="key"
@@ -24,6 +25,15 @@
 
       </div> -->
     </div>
+    <div style="width: 100%;display: flex; justify-content: center;align-items: center;margin-top: 20px;" >
+        <v-card style="width: 40%">
+        <v-card-text class="text-subtitle-1" style="height: 20vh">
+          <p>This is a temporary url created especially for you, our beloved early tester. Please note that it will expire soon.</p>
+          <p>If you find this product amazing and you want to hear more from us and share your experience join us on our Discord channel <a href="https://discord.gg/MKtRuUfG" target="_blank">discord channel</a>. We'd love to hear from you! </p>
+       </v-card-text>
+      </v-card>
+    </div>
+
     <v-footer
       padless
       absolute
@@ -40,6 +50,34 @@
         </v-card-text>
       </v-card>
     </v-footer>
+    <v-dialog
+      v-if="showWelcomeDialog"
+      v-model="showWelcomeDialog"
+      persistent
+      width="600"
+      class="pa-5 ma-5 progress-dialog"
+    >
+      <v-card style="width: 100%">
+        <v-card-title class="text-h6">Welcome, Early Tester! </v-card-title>
+        <v-card-text class="text-subtitle-1" style="height: 20vh">
+          <p>Thank you for being one of the selected few to try out our beta version. Your feedback is incredibly valuable in helping us shape the final product.</p>
+          <p>Please remember that this is a beta version, so you may encounter some bugs or incomplete features. Also is only working on PC and tablet. We’d love to hear your thoughts on how we can improve!</p>
+       </v-card-text>
+        <v-card-actions class="text-body-2 pa-2 d-flex justify-end align-end">
+          <v-btn
+            small
+            class="px-10"
+            color="primary darken-1"
+            tile
+            @click="
+            showWelcomeDialog = false;
+            "
+          >
+            Close</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 <script>
@@ -51,6 +89,7 @@ export default {
   name: 'RoomsComponent',
   components: { RoomThumbnail },
   data: () => ({
+    showWelcomeDialog: false,
     usersOnline: 0,
     flexBasisValues: ['25%'],
     variant: 'absolute',
@@ -75,6 +114,10 @@ export default {
     this.getRooms();// TODO: we don't need all the data for all rooms
   },
   mounted() {
+    if (!localStorage.getItem('hasVisited')) {
+      this.showWelcomeDialog = true;
+      localStorage.setItem('hasVisited', 'true');
+    }
     // console.log('usersOnline', this.usersOnline);
   },
   watch: {
