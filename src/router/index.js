@@ -21,11 +21,7 @@ const routes = [
     path: '/rooms/:roomId',
     name: 'room',
     component: Room,
-    props: route => ({
-      roomId: route.params.roomId,
-      background: route.query.background,
-      maxusers: route.query.maxusers
-    }),
+    props: true,
   },
   {
     path: '/signup',

@@ -58,7 +58,6 @@ export default {
       this.$router.push({
         name: 'room',
         params: { roomId: key },
-        query: { background: room.picture, maxusers: room.maxusers },
       });
     },
   },
