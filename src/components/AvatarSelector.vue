@@ -109,15 +109,17 @@ export default {
     // Slider configuration [obj]
     options: {
       currentPage: 0,
-      tracking: false,
-      thresholdDistance: 80,
+      tracking: true,
+      thresholdDistance: 50,
       thresholdTime: 300,
       infinite: false,
       loopedSlides: 0,
       slidesToScroll: 1,
       loop: false,
       itemAnimation: true,
-      speed: 300,
+      speed: 400,
+      centeredSlides: true,
+      spaceBetween: 20,
     },
     avatars: [],
   }),
@@ -128,7 +130,7 @@ export default {
       return Math.max(0, this.avatarsList.length - 1);
     },
     totalDots() {
-      return Math.ceil(this.avatarsList.length / this.options.slidesToScroll);
+      return this.avatarsList.length;
     },
   },
   created() {
@@ -235,15 +237,38 @@ export default {
 .avatar-selector-sheet::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: -20%;
+  left: -30%;
+  right: -30%;
+  bottom: -20%;
   background:
     radial-gradient(circle at 20% 30%, rgba(255, 107, 157, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, rgba(138, 43, 226, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(255, 20, 147, 0.2) 0%, transparent 50%);
+    radial-gradient(circle at 40% 80%, rgba(255, 20, 147, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 60% 20%, rgba(138, 43, 226, 0.2) 0%, transparent 40%),
+    radial-gradient(circle at 10% 60%, rgba(255, 20, 147, 0.3) 0%, transparent 45%);
+  background-size: 200% 200%;
+  background-position: center;
+  animation: background-shift 8s ease-in-out infinite alternate;
   pointer-events: none;
+}
+
+@keyframes background-shift {
+  0% {
+    background-position: 0% 0%;
+  }
+  25% {
+    background-position: 30% 20%;
+  }
+  50% {
+    background-position: 70% 60%;
+  }
+  75% {
+    background-position: 20% 80%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
 }
 
 .avatar-selector-title {
@@ -293,6 +318,28 @@ export default {
   flex: 1;
   height: 100%;
   overflow: hidden;
+  position: relative;
+}
+
+/* Vue Concise Slider specific styles */
+.slider-wrapper >>> .slider {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.slider-wrapper >>> .slider-wrap {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.slider-wrapper >>> .slider-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
 }
 
 .nav-button {
@@ -361,15 +408,20 @@ export default {
 .avatar-slider {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .slider-item-custom {
   width: 120px !important;
   height: 200px !important;
-  margin: 0 10px !important;
+  margin: 0 15px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
 }
 
 .avatar-card {
@@ -660,7 +712,7 @@ export default {
 
   .slider-item-custom {
     width: 80px !important;
-    margin: 0 5px !important;
+    margin: 0 10px !important;
   }
 
   .avatar-card {
@@ -712,7 +764,7 @@ export default {
   .slider-item-custom {
     width: 60px !important;
     height: 120px !important;
-    margin: 0 3px !important;
+    margin: 0 8px !important;
   }
 
   .avatar-card {

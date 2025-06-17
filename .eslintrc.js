@@ -16,9 +16,7 @@ module.exports = {
     ecmaVersion: 2020, // or later
     sourceType: 'module',
   },
-  // parserOptions: {
-    // parser: '@typescript-eslint/parser',
-  // },
+  ignorePatterns: ['dist/', 'service-worker.js'], // Exclude dist directory and service-worker file
   overrides: [
     {
       files: [
