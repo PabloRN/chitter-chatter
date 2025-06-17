@@ -4,7 +4,7 @@
     <v-app-bar dense elevation="4" rounded shaped>
       <v-toolbar-title style="display: flex; justify-content: flex-start">
         <v-img
-          :src="require('../assets/logotype_landing_page.png')"
+          src="../assets/logotype_landing_page.png"
           class="my-3"
           contain
           width="6em"
@@ -82,12 +82,22 @@
 </template>
 <script>
 // @ is an alias to /src
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { useRoomsStore } from '@/stores/rooms';
+import { useUserStore } from '@/stores/user';
 import RoomThumbnail from '@/components/RoomThumbnail.vue';
 
 export default {
   name: 'RoomsComponent',
   components: { RoomThumbnail },
+  setup() {
+    const roomsStore = useRoomsStore();
+    const userStore = useUserStore();
+
+    return {
+      roomsStore,
+      userStore,
+    };
+  },
   data: () => ({
     showWelcomeDialog: false,
     usersOnline: 0,
@@ -98,12 +108,20 @@ export default {
     avatar: 'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fkimetsu_1%2Favatars%2FL1%2Ftanjiro.png?alt=media&token=ebf9e68d-c0e2-4019-a201-24e6553aad0a',
   }),
   computed: {
-    ...mapGetters('rooms', ['getAllRooms']),
-    ...mapState('rooms', ['roomList', 'usersOnlineNow']),
-    ...mapGetters('user', ['getCurrentUser']),
+    getAllRooms() {
+      return this.roomsStore.getAllRooms;
+    },
+    roomList() {
+      return this.roomsStore.roomList;
+    },
+    usersOnlineNow() {
+      return this.roomsStore.usersOnlineNow;
+    },
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
   },
   methods: {
-    ...mapActions('rooms', ['getRooms']),
     getRandomFlexBasis() {
       const randomFlexBasis = this.flexBasisValues[Math.floor(Math.random()
         * this.flexBasisValues.length)];
@@ -111,7 +129,7 @@ export default {
     },
   },
   created() {
-    this.getRooms();// TODO: we don't need all the data for all rooms
+    this.roomsStore.getRooms();
   },
   mounted() {
     if (!localStorage.getItem('hasVisited')) {

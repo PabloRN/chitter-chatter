@@ -1,15 +1,10 @@
-import Vue from 'vue';
-import VueRouter from 'vue-router';
-// @ts-ignore
+import { createRouter, createWebHistory } from 'vue-router';
 import Login from '@/views/Login.vue';
-// @ts-ignore
 import LoginForm from '@/components/LoginForm.vue';
 import SignupForm from '@/components/SignupForm.vue';
 import Rooms from '@/views/Rooms.vue';
 import Room from '@/views/Room.vue';
 import LoadingPage from '@/views/LoadingPage.vue';
-
-Vue.use(VueRouter);
 
 const routes = [
   {
@@ -26,7 +21,11 @@ const routes = [
     path: '/rooms/:roomId',
     name: 'room',
     component: Room,
-    props: true,
+    props: route => ({
+      roomId: route.params.roomId,
+      background: route.query.background,
+      maxusers: route.query.maxusers
+    }),
   },
   {
     path: '/signup',
@@ -62,12 +61,14 @@ const routes = [
   },
 ];
 
-const router = new VueRouter({
-  mode: 'history',
+const router = createRouter({
+  history: createWebHistory(),
   routes,
 });
+
 // router.beforeEach((to, from, next) => {
 //   console.log({ to, from, next });
 //   next();
 // });
+
 export default router;

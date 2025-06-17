@@ -87,10 +87,12 @@
 </template>
 
 <script>
-import { mapState, mapActions, mapGetters } from 'vuex';
 import ChatterComponent from '@/components/Chatter.vue';
 import TimeMachine from '@/components/TimeMachine.vue';
 import PrivateDialogBubble from '@/components/PrivateDialogBubble.vue';
+import { useUserStore } from '@/stores/user';
+import { useRoomsStore } from '@/stores/rooms';
+import { useMessagesStore } from '@/stores/messages';
 
 export default {
   name: 'RoomComponent',
@@ -101,6 +103,17 @@ export default {
   },
   props: {
     roomId: String,
+  },
+  setup() {
+    const userStore = useUserStore();
+    const roomsStore = useRoomsStore();
+    const messagesStore = useMessagesStore();
+
+    return {
+      userStore,
+      roomsStore,
+      messagesStore,
+    };
   },
   data: () => ({
     innerHeight: '',
@@ -114,23 +127,26 @@ export default {
     chattersCounter: 0,
   }),
   computed: {
-    ...mapState('rooms', ['userAdded', 'userExit', 'roomList', 'avatarList', 'currentRoom']),
-    ...mapState('user', ['currentUser', 'requestedBy', 'avatarUpdated', 'usersSwitched', 'userData', 'signingInUpgraded']),
-    ...mapState('messages', ['privateMessage', 'privateUsers', 'showMessagesStatus']),
-    ...mapGetters('user', ['getCurrentUser']),
+    userAdded() { return this.roomsStore.userAdded; },
+    userExit() { return this.roomsStore.userExit; },
+    roomList() { return this.roomsStore.roomList; },
+    avatarList() { return this.roomsStore.avatarsList; },
+    currentRoom() { return this.roomsStore.currentRoom; },
+    currentUser() { return this.userStore.currentUser; },
+    requestedBy() { return this.userStore.requestedBy; },
+    avatarUpdated() { return this.userStore.avatarUpdated; },
+    usersSwitched() { return this.userStore.usersSwitched; },
+    userData() { return this.userStore.userData; },
+    signingInUpgraded() { return this.userStore.signingInUpgraded; },
+    privateMessage() { return this.messagesStore.privateMessage; },
+    privateUsers() { return this.messagesStore.privateUsers; },
+    showMessagesStatus() { return this.messagesStore.showMessagesStatus; },
+    getCurrentUser() { return this.userStore.getCurrentUser; },
     chattersArray() {
       return this.chattersCounter && Array.from(this.chatters);
     },
   },
   methods: {
-    ...mapActions('user', ['getUserData']),
-    ...mapActions('rooms', ['getRooms', 'removeUser', 'getAvatars', 'pushUser', 'getRoomDetails']),
-    ...mapActions('messages', [
-      'getDialogs',
-      'confirmPrivate',
-      'closePrivate',
-      'cleanPrivateMessages',
-    ]),
     async initUsers() {
       setTimeout(async () => {
         if (
@@ -143,7 +159,7 @@ export default {
           for (const roomUserID of userIDs) {
             const { userId } = this.currentRoom.users[roomUserID];
             // eslint-disable-next-line no-await-in-loop
-            const userDataNew = await this.getUserData(userId);
+            const userDataNew = await this.userStore.getUserData(userId);
             if (Object.keys(userDataNew).length > 0) {
               this.chatters.set(userId, userDataNew);
               this.chattersCounter += 1;
@@ -152,20 +168,20 @@ export default {
         }
         // eslint-disable-next-line max-len
         if (this.$route.params.roomId && this.getCurrentUser.userId) {
-          this.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
-          this.getAvatars(this.$route.params.roomId);
+          this.roomsStore.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
+          this.roomsStore.getAvatars(this.$route.params.roomId);
         }
       }, 100);
     },
     confirmPrivateRequest() {
-      this.confirmPrivate({
+      this.messagesStore.confirmPrivate({
         requestedBy: this.requestedBy.userId,
         currentUser: this.currentUser.userId,
       });
     },
     privateMessageClosed() {
       this.showDialog = false;
-      this.closePrivate();
+      this.messagesStore.closePrivate();
     },
   },
   created() {
@@ -175,7 +191,7 @@ export default {
     // eslint-disable-next-line max-len
     this.innerHeight = window.innerHeight;
     if (Object.keys(this.currentRoom).length === 0) {
-      this.getRoomDetails(this.$route.params.roomId)
+      this.roomsStore.getRoomDetails(this.$route.params.roomId)
         // eslint-disable-next-line max-len
         .then(() => {
           this.background = this.currentRoom.picture;
@@ -185,7 +201,7 @@ export default {
       this.background = this.currentRoom.picture;
       this.initUsers();
     }
-    this.getDialogs(this.$route.params.roomId);
+    this.messagesStore.getDialogs(this.$route.params.roomId);
   },
   // beforeRouteLeave(from, to, next) {
   //   const userVal = Object.values(this.currentUser)[0];
@@ -199,7 +215,7 @@ export default {
   watch: {
     async userAdded(newUser) {
       if (newUser && newUser?.roomId === this.$route.params.roomId) {
-        const userDataNew = await this.getUserData(newUser.userId);
+        const userDataNew = await this.userStore.getUserData(newUser.userId);
         if (Object.keys(userDataNew).length > 0) {
           this.chatters.set(newUser.userId, userDataNew);
           this.chattersCounter += 1;
@@ -254,7 +270,7 @@ export default {
         this.$nextTick(() => {
           this.showDialog = false;
         });
-        this.cleanPrivateMessages();
+        this.messagesStore.cleanPrivateMessages();
         this.pMessage = [];
       }
     },

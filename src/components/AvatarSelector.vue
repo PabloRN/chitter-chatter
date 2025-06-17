@@ -14,49 +14,44 @@
             >
               <v-icon>mdi-chevron-left</v-icon>
             </button>
-            <!-- Using the slider component -->
+            <!-- Custom Vue 3 compatible slider -->
             <div class="slider-wrapper">
-              <slider
-                ref="slider"
-                :options="options"
-                class="avatar-slider"
-                @slide="onSlide"
-                @init="onInit"
-              >
-                <!-- slideritem wrapped package with the components you need -->
-                <slideritem
-                  class="slider-item-custom"
-                  v-for="(item, index) in avatarsList"
-                  :key="index"
+              <div class="avatar-slider" ref="slider">
+                <div 
+                  class="slider-track" 
+                  :style="{ transform: `translateX(-${currentSlide * slideWidth}px)` }"
                 >
                   <div
-                    class="avatar-card"
+                    v-for="(item, index) in avatarsList"
+                    :key="index"
+                    class="slider-item-custom"
                     @click="avatarSelected($event, item)"
                     @touchstart="handleTouchStart"
                     @touchmove="handleTouchMove"
                     @touchend="handleTouchEnd"
                   >
-                    <div class="avatar-frame">
-                      <div class="anime-sparkles">
-                        <div class="sparkle sparkle-1"></div>
-                        <div class="sparkle sparkle-2"></div>
-                        <div class="sparkle sparkle-3"></div>
-                        <div class="sparkle sparkle-4"></div>
+                    <div class="avatar-card">
+                      <div class="avatar-frame">
+                        <div class="anime-sparkles">
+                          <div class="sparkle sparkle-1"></div>
+                          <div class="sparkle sparkle-2"></div>
+                          <div class="sparkle sparkle-3"></div>
+                          <div class="sparkle sparkle-4"></div>
+                        </div>
+                        <v-img
+                          contain
+                          class="avatar-image-selector"
+                          :src="item.url"
+                        ></v-img>
+                        <div class="manga-speed-lines"></div>
                       </div>
-                      <v-img
-                        contain
-                        class="avatar-image-selector"
-                        :src="item.url"
-                      ></v-img>
-                      <div class="manga-speed-lines"></div>
+                      <div class="avatar-glow"></div>
+                      <div class="anime-aura"></div>
                     </div>
-                    <div class="avatar-glow"></div>
-                    <div class="anime-aura"></div>
                   </div>
-                </slideritem>
-                <!-- Customizable loading -->
-                <div slot="loading" class="loading-text">Loading characters...</div>
-              </slider>
+                </div>
+                <div v-if="avatarsList.length === 0" class="loading-text">Loading characters...</div>
+              </div>
             </div>
             <button
               class="nav-button nav-button-right"
@@ -83,19 +78,25 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex';
-import { slider, slideritem } from 'vue-concise-slider';
+import { useRoomsStore } from '@/stores/rooms';
+import { useUserStore } from '@/stores/user';
 
 export default {
-  components: {
-    slider,
-    slideritem,
-  },
+  components: {},
   props: {
     showAvatarSelector: {
       default: false,
       type: Boolean,
     },
+  },
+  setup() {
+    const roomsStore = useRoomsStore();
+    const userStore = useUserStore();
+
+    return {
+      roomsStore,
+      userStore,
+    };
   },
   data: () => ({
     showLoginDialog: false,
@@ -106,26 +107,19 @@ export default {
     touchStartX: 0,
     touchStartTime: 0,
     isDragging: false,
-    // Slider configuration [obj]
-    options: {
-      currentPage: 0,
-      tracking: true,
-      thresholdDistance: 50,
-      thresholdTime: 300,
-      infinite: false,
-      loopedSlides: 0,
-      slidesToScroll: 1,
-      loop: false,
-      itemAnimation: true,
-      speed: 400,
-      centeredSlides: true,
-      spaceBetween: 20,
-    },
+    slideWidth: 150, // Width of each slide including margin
     avatars: [],
   }),
   computed: {
-    ...mapState('rooms', ['avatarsList']),
-    ...mapState('user', ['currentUser', 'signingInUpgraded']),
+    avatarsList() {
+      return this.roomsStore.avatarsList;
+    },
+    currentUser() {
+      return this.userStore.currentUser;
+    },
+    signingInUpgraded() {
+      return this.userStore.signingInUpgraded;
+    },
     maxSlide() {
       return Math.max(0, this.avatarsList.length - 1);
     },
@@ -138,35 +132,30 @@ export default {
   },
   mounted() {
     this.avatars = this.avatarsList;
+    // Ensure proper initialization after DOM is ready
+    this.$nextTick(() => {
+      this.currentSlide = 0;
+    });
   },
   methods: {
-    ...mapActions('user', ['signUserIn', 'changeAvatar']),
     setIsLoading(val) {
       this.isLoading = val;
     },
     submit() {
-      this.signUserIn();
-    },
-    onSlide(data) {
-      this.currentSlide = data.currentPage;
-    },
-    onInit() {
-      this.currentSlide = 0;
+      this.userStore.signUserIn();
     },
     previousSlide() {
-      if (this.$refs.slider && this.currentSlide > 0) {
-        this.$refs.slider.slide(this.currentSlide - 1);
+      if (this.currentSlide > 0) {
+        this.currentSlide--;
       }
     },
     nextSlide() {
-      if (this.$refs.slider && this.currentSlide < this.maxSlide) {
-        this.$refs.slider.slide(this.currentSlide + 1);
+      if (this.currentSlide < this.maxSlide) {
+        this.currentSlide++;
       }
     },
     goToSlide(index) {
-      if (this.$refs.slider) {
-        this.$refs.slider.slide(index);
-      }
+      this.currentSlide = index;
     },
     handleTouchStart(e) {
       this.touchStartX = e.touches[0].clientX;
@@ -199,7 +188,7 @@ export default {
       e.stopPropagation();
       e.preventDefault();
       if (this.currentUser.isAnonymous) {
-        this.changeAvatar(itemSelected.url);
+        this.userStore.changeAvatar(itemSelected.url);
         this.$emit('onClose');
       } else {
         this.itemSelectedUrl = itemSelected.url;
@@ -321,25 +310,19 @@ export default {
   position: relative;
 }
 
-/* Vue Concise Slider specific styles */
-.slider-wrapper >>> .slider {
+/* Custom slider styles */
+.avatar-slider {
+  width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
+  overflow: hidden;
+  position: relative;
 }
 
-.slider-wrapper >>> .slider-wrap {
-  height: 100%;
+.slider-track {
   display: flex;
-  align-items: center;
+  height: 100%;
   transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.slider-wrapper >>> .slider-item {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  height: 100% !important;
+  align-items: center;
 }
 
 .nav-button {
@@ -405,23 +388,15 @@ export default {
   transform: scale(1.1);
 }
 
-.avatar-slider {
-  width: 100%;
-  height: 100%;
+.slider-item-custom {
+  width: 120px;
+  height: 200px;
+  margin: 0 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.slider-item-custom {
-  width: 120px !important;
-  height: 200px !important;
-  margin: 0 15px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
-  position: relative !important;
+  flex-shrink: 0;
+  position: relative;
 }
 
 .avatar-card {

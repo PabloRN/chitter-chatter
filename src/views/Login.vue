@@ -27,11 +27,7 @@
     </v-container>
 </template>
 <script>
-import {
-  mapMutations,
-  mapState,
-} from 'vuex';
-
+import { useMainStore } from '@/stores/main';
 import LanguageSwitcher from '@/components/layout/LanguageSwitcher.vue';
 
 export default {
@@ -39,18 +35,29 @@ export default {
   components: {
     LanguageSwitcher,
   },
+  setup() {
+    const mainStore = useMainStore();
+
+    return {
+      mainStore,
+    };
+  },
   data: () => ({
     breakpoint: {},
   }),
   computed: {
-    ...mapState('main', ['drawer']),
+    drawer() {
+      return this.mainStore.drawer;
+    },
   },
   mounted() {
     // this.setDrawer(false);
     this.breakpoint = this.$vuetify.breakpoint;
   },
   methods: {
-    ...mapMutations('main', ['setSnackbar']),
+    setSnackbar(payload) {
+      this.mainStore.setSnackbar(payload);
+    },
   },
 };
 </script>

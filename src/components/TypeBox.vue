@@ -32,8 +32,9 @@ text-shadow: 1px 1px 1px rgba(255,255,255,.5);">Talk</span></v-btn>
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
 import isMobile from '@/utils/mobileDetection';
+import { useUserStore } from '@/stores/user';
+import { useMessagesStore } from '@/stores/messages';
 
 export default {
   name: 'TypeBox',
@@ -42,6 +43,15 @@ export default {
       default: false,
       type: Boolean,
     },
+  },
+  setup() {
+    const userStore = useUserStore();
+    const messagesStore = useMessagesStore();
+
+    return {
+      userStore,
+      messagesStore,
+    };
   },
   data: () => ({
     message: '',
@@ -55,10 +65,11 @@ export default {
 
   },
   computed: {
-    ...mapGetters('user', ['getCurrentUser']),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
   },
   methods: {
-    ...mapActions('messages', ['sendMessage']),
     enterPress(e) {
       if (e.type === 'keypress' && e.key === 'Enter') {
         this.talk(e);
@@ -67,7 +78,7 @@ export default {
     talk(e) {
       e.preventDefault();
       e.stopPropagation();
-      this.sendMessage(
+      this.messagesStore.sendMessage(
         {
           message: this.message,
           userId: this.getCurrentUser.userId,

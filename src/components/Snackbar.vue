@@ -16,9 +16,7 @@
 
 <script>
 // Utilities
-import {
-  mapState,
-} from 'vuex';
+import { useMainStore } from '@/stores/main';
 
 const ICON_MAP = {
   error: 'mdi-alert-octagon',
@@ -29,12 +27,21 @@ const ICON_MAP = {
 
 export default {
   name: 'SnackBar',
+  setup() {
+    const mainStore = useMainStore();
+
+    return {
+      mainStore,
+    };
+  },
   data: () => ({
     model: false,
   }),
 
   computed: {
-    ...mapState('main', ['snackbar']),
+    snackbar() {
+      return this.mainStore.snackbar;
+    },
     icon() {
       return ICON_MAP[this.snackbar.type] || 'mdi-playlist-check';
     },

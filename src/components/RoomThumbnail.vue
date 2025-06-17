@@ -9,9 +9,7 @@
       >
         <v-card-actions>
           <v-list-item class="roomtitle">
-            <v-list-item-content class="roomtitle">
-              <v-list-item-title class="roomtitle">{{ room?.nombre }}</v-list-item-title>
-            </v-list-item-content>
+            <v-list-item-title class="roomtitle">{{ room?.nombre }}</v-list-item-title>
 
             <v-row align="center" justify="end">
               <!-- <v-icon class="mr-1 roomtitle"> mdi-account-multiple-plus </v-icon>
@@ -28,10 +26,17 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { useRoomsStore } from '@/stores/rooms';
 
 export default {
   name: 'RoomThumbnail',
+  setup() {
+    const roomsStore = useRoomsStore();
+
+    return {
+      roomsStore,
+    };
+  },
   props: {
     id: String,
     room: Object,
@@ -41,13 +46,19 @@ export default {
   }),
   mounted() {},
   computed: {
-    ...mapState('rooms', ['roomList', 'usersOnlineNow']),
+    roomList() {
+      return this.roomsStore.roomList;
+    },
+    usersOnlineNow() {
+      return this.roomsStore.usersOnlineNow;
+    },
   },
   methods: {
     enterRoom(room, key) {
       this.$router.push({
         name: 'room',
-        params: { roomId: key, background: room.picture, maxusers: room.maxusers },
+        params: { roomId: key },
+        query: { background: room.picture, maxusers: room.maxusers },
       });
     },
   },

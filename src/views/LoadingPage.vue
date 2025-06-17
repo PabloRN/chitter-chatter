@@ -1,7 +1,7 @@
 <template>
   <div style="display: flex; justify-content: center;align-items: center;height: 100vh">
     <v-img
-          :src="require('../assets/logotype_landing_page.png')"
+          src="../assets/logotype_landing_page.png"
           class="my-3"
           contain
           height="60" style="left: -20px;"

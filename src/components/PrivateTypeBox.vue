@@ -33,10 +33,20 @@ text-shadow: 1px 1px 1px rgba(255,255,255,1);">Talk</span></v-btn>
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { useUserStore } from '@/stores/user';
+import { useMessagesStore } from '@/stores/messages';
 
 export default {
   name: 'PrivateTypeBox',
+  setup() {
+    const userStore = useUserStore();
+    const messagesStore = useMessagesStore();
+
+    return {
+      userStore,
+      messagesStore,
+    };
+  },
   props: {
 
   },
@@ -48,17 +58,18 @@ export default {
 
   },
   computed: {
-    ...mapGetters('user', ['getCurrentUser']),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
   },
   methods: {
-    ...mapActions('messages', ['sendPrivateMessage']),
     enterPress(e) {
       if (e.type === 'keypress' && e.key === 'Enter') {
         this.talk();
       }
     },
     talk() {
-      this.sendPrivateMessage(
+      this.messagesStore.sendPrivateMessage(
         {
           message: this.message,
           userId: this.getCurrentUser.userId,

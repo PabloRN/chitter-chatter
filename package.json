@@ -3,51 +3,40 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:unit": "vitest",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "i18n:report": "vue-cli-service i18n:report --src './src/**/*.?(js|vue)' --locales './src/locales/**/*.json'"
   },
   "dependencies": {
-    "core-js": "^3.25.0",
-    "firebase": "^8.10.1",
-    "firebaseui": "^5.0.0",
-    "i": "^0.3.6",
-    "lodash": "^4.17.20",
+    "firebase": "^10.7.1",
+    "firebaseui": "^6.1.0",
+    "lodash": "^4.17.21",
     "moment": "^2.29.4",
+    "pinia": "^2.1.7",
     "register-service-worker": "^1.7.2",
-    "uuid": "^9.0.0",
-    "vee-validate": "^3.4.0",
-    "vue": "^2.7.14",
-    "vue-concise-slider": "^4.2.5",
-    "vue-i18n": "^8.27.0",
-    "vue-ls": "^3.2.1",
-    "vue-router": "^3.6.5",
-    "vuetify": "^2.6.15",
-    "vuex": "^3.4.0",
-    "vuex-router-sync": "^5.0.0"
+    "uuid": "^9.0.1",
+    "vue": "^3.3.11",
+    "vue-i18n": "^9.8.0",
+    "vue-ls": "^4.2.0",
+    "vue-router": "^4.2.5",
+    "vuetify": "^3.4.6",
+    "vuex": "^4.1.0"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-eslint": "~5.0.0",
-    "@vue/cli-plugin-pwa": "~5.0.0",
-    "@vue/cli-plugin-router": "~5.0.0",
-    "@vue/cli-plugin-unit-jest": "~5.0.0",
-    "@vue/cli-plugin-vuex": "~5.0.0",
-    "@vue/cli-service": "~5.0.0",
-    "@vue/eslint-config-airbnb": "^5.0.2",
-    "@vue/test-utils": "^1.1.3",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^7.32.0",
-    "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-vue": "^9.0.0",
-    "sass": "~1.32.12",
-    "sass-loader": "^12.0.0",
-    "vue-cli-plugin-i18n": "^2.0.0",
-    "vue-cli-plugin-vuetify": "^2.3.1",
-    "vue-template-compiler": "^2.7.14",
-    "vuetify-loader": "^1.7.3"
+    "@vitejs/plugin-vue": "^4.5.2",
+    "@vue/eslint-config-airbnb": "^6.0.0",
+    "@vue/test-utils": "^2.4.3",
+    "eslint": "^8.55.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-vue": "^9.19.2",
+    "jsdom": "^23.0.1",
+    "sass": "^1.69.5",
+    "vite": "^5.0.8",
+    "vite-plugin-vuetify": "^2.0.1",
+    "vitest": "^1.0.4"
   },
   "eslintConfig": {
     "root": true,
@@ -55,11 +44,12 @@
       "node": true
     },
     "extends": [
-      "plugin:vue/essential",
+      "plugin:vue/vue3-essential",
       "@vue/airbnb"
     ],
     "parserOptions": {
-      "parser": "babel-eslint"
+      "ecmaVersion": 2020,
+      "sourceType": "module"
     },
     "rules": {},
     "overrides": [
@@ -69,7 +59,7 @@
           "**/tests/unit/**/*.spec.{j,t}s?(x)"
         ],
         "env": {
-          "jest": true
+          "vitest": true
         }
       }
     ]
@@ -79,9 +69,6 @@
     "last 2 versions",
     "not dead"
   ],
-  "jest": {
-    "preset": "@vue/cli-plugin-unit-jest"
-  },
   "engines": {
     "node": ">=8 <21"
   }

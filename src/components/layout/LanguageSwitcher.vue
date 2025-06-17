@@ -32,15 +32,20 @@
 
 <script>
 // Utilities
-import {
-  mapMutations,
-  mapState,
-  mapActions,
-  mapGetters,
-} from 'vuex';
+import { useLanguageSwitcherStore } from '@/stores/languageswitcher';
+import { useMainStore } from '@/stores/main';
 
 export default {
   name: 'language-switcher',
+  setup() {
+    const languageSwitcherStore = useLanguageSwitcherStore();
+    const mainStore = useMainStore();
+
+    return {
+      languageSwitcherStore,
+      mainStore,
+    };
+  },
   props: {
     position: String,
   },
@@ -58,29 +63,20 @@ export default {
     },
   },
   computed: {
-    ...mapState('cognito', ['user']),
-    ...mapState('user', ['password', 'email']),
-    ...mapGetters('cognito', ['userAttributes']),
-    ...mapGetters('cognito', ['userGroups']),
-    ...mapGetters('languageswitcher', ['getLang']),
-    userName() {
-      const { email } = this.userAttributes;
-      return email;
-    },
-    userRole() {
-      return this.userGroups[0];
+    getLang() {
+      return this.languageSwitcherStore.getLang;
     },
   },
   mounted() {
     // this.$vuetify.lang.current = this.getLang;
   },
   methods: {
-
-    ...mapActions('languageswitcher', ['SET_LANG']),
-    ...mapMutations('main', ['setSnackbar']),
+    setSnackbar(payload) {
+      this.mainStore.setSnackbar(payload);
+    },
     changeLanguage({ lang }) {
       this.$vuetify.lang.current = lang;
-      this.SET_LANG(lang);
+      this.languageSwitcherStore.SET_LANG(lang);
     },
   },
   watch: {

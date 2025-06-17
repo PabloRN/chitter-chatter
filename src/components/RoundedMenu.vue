@@ -122,10 +122,20 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { useUserStore } from '@/stores/user';
+import { useMessagesStore } from '@/stores/messages';
 
 export default {
   name: 'RoundedMenu',
+  setup() {
+    const userStore = useUserStore();
+    const messagesStore = useMessagesStore();
+
+    return {
+      userStore,
+      messagesStore,
+    };
+  },
   props: {},
   data: () => ({
     message: '',
@@ -133,10 +143,11 @@ export default {
   }),
   mounted() {},
   computed: {
-    ...mapGetters('user', ['getCurrentUser']),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
   },
   methods: {
-    ...mapActions('messages', ['sendMessage']),
     toggleMenu() {
       this.$nextTick(() => {
         this.hideMenu = !this.hideMenu;

@@ -36,12 +36,19 @@
 
 <script>
 import PrivateTypeBox from '@/components/PrivateTypeBox.vue';
-import { mapGetters, mapState } from 'vuex';
+import { useUserStore } from '@/stores/user';
 
 export default {
   name: 'PrivateDialogBubble',
   components: {
     PrivateTypeBox,
+  },
+  setup() {
+    const userStore = useUserStore();
+
+    return {
+      userStore,
+    };
   },
   props: {
     message: Array,
@@ -53,9 +60,12 @@ export default {
     this.text = this.message;
   },
   computed: {
-    // ...mapGetters('messages', ['getText']),
-    ...mapGetters('user', ['getCurrentUser']),
-    ...mapState('user', ['userData']),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
+    userData() {
+      return this.userStore.userData;
+    },
   },
   methods: {
     gotoBottom(element) {

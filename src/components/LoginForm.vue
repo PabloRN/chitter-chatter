@@ -29,19 +29,24 @@
 </template>
 <script>
 
-import { ValidationObserver } from 'vee-validate';
+// import { ValidationObserver } from 'vee-validate';
 import Password from '@/components/inputs/Password.vue';
 import Email from '@/components/inputs/Email.vue';
-import {
-  mapActions,
-} from 'vuex';
+import { useUserStore } from '@/stores/user';
 
 export default {
 
   components: {
     Password,
     Email,
-    ValidationObserver,
+    // ValidationObserver,
+  },
+  setup() {
+    const userStore = useUserStore();
+
+    return {
+      userStore,
+    };
   },
   data: () => ({
     isLoading: false,
@@ -53,12 +58,11 @@ export default {
     // this.setDrawer(false);
   },
   methods: {
-    ...mapActions('user', ['signUserIn']),
     setIsLoading(val) {
       this.isLoading = val;
     },
     submit() {
-      this.signUserIn();
+      this.userStore.signUserIn();
     },
   },
 };

@@ -3,11 +3,6 @@
 </template>
 
 <script>
-import {
-
-  mapActions,
-} from 'vuex';
-
 export default {
   // beforeRouteEnter(to, from, next) {
   //   next((vm) => {
@@ -21,9 +16,6 @@ export default {
   //   });
   // },
   components: {
-  },
-  computed: {
-    ...mapActions('store', ['setSnackbar']),
   },
 };
 </script>

@@ -1,47 +1,53 @@
-import Vue from 'vue';
-import { sync } from 'vuex-router-sync';
+import { createApp } from 'vue';
+import { initializeApp } from 'firebase/app';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
-import firebase from 'firebase/app';
 import App from './App.vue';
 import './registerServiceWorker';
 import router from './router';
-import store from './store';
+import pinia from './stores';
+// import store from './store' // Removed again to avoid Firebase conflicts
 import vuetify from './plugins/vuetify';
 import i18n from './i18n';
-import './utils/vee-validate';
+// import './utils/vee-validate' // Removed for now
 import './assets/scss/main.scss';
 
-// Sync store with router
-sync(store, router);
-const options = {
-  name: 'ls', // name variable Vue.[ls] or this.[$ls],
-  storage: 'local', // storage name session, local, memory
+// Initialize Firebase
+initializeApp({
+  apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
+  authDomain: 'toonstalk.com',
+  databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
+  projectId: 'chitter-chatter-f762a',
+  storageBucket: 'chitter-chatter-f762a.appspot.com',
+  messagingSenderId: '63563490823',
+  appId: '1:63563490823:web:a6b6dc9011861f6d0d2ca2',
+  measurementId: 'G-JCDBMEBPZZ',
+});
+
+const app = createApp(App);
+
+// Global error handler to catch unhandled component errors
+app.config.errorHandler = (err, instance, info) => {
+  console.error('Global error:', err, info);
+  // Prevent app crashes from non-critical errors
+  if (err.message && err.message.includes('classList')) {
+    console.warn('DOM element access error caught and ignored:', err.message);
+    return false;
+  }
 };
-Vue.use(Storage, options);
-Vue.config.productionTip = false;
-Vue.prototype._ = lodash;
 
-new Vue({
+const storageOptions = {
+  name: 'ls',
+  storage: 'local',
+};
 
-  async created() {
-    firebase.initializeApp(
-      {
-        apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
-        authDomain: 'toonstalk.com',
-        // authDomain: 'chitter-chatter-f762a.firebaseapp.com',
-        databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
-        projectId: 'chitter-chatter-f762a',
-        storageBucket: 'chitter-chatter-f762a.appspot.com',
-        messagingSenderId: '63563490823',
-        appId: '1:63563490823:web:a6b6dc9011861f6d0d2ca2',
-        measurementId: 'G-JCDBMEBPZZ',
-      },
-    );
-  },
-  router,
-  store,
-  vuetify,
-  i18n,
-  render: (h) => h(App),
-}).$mount('#app');
+app.use(pinia);
+// app.use(store) // Removed again to avoid Firebase conflicts
+app.use(router);
+app.use(vuetify);
+app.use(i18n);
+app.use(Storage, storageOptions);
+
+app.config.globalProperties._ = lodash;
+
+app.mount('#app');

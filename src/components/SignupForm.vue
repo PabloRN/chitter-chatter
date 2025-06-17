@@ -41,17 +41,13 @@
 </template>
 
 <script>
-import {
-  mapMutations,
-  mapState,
-  mapActions,
-  mapGetters,
-
-} from 'vuex';
-import {
-  ValidationObserver,
-  ValidationProvider,
-} from 'vee-validate';
+import { useUserStore } from '@/stores/user';
+import { useRoomsStore } from '@/stores/rooms';
+import { useMainStore } from '@/stores/main';
+// import {
+//   ValidationObserver,
+//   ValidationProvider,
+// } from 'vee-validate';
 import PasswordConfirmed from '@/components/inputs/PasswordConfirmed.vue';
 import Email from '@/components/inputs/Email.vue';
 
@@ -59,9 +55,20 @@ export default {
 
   components: {
     Email,
-    ValidationObserver,
+    // ValidationObserver,
     PasswordConfirmed,
-    ValidationProvider,
+    // ValidationProvider,
+  },
+  setup() {
+    const userStore = useUserStore();
+    const roomsStore = useRoomsStore();
+    const mainStore = useMainStore();
+
+    return {
+      userStore,
+      roomsStore,
+      mainStore,
+    };
   },
   data: () => ({
     carVal: '',
@@ -73,18 +80,24 @@ export default {
     },
   }),
   computed: {
-    ...mapState('user', ['email', 'password']),
-    ...mapGetters('user', ['getAllAvatars']),
+    email() {
+      return this.userStore.email;
+    },
+    password() {
+      return this.userStore.password;
+    },
+    getAllAvatars() {
+      return this.roomsStore.getAllAvatars;
+    },
   },
   created() {
 
   },
   mounted() {
-    this.getAvatars();
+    // Use kimetsu_1 room for signup avatars (based on URL in default avatar)
+    this.roomsStore.getAvatars('kimetsu_1');
   },
   methods: {
-    ...mapMutations('store', ['setSnackbar']),
-    ...mapActions('user', ['signUserUp', 'getAvatars']),
     setIsLoading(val) {
       this.isLoading = val;
     },
@@ -93,7 +106,7 @@ export default {
       if (this.userData.avatar.length === 0) {
         this.userData.avatar = this.getAllAvatars[0].url;
       }
-      this.signUserUp(this.userData);
+      this.userStore.signUserUp(this.userData);
     },
     checkAvatar(index) {
       this.userData.avatar = this.getAllAvatars[index].url;

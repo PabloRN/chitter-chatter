@@ -49,14 +49,8 @@
       :ref="`avatar-selector_${actualUserId}`"
       :id="`avatar-selector_${actualUserId}`"
       :showAvatarSelector="showAvatarSelector"
-      v-on="{
-        ['onClose']: () => {
-          showAvatarSelector = false;
-        },
-        ['onShowLoginDialog']: () => {
-          showLoginDialog = true;
-        },
-      }"
+      @onClose="closeAvatarSelector"
+      @onShowLoginDialog="showLoginDialogHandler"
     />
     <v-dialog
       persistent
@@ -76,13 +70,15 @@
 </template>
 
 <script>
-import { mapGetters, mapState, mapActions } from 'vuex';
 import TypeBox from '@/components/TypeBox.vue';
 import DialogBubble from '@/components/DialogBubble.vue';
 import RoundedMenu from '@/components/RoundedMenu.vue';
 import RoundedMenuCurrent from '@/components/RoundedMenuCurrent.vue';
 import AvatarSelector from '@/components/AvatarSelector.vue';
 import LoginDialogBubble from '@/components/LoginDialogBubble.vue';
+import { useUserStore } from '@/stores/user';
+import { useMessagesStore } from '@/stores/messages';
+import { useRoomsStore } from '@/stores/rooms';
 
 export default {
   name: 'ChatterComponent',
@@ -99,6 +95,17 @@ export default {
     avatar: String,
     nickname: String,
     room: String,
+  },
+  setup() {
+    const userStore = useUserStore();
+    const messagesStore = useMessagesStore();
+    const roomsStore = useRoomsStore();
+
+    return {
+      userStore,
+      messagesStore,
+      roomsStore,
+    };
   },
   data: () => ({
     showLoginDialog: false,
@@ -169,30 +176,38 @@ export default {
     this.initUserData(this.userId);
   },
   computed: {
-    ...mapGetters('user', ['getCurrentUser']),
-    ...mapState('messages', ['roomMessages']),
-    ...mapState('user', [
-      'usersPosition',
-      'userPositionModified',
-      'userData',
-      'currentUser',
-    ]),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
+    roomMessages() {
+      return this.messagesStore.roomMessages;
+    },
+    usersPosition() {
+      return this.userStore.usersPosition;
+    },
+    userPositionModified() {
+      return this.userStore.userPositionModified;
+    },
+    userData() {
+      return this.userStore.userData;
+    },
+    currentUser() {
+      return this.userStore.currentUser;
+    },
     isCurrentUser() {
       return this.actualUserId === this.getCurrentUser.userId;
     },
   },
   methods: {
-    ...mapActions('user', [
-      'initPosition',
-      'changePosition',
-      'userSignOut',
-      'updateNickNameByUser',
-    ]),
-    ...mapActions('messages', ['sendPrivateMessageRequest', 'showMessages', 'showUserMessages', 'cleanMessages']),
-    ...mapActions('rooms', ['removeUser']),
     updateNickName() {
-      this.updateNickNameByUser();
+      this.userStore.updateUserNickName();
       this.showLoginDialog = false;
+    },
+    closeAvatarSelector() {
+      this.showAvatarSelector = false;
+    },
+    showLoginDialogHandler() {
+      this.showLoginDialog = true;
     },
     keyboardCLicked(e) {
       e.preventDefault();
@@ -200,10 +215,10 @@ export default {
       this.keyboardClicked = true;
     },
     toggleMessages() {
-      this.showMessages(true);
+      this.messagesStore.showMessages(true);
     },
     toggleUserMessages() {
-      this.showUserMessages(this.userId);
+      this.messagesStore.showUserMessages(this.userId);
     },
     findClosestDivPosition(givenDivId) {
       const divPositions = this.usersPosition;
@@ -252,33 +267,34 @@ export default {
       const userVal = this.userData[this.actualUserId];
       this.isDown = false;
       this.mouseMoved = false;
-      this.removeUser({
+      this.roomsStore.removeUser({
         userId: this.actualUserId,
         roomId: this.$route.params.roomId,
         roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
+        isAnonymous: this.getCurrentUser.nickname === 'anonymous',
       });
-      this.cleanMessages();
+      this.messagesStore.cleanMessages();
       this.$router.push({
         name: 'rooms',
       });
     },
     invitePrivate() {
       // eslint-disable-next-line max-len
-      this.sendPrivateMessageRequest({
+      this.messagesStore.sendPrivateMessageRequest({
         currentUser: this.getCurrentUser.userId,
         userId: this.actualUserId,
       });
     },
     userSignOutCall() {
       const userVal = this.userData[this.actualUserId];
-      this.removeUser({
+      this.roomsStore.removeUser({
         userId: this.actualUserId,
         roomId: this.$route.params.roomId,
         roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
         isAnonymous: this.getCurrentUser.nickname === 'anonymous',
       });
-      this.userSignOut(this.actualUserId);
-      this.cleanMessages();
+      this.userStore.userSignOut(this.actualUserId);
+      this.messagesStore.cleanMessages();
     },
     chatterClicked(e) {
       e.preventDefault();
@@ -300,13 +316,13 @@ export default {
               && usersPositionTemp[this.actualUserId]?.position?.left
               && usersPositionTemp[this.actualUserId]?.position?.top
             ) {
-              this.initPosition({
+              this.userStore.initPosition({
                 left: usersPositionTemp[this.actualUserId]?.position?.left,
                 top: usersPositionTemp[this.actualUserId]?.position?.top,
                 userId,
               });
             } else {
-              this.initPosition({
+              this.userStore.initPosition({
                 left: '50px',
                 top: '50px',
                 userId,
@@ -361,7 +377,7 @@ export default {
               mousePosition.y + this.offset[1],
               this.windowHeight - avatarHeight,
             ));
-            this.changePosition({
+            this.userStore.changePosition({
               left: `${newLeft}px`,
               top: `${newTop}px`,
               userId: this.actualUserId,
@@ -414,7 +430,7 @@ export default {
             mousePosition.y + this.offset[1],
             this.windowHeight - avatarHeight,
           ));
-          this.changePosition({
+          this.userStore.changePosition({
             left: `${newLeft}px`,
             top: `${newTop}px`,
             userId: this.actualUserId,
@@ -439,7 +455,7 @@ export default {
       this.windowHeight = window.innerHeight;
       this.windowWidth = window.innerWidth;
 
-      if (this.chatterManager && this.usersPosition[this.actualUserId]) {
+      if (this.chatterManager && this.usersPosition[this.actualUserId] && this.usersPosition[this.actualUserId].position) {
         const currentLeft = parseInt(this.usersPosition[this.actualUserId].position.left, 10);
         const currentTop = parseInt(this.usersPosition[this.actualUserId].position.top, 10);
 
@@ -449,7 +465,7 @@ export default {
         const boundedTop = Math.max(0, Math.min(currentTop, this.windowHeight - avatarHeight));
 
         if (boundedLeft !== currentLeft || boundedTop !== currentTop) {
-          this.changePosition({
+          this.userStore.changePosition({
             left: `${boundedLeft}px`,
             top: `${boundedTop}px`,
             userId: this.actualUserId,

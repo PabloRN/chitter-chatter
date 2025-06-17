@@ -1,56 +1,67 @@
 <template>
-  <v-scroll-y-reverse-transition>
+  <div>
     <v-navigation-drawer
       v-model="showHistory"
       absolute
       bottom
       right
       temporary
-      @input="(object) => { onTransitionend(object) }"
+      @update:model-value="onTransitionend"
     >
     <v-list dense>
         <v-list-item
           v-for="(item, index) in getText"
           :key="index"
         >
-          <v-list-item-avatar v-if="index%2 === 0" color="grey darken-3">
-          <v-img contain
-            class="elevation-6 pa-1"
-            alt=""
-            :src="item.miniAvatar"
-          ></v-img>
-        </v-list-item-avatar>
+          <template v-slot:prepend v-if="index%2 === 0">
+            <v-avatar color="grey darken-3">
+              <v-img contain
+                class="elevation-6 pa-1"
+                alt=""
+                :src="item.miniAvatar"
+              ></v-img>
+            </v-avatar>
+          </template>
 
-          <v-list-item-content :class="{ 'text-right': index % 2 !== 0 }">
-            <v-list-item-title style="font-size: 1.3rem;" class="chat-text">
-            {{ item.text }}</v-list-item-title>
-            <v-list-item-subtitle style="font-size:0.8rem;color: darkgrey">
-            {{ item.nickname }}</v-list-item-subtitle>
-            <v-list-item-subtitle style="font-size:0.8rem;color: darkgrey" class="chat-time">
-             {{ formattedDateTime(item.timestamp) }}
-           </v-list-item-subtitle>
-          </v-list-item-content>
+          <v-list-item-title style="font-size: 1.3rem;" class="chat-text" :class="{ 'text-right': index % 2 !== 0 }">
+            {{ item.text }}
+          </v-list-item-title>
+          <v-list-item-subtitle style="font-size:0.8rem;color: darkgrey" :class="{ 'text-right': index % 2 !== 0 }">
+            {{ item.nickname }}
+          </v-list-item-subtitle>
+          <v-list-item-subtitle style="font-size:0.8rem;color: darkgrey" class="chat-time" :class="{ 'text-right': index % 2 !== 0 }">
+            {{ formattedDateTime(item.timestamp) }}
+          </v-list-item-subtitle>
 
-          <v-list-item-avatar  v-if="index % 2 !== 0" color="grey darken-3">
-          <v-img contain
-            class="elevation-6  pa-1"
-            alt=""
-            :src="item.miniAvatar"
-          ></v-img>
-        </v-list-item-avatar>
+          <template v-slot:append v-if="index % 2 !== 0">
+            <v-avatar color="grey darken-3">
+              <v-img contain
+                class="elevation-6 pa-1"
+                alt=""
+                :src="item.miniAvatar"
+              ></v-img>
+            </v-avatar>
+          </template>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
-  </v-scroll-y-reverse-transition>
+  </div>
 </template>
 
 <script>
-import { mapState, mapActions, mapGetters } from 'vuex';
+import { useMessagesStore } from '@/stores/messages';
 import formatDate from '@/utils/timeTools';
 
 export default {
   name: 'TimeMachine',
   components: {
+  },
+  setup() {
+    const messagesStore = useMessagesStore();
+
+    return {
+      messagesStore,
+    };
   },
   props: {
     message: Array,
@@ -62,14 +73,16 @@ export default {
     this.text = this.message;
   },
   computed: {
-    ...mapGetters('messages', ['getText']),
-    ...mapState('messages', ['showMessagesStatus']),
-
+    getText() {
+      return this.messagesStore.getText;
+    },
+    showMessagesStatus() {
+      return this.messagesStore.showMessagesStatus;
+    },
   },
   methods: {
-    ...mapActions('messages', ['showMessages']),
     onTransitionend(value) {
-      if (!value) this.showMessages(false);
+      if (!value) this.messagesStore.showMessages(false);
     },
     formattedDateTime(timestamp) {
       return formatDate(timestamp);

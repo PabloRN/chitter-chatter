@@ -40,12 +40,19 @@
 </template>
 
 <script>
-import { mapGetters, mapState, mapActions } from 'vuex';
+import { useUserStore } from '@/stores/user';
 import 'firebaseui/dist/firebaseui.css';
 
 export default {
   name: 'LoginDialogBubble',
   components: {},
+  setup() {
+    const userStore = useUserStore();
+
+    return {
+      userStore,
+    };
+  },
   props: {
     message: Array,
   },
@@ -56,21 +63,29 @@ export default {
     loading: false,
   }),
   mounted() {
-    this.setFirebaseUiInstance();
+    this.userStore.setFirebaseUiInstance();
   },
   computed: {
-    // ...mapGetters('messages', ['getText']),
-    ...mapGetters('user', ['getCurrentUser']),
-    ...mapState('user', ['userData', 'currentUser', 'signingInUpgraded']),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
+    userData() {
+      return this.userStore.userData;
+    },
+    currentUser() {
+      return this.userStore.currentUser;
+    },
+    signingInUpgraded() {
+      return this.userStore.signingInUpgraded;
+    },
   },
   methods: {
-    ...mapActions('user', ['setFirebaseUiInstance', 'updateUserNickName']),
 
     closeDialogLogin() {
       this.$emit('onCloseLoginDialog');
     },
     updateNickName() {
-      this.updateUserNickName(this.userNickName !== '' ? this.userNickName : this.tempNickName);
+      this.userStore.updateUserNickName(this.userNickName !== '' ? this.userNickName : this.tempNickName);
       this.$emit('onCloseLoginDialog');
     },
   },

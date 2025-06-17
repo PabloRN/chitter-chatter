@@ -8,10 +8,17 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { useUserStore } from '@/stores/user';
 
 export default {
   name: 'DialogBubble',
+  setup() {
+    const userStore = useUserStore();
+
+    return {
+      userStore,
+    };
+  },
   props: {
     id: String,
     message: String,
@@ -23,8 +30,9 @@ export default {
   }),
   mounted() {},
   computed: {
-    // ...mapGetters('messages', ['getText']),
-    ...mapGetters('user', ['getCurrentUser']),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
     isCurrentUser() {
       return this.id === `$bubble_${this.getCurrentUser.userId}`;
     },

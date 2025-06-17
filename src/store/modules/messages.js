@@ -109,12 +109,14 @@ const actions = {
         requestedTo: userId,
       });
       commit('SET_PRIVATE_USERS', { users: `${currentId}_${userId}` });
-      commit('main/setSnackbar',
+      commit(
+        'main/setSnackbar',
         {
           type: 'success',
           msg: 'Private message request successfully sent',
         },
-        { root: true });
+        { root: true },
+      );
       // commit('SEND_PRIVATE_MESSAGE_REQUEST_SUCCESS');
       firebase.database()
         .ref(`privateMessages/${currentId}_${userId}`)
@@ -209,12 +211,14 @@ const actions = {
   },
   cleanPrivateMessages({ commit }) {
     commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
-    commit('main/setSnackbar',
+    commit(
+      'main/setSnackbar',
       {
         type: 'info',
         msg: 'The other user has closed the dialog window',
       },
-      { root: true });
+      { root: true },
+    );
   },
 };
 

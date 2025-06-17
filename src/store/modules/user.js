@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 /* eslint-disable no-shadow */
-import Vue from 'vue';
+// Removed Vue import for Vue 3 compatibility
 import firebase from 'firebase/app';
 import * as firebaseui from 'firebaseui';
 import 'firebase/auth'; // Import the auth module explicitly if needed
@@ -163,12 +163,14 @@ const actions = {
           age,
           miniAvatar,
         });
-        commit('main/setSnackbar',
+        commit(
+          'main/setSnackbar',
           {
             type: 'success',
             msg: `Created user ${nickname} successfully`,
           },
-          { root: true });
+          { root: true },
+        );
         commit('setUser', {
           nickname, avatar, age, userId: credentials.user.uid,
         });
@@ -187,12 +189,14 @@ const actions = {
             firebase.database().ref(`users/${credentials.user.uid}`).once('value').then((snapshot) => {
               commit('setUser', snapshot.val());
             });
-            commit('main/setSnackbar',
+            commit(
+              'main/setSnackbar',
               {
                 type: 'success',
                 msg: `Created user ${credentials.user.email} successfully`,
               },
-              { root: true });
+              { root: true },
+            );
             router.push({ name: 'rooms' });
           } else {
             console.log('No user is signed in.');
@@ -200,12 +204,14 @@ const actions = {
         })
         .catch(
           (error) => {
-            commit('main/setSnackbar',
+            commit(
+              'main/setSnackbar',
               {
                 type: 'error',
                 msg: `${error}`,
               },
-              { root: true });
+              { root: true },
+            );
             console.log(error);
           },
         );
@@ -385,29 +391,28 @@ const mutations = {
   USER_UPGRADED(state, { verifiedUser, unverifiedUser, isCurrent }) {
     // Update currentUser
     if (isCurrent) {
-      Vue.set(state.currentUser, 'isAnonymous', false);
-      Vue.set(state.currentUser, 'userId', verifiedUser);
+      state.currentUser.isAnonymous = false;
+      state.currentUser.userId = verifiedUser;
     }
 
-    if (verifiedUser !== unverifiedUser && isCurrent)Vue.set(state.currentUser, 'unverified', unverifiedUser);
+    if (verifiedUser !== unverifiedUser && isCurrent) state.currentUser.unverified = unverifiedUser;
 
     // Transfer user data
-    Vue.set(state.userData, verifiedUser, {
+    state.userData[verifiedUser] = {
       ...state.userData[unverifiedUser],
       userId: verifiedUser,
       isAnonymous: false,
-    });
+    };
 
     // Transfer user position
-    Vue.set(state.usersPosition, verifiedUser, state.userData[verifiedUser].position);
-    Vue.set(state.avatarUpdated, 'url', state.userData[verifiedUser].avatar);
-    Vue.set(state.avatarUpdated, 'userId', state.userData[verifiedUser].userId);
-    // Object.assign(state.avatarUpdated, { url: state.userData[verifiedUser].avatar, userId: verifiedUser });
+    state.usersPosition[verifiedUser] = state.userData[verifiedUser].position;
+    state.avatarUpdated.url = state.userData[verifiedUser].avatar;
+    state.avatarUpdated.userId = state.userData[verifiedUser].userId;
 
     // Remove unverified user data
     if (verifiedUser !== unverifiedUser) {
-      Vue.delete(state.userData, unverifiedUser);
-      Vue.delete(state.usersPosition, unverifiedUser);
+      delete state.userData[unverifiedUser];
+      delete state.usersPosition[unverifiedUser];
     }
     state.usersSwitched = { verifiedUser, unverifiedUser };
     state.signingInUpgraded = true;
