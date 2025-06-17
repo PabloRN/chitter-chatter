@@ -234,7 +234,6 @@ export const useUserStore = defineStore('user', {
     async changeAvatar(url) {
       const storage = getStorage();
       const db = getDatabase();
-      const miniAvatarsRef = storageRef(storage, `${router.currentRoute.value.fullPath}/avatars/L1/miniavatars`);
 
       try {
         const { currentUser } = this;
@@ -242,7 +241,9 @@ export const useUserStore = defineStore('user', {
         const avatarName = avatarNameWithExt.replace('.png', '');
 
         await set(ref(db, `users/${currentUser.userId}/avatar/`), url);
-        const miniavatarRefUrl = await getDownloadURL(child(miniAvatarsRef, `${avatarName}_head.png`));
+        const roomId = router.currentRoute.value.params.roomId;
+        const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}_head.png`);
+        const miniavatarRefUrl = await getDownloadURL(miniAvatarRef);
         await set(ref(db, `users/${currentUser.userId}/miniAvatar/`), miniavatarRefUrl);
 
         this.setCurrentUserAvatar({ avatar: url, miniAvatar: miniavatarRefUrl });
