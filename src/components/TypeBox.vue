@@ -13,10 +13,25 @@
     <v-expand-transition>
       <v-row v-if="!hideKeyboard" no-gutters class="pa-1 typebox mt-3">
         <v-col class="" cols="9" style="background: rgba(255,255,255,0.5);border-radius: 10px 0px 0px 10px;">
-          <v-text-field @keypress.enter.prevent="enterPress" @input="checkValue" class="text-area-input type-box text-body-2"
-             rows="1" row-height="2" max="10" :maxlength="61" ref="refDialog"
-            :value="message" v-model="message" counter="61" outlined :rules="[ rules.length(61)]"
-             style="border-radius: 10px 0px 0px 10px;line-height: 1.3;">
+          <v-text-field 
+            @keypress.enter.prevent="enterPress" 
+            class="text-area-input type-box text-body-2"
+            rows="1" 
+            row-height="2" 
+            max="10" 
+            :maxlength="61" 
+            ref="refDialog"
+            v-model="message" 
+            counter="61" 
+            outlined 
+            :rules="[rules.length(61)]"
+            style="border-radius: 10px 0px 0px 10px;line-height: 1.3;"
+            placeholder="Type your message..."
+            inputmode="text"
+            @blur="handleBlur"
+            @focus="handleFocus"
+            @input="handleInput"
+          >
           </v-text-field>
         </v-col>
         <v-spacer></v-spacer>
@@ -55,11 +70,11 @@ export default {
   },
   data: () => ({
     message: '',
-    hideKeyboard: false,
+    hideKeyboard: true,
+    inputFocused: false,
     rules: {
       length: (len) => (v) => (v || '').length < len || '',
     },
-
   }),
   mounted() {
 
@@ -72,23 +87,46 @@ export default {
   methods: {
     enterPress(e) {
       if (e.type === 'keypress' && e.key === 'Enter') {
+        e.preventDefault();
         this.talk(e);
       }
     },
     talk(e) {
       e.preventDefault();
       e.stopPropagation();
-      this.messagesStore.sendMessage(
-        {
-          message: this.message,
-          userId: this.getCurrentUser.userId,
-          nickname: this.getCurrentUser.nickname,
-          roomId: this.$route.params.roomId,
-          miniAvatar: this.getCurrentUser.miniAvatar,
-        },
-      );
+      
+      if (!this.message.trim()) {
+        return;
+      }
+
+      this.messagesStore.sendMessage({
+        message: this.message,
+        userId: this.getCurrentUser.userId,
+        nickname: this.getCurrentUser.nickname,
+        roomId: this.$route.params.roomId,
+        miniAvatar: this.getCurrentUser.miniAvatar,
+      });
+      
       this.message = '';
-      if (isMobile()) this.$refs.refDialog.blur();
+      
+      // For mobile, ensure the input stays active and ready for next message
+      if (isMobile()) {
+        this.$nextTick(() => {
+          if (!this.hideKeyboard && this.$refs.refDialog) {
+            // Force focus and selection to ensure the input is ready
+            const input = this.$refs.refDialog.$refs.input || this.$refs.refDialog;
+            if (input) {
+              input.focus();
+              // Ensure cursor is positioned correctly
+              setTimeout(() => {
+                if (input.setSelectionRange) {
+                  input.setSelectionRange(0, 0);
+                }
+              }, 50);
+            }
+          }
+        });
+      }
     },
     toggleKeyBoard(e) {
       e.preventDefault();
@@ -97,20 +135,44 @@ export default {
       this.$emit('keyboard-clicked');
       this.hideKeyboard = !this.hideKeyboard;
       this.$nextTick(() => {
-        if (this.$refs.refDialog) {
-          this.$refs.refDialog.focus();
+        if (!this.hideKeyboard && this.$refs.refDialog) {
+          // Add a small delay for mobile devices to ensure proper focus
+          if (isMobile()) {
+            setTimeout(() => {
+              this.$refs.refDialog.focus();
+            }, 150);
+          } else {
+            this.$refs.refDialog.focus();
+          }
         }
       });
     },
-    checkValue(value) {
-      if (value) {
-        this.dialog = value.substring(0, 61);
-      }
-
-      // value = value.substring(0, value.length - 1);
+    handleFocus() {
+      // Track that the input is focused
+      this.inputFocused = true;
     },
-    // typing(e) {
-    // },
+    handleBlur() {
+      // Track that the input lost focus
+      this.inputFocused = false;
+      
+      // On mobile, if the keyboard is supposed to be open but focus is lost, refocus
+      if (isMobile() && !this.hideKeyboard) {
+        setTimeout(() => {
+          if (!this.hideKeyboard && this.$refs.refDialog && !this.inputFocused) {
+            const input = this.$refs.refDialog.$refs.input || this.$refs.refDialog;
+            if (input) {
+              input.focus();
+            }
+          }
+        }, 100);
+      }
+    },
+    handleInput() {
+      // Ensure focus is maintained during typing on mobile
+      if (isMobile() && !this.inputFocused) {
+        this.inputFocused = true;
+      }
+    },
   },
 };
 </script>

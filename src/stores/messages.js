@@ -247,7 +247,7 @@ export const useMessagesStore = defineStore('messages', {
     },
 
     messageAddedSuccess(message) {
-      this.roomMessages.push(message);
+      this.roomMessages = [...this.roomMessages, message]; // Create new array for reactivity
     },
 
     messageRemovedSuccess(messageId) {

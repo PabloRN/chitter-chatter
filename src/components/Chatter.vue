@@ -479,8 +479,11 @@ export default {
   },
   watch: {
     roomMessages(newVal) {
-      if (newVal.length > 0 && newVal[newVal.length - 1].userId === this.actualUserId) {
-        this.message = newVal[newVal.length - 1].text;
+      if (newVal.length > 0) {
+        const lastMessage = newVal[newVal.length - 1];
+        if (lastMessage.userId === this.actualUserId) {
+          this.message = lastMessage.text;
+        }
       }
     },
     userPositionModified() {
