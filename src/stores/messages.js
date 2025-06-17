@@ -28,7 +28,10 @@ export const useMessagesStore = defineStore('messages', {
     },
 
     showMessages(payload) {
+      console.log('showMessages called with:', payload);
+      console.log('Current roomMessages length:', this.roomMessages.length);
       this.setShowMessages(payload);
+      console.log('roomMessagesToShow after setShowMessages:', this.roomMessagesToShow.length);
     },
 
     showUserMessages(payload) {

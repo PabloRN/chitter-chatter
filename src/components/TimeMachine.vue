@@ -1,56 +1,125 @@
 <template>
   <div>
+    <!-- Desktop: Navigation Drawer on the right -->
     <v-navigation-drawer
+      v-if="!isMobileDevice"
       v-model="showHistory"
-      absolute
-      bottom
-      right
+      location="right"
       temporary
+      width="400"
       @update:model-value="onTransitionend"
     >
-    <v-list dense>
-        <v-list-item
-          v-for="(item, index) in getText"
-          :key="index"
-        >
-          <template v-slot:prepend v-if="index%2 === 0">
-            <v-avatar color="grey darken-3">
-              <v-img contain
-                class="elevation-6 pa-1"
-                alt=""
-                :src="item.miniAvatar"
-              ></v-img>
-            </v-avatar>
-          </template>
+      <v-card flat>
+        <v-card-title class="d-flex justify-space-between align-center pa-4">
+          <span>Message History</span>
+          <v-btn icon size="small" @click="showHistory = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pa-2" style="height: calc(100vh - 80px); overflow-y: auto;">
+          <v-list density="compact">
+            <v-list-item
+              v-for="(item, index) in getText"
+              :key="index"
+              class="mb-2"
+            >
+              <template v-slot:prepend v-if="index%2 === 0">
+                <v-avatar color="grey darken-3" size="32">
+                  <v-img contain
+                    class="elevation-2"
+                    alt=""
+                    :src="item.miniAvatar"
+                  ></v-img>
+                </v-avatar>
+              </template>
 
-          <v-list-item-title style="font-size: 1.3rem;" class="chat-text" :class="{ 'text-right': index % 2 !== 0 }">
-            {{ item.text }}
-          </v-list-item-title>
-          <v-list-item-subtitle style="font-size:0.8rem;color: darkgrey" :class="{ 'text-right': index % 2 !== 0 }">
-            {{ item.nickname }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle style="font-size:0.8rem;color: darkgrey" class="chat-time" :class="{ 'text-right': index % 2 !== 0 }">
-            {{ formattedDateTime(item.timestamp) }}
-          </v-list-item-subtitle>
+              <div>
+                <v-list-item-title style="font-size: 1rem;" class="chat-text" :class="{ 'text-right': index % 2 !== 0 }">
+                  {{ item.text }}
+                </v-list-item-title>
+                <v-list-item-subtitle style="font-size:0.7rem;color: darkgrey" :class="{ 'text-right': index % 2 !== 0 }">
+                  {{ item.nickname }} - {{ formattedDateTime(item.timestamp) }}
+                </v-list-item-subtitle>
+              </div>
 
-          <template v-slot:append v-if="index % 2 !== 0">
-            <v-avatar color="grey darken-3">
-              <v-img contain
-                class="elevation-6 pa-1"
-                alt=""
-                :src="item.miniAvatar"
-              ></v-img>
-            </v-avatar>
-          </template>
-        </v-list-item>
-      </v-list>
+              <template v-slot:append v-if="index % 2 !== 0">
+                <v-avatar color="grey darken-3" size="32">
+                  <v-img contain
+                    class="elevation-2"
+                    alt=""
+                    :src="item.miniAvatar"
+                  ></v-img>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+      </v-card>
     </v-navigation-drawer>
+
+    <!-- Mobile: Dialog overlay -->
+    <v-dialog
+      v-if="isMobileDevice"
+      v-model="showHistory"
+      max-width="500"
+      scrollable
+      @update:model-value="onTransitionend"
+    >
+      <v-card>
+        <v-card-title class="d-flex justify-space-between align-center">
+          <span>Message History</span>
+          <v-btn icon @click="showHistory = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text style="height: 400px;">
+          <v-list density="compact">
+            <v-list-item
+              v-for="(item, index) in getText"
+              :key="index"
+            >
+              <template v-slot:prepend v-if="index%2 === 0">
+                <v-avatar color="grey darken-3" size="32">
+                  <v-img contain
+                    class="elevation-2"
+                    alt=""
+                    :src="item.miniAvatar"
+                  ></v-img>
+                </v-avatar>
+              </template>
+
+              <div>
+                <v-list-item-title style="font-size: 1rem;" class="chat-text" :class="{ 'text-right': index % 2 !== 0 }">
+                  {{ item.text }}
+                </v-list-item-title>
+                <v-list-item-subtitle style="font-size:0.7rem;color: darkgrey" :class="{ 'text-right': index % 2 !== 0 }">
+                  {{ item.nickname }} - {{ formattedDateTime(item.timestamp) }}
+                </v-list-item-subtitle>
+              </div>
+
+              <template v-slot:append v-if="index % 2 !== 0">
+                <v-avatar color="grey darken-3" size="32">
+                  <v-img contain
+                    class="elevation-2"
+                    alt=""
+                    :src="item.miniAvatar"
+                  ></v-img>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script>
 import { useMessagesStore } from '@/stores/messages';
 import formatDate from '@/utils/timeTools';
+import isMobile from '@/utils/mobileDetection';
 
 export default {
   name: 'TimeMachine',
@@ -74,10 +143,17 @@ export default {
   },
   computed: {
     getText() {
-      return this.messagesStore.getText;
+      const messages = this.messagesStore.getText;
+      console.log('TimeMachine getText:', messages.length, 'messages');
+      return messages;
     },
     showMessagesStatus() {
-      return this.messagesStore.showMessagesStatus;
+      const status = this.messagesStore.showMessagesStatus;
+      console.log('TimeMachine showMessagesStatus:', status);
+      return status;
+    },
+    isMobileDevice() {
+      return isMobile();
     },
   },
   methods: {
@@ -90,7 +166,9 @@ export default {
   },
   watch: {
     showMessagesStatus(value) {
+      console.log('TimeMachine watch showMessagesStatus:', value);
       this.showHistory = value;
+      console.log('TimeMachine showHistory set to:', this.showHistory);
     },
   },
 };

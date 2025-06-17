@@ -215,6 +215,7 @@ export default {
       this.keyboardClicked = true;
     },
     toggleMessages() {
+      console.log('toggleMessages called from Chatter');
       this.messagesStore.showMessages(true);
     },
     toggleUserMessages() {
