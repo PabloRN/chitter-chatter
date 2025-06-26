@@ -1,15 +1,8 @@
-import Vue from 'vue';
-import VueRouter from 'vue-router';
-// @ts-ignore
-import Login from '@/views/Login.vue';
-// @ts-ignore
-import LoginForm from '@/components/LoginForm.vue';
-import SignupForm from '@/components/SignupForm.vue';
-import Rooms from '@/views/Rooms.vue';
-import Room from '@/views/Room.vue';
-import LoadingPage from '@/views/LoadingPage.vue';
-
-Vue.use(VueRouter);
+import { createRouter, createWebHistory } from 'vue-router';
+import Login from '@/views/Login';
+import Rooms from '@/views/Rooms';
+import Room from '@/views/Room';
+import LoadingPage from '@/views/LoadingPage';
 
 const routes = [
   {
@@ -34,8 +27,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    // component: () => import(/* webpackChunkName: "about" */ '../views/About.vue'),
-    component: SignupForm,
+    component: () => import('@/components/SignupForm'),
   },
   {
     path: '/user',
@@ -48,7 +40,7 @@ const routes = [
       {
         path: 'login',
         name: 'login',
-        component: LoginForm,
+        component: () => import('@/components/LoginForm'),
       },
       {
         path: 'signup',
@@ -56,18 +48,20 @@ const routes = [
         meta: {
           auth: ['ALL'],
         },
-        component: SignupForm,
+        component: () => import('@/components/SignupForm'),
       },
     ],
   },
 ];
 
-const router = new VueRouter({
-  mode: 'history',
+const router = createRouter({
+  history: createWebHistory(),
   routes,
 });
+
 // router.beforeEach((to, from, next) => {
 //   console.log({ to, from, next });
 //   next();
 // });
+
 export default router;

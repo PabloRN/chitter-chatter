@@ -1,6 +1,5 @@
 // Lib imports
-import Vue from 'vue';
-import Vuex from 'vuex';
+import { createStore } from 'vuex';
 
 // Store functionality
 // @ts-ignore
@@ -10,10 +9,8 @@ import user from './modules/user';
 import messages from './modules/messages';
 import rooms from './modules/rooms';
 
-Vue.use(Vuex);
-
 // Create a new store
-const store = new Vuex.Store({
+const store = createStore({
   modules: {
     main, languageswitcher, user, messages, rooms,
   },

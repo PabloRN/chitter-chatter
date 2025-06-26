@@ -3,12 +3,8 @@
 </template>
 
 <script>
-import {
-
-  mapActions,
-} from 'vuex';
-
 export default {
+  name: 'AbstractView',
   // beforeRouteEnter(to, from, next) {
   //   next((vm) => {
   //     console.log(vm.$store.getters['cognito/userGroups']);
@@ -22,12 +18,7 @@ export default {
   // },
   components: {
   },
-  computed: {
-    ...mapActions('store', ['setSnackbar']),
-  },
 };
 </script>
 
-<style>
-
-</style>
+<style></style>

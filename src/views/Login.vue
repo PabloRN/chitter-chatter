@@ -1,81 +1,95 @@
 <template>
-    <v-container fluid style="max-height:100vh;">
-      <v-row class="flex-column align-center align-content-center justify-center text-center"
-       :style="{ heigth: breakpoint.mobile ? '45vh' : '50vh' }" no-gutters>
-      </v-row>
-      <v-row no-gutters class="flex-column justify-center align-center fill-height mt-sm-2">
-        <v-col class="pa-5" cols="12">
-          <transition name="slide-fade">
-              <router-view />
-          </transition>
-        </v-col>
-        <v-col cols="12" class="footer ">
-          <template>
-            <v-footer absolute bottom padless>
-              <v-row no-gutters class="d-flex">
-               <v-col class="text-start pl-3" sm="9" md="9" lg="11">
+  <v-container fluid style="max-height:100vh;">
+    <v-row class="flex-column align-center align-content-center justify-center text-center"
+      :style="{ heigth: breakpoint.mobile ? '45vh' : '50vh' }" no-gutters>
+    </v-row>
+    <v-row no-gutters class="flex-column justify-center align-center fill-height mt-sm-2">
+      <v-col class="pa-5" cols="12">
+        <transition name="slide-fade">
+          <router-view />
+        </transition>
+      </v-col>
+      <v-col cols="12" class="footer ">
+        <template>
+          <v-footer absolute bottom padless>
+            <v-row no-gutters class="d-flex">
+              <v-col class="text-start pl-3" sm="9" md="9" lg="11">
                 <strong>© TOONSTALK {{ new Date().getFullYear() }}</strong>
               </v-col>
-              <v-col class="text-end pr-3" sm="3" md="3" lg="1" >
+              <v-col class="text-end pr-3" sm="3" md="3" lg="1">
                 <language-switcher />
               </v-col>
-              </v-row>
-            </v-footer>
-          </template>
-        </v-col>
-      </v-row>
-    </v-container>
+            </v-row>
+          </v-footer>
+        </template>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 <script>
-import {
-  mapMutations,
-  mapState,
-} from 'vuex';
-
-import LanguageSwitcher from '@/components/layout/LanguageSwitcher.vue';
+import useMainStore from '@/stores/main';
+import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 
 export default {
   name: 'LoginComponent',
   components: {
     LanguageSwitcher,
   },
+  setup() {
+    const mainStore = useMainStore();
+
+    return {
+      mainStore,
+    };
+  },
   data: () => ({
     breakpoint: {},
   }),
   computed: {
-    ...mapState('main', ['drawer']),
+    drawer() {
+      return this.mainStore.drawer;
+    },
   },
   mounted() {
     // this.setDrawer(false);
     this.breakpoint = this.$vuetify.breakpoint;
   },
   methods: {
-    ...mapMutations('main', ['setSnackbar']),
+    setSnackbar(payload) {
+      this.mainStore.setSnackbar(payload);
+    },
   },
 };
 </script>
 <style scoped>
-  .v-responsive__content{
-    flex: none;
-  }
+.v-responsive__content {
+  flex: none;
+}
 
-.container{
+.container {
   padding: 0;
 }
+
 /* Enter and leave animations can use different */
 /* durations and timing functions.              */
 .slide-fade-enter-active {
   transition: all .3s ease;
 }
+
 .slide-fade-leave-active {
   transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
 }
-.slide-fade-enter, .slide-fade-leave-to
-/* .slide-fade-leave-active below version 2.1.8 */ {
+
+.slide-fade-enter,
+.slide-fade-leave-to
+
+/* .slide-fade-leave-active below version 2.1.8 */
+  {
   transform: translateX(10px);
   opacity: 0;
 }
-.v-footer{
+
+.v-footer {
   background-color: #575757;
   height: 48px;
   color: #e6e6e6;

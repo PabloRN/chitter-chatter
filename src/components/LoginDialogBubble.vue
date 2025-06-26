@@ -1,7 +1,6 @@
 <template>
   <v-scroll-y-reverse-transition>
-    <v-card :loading="loading" class="mx-auto my-12" max-width="374"
-     transition="scale-transition" height="fit-content">
+    <v-card :loading="loading" class="mx-auto my-12" max-width="374" transition="scale-transition" height="fit-content">
       <template slot="progress">
         <v-progress-linear color="deep-purple" height="10" indeterminate></v-progress-linear>
       </template>
@@ -17,20 +16,12 @@
       <div v-if="showProfileForm">
         <v-card-text>
           <p>This is your Nickname. You can change it now or anytime later in your profile</p>
-          <v-text-field
-            label="Your nickname"
-            :hint="`${tempNickName} will be assigned if empty`"
-            persistent-hint
-            outlined
-            v-model="userNickName"
-            :maxlength="10"
-            :minlength="3"
-          ></v-text-field>
+          <v-text-field label="Your nickname" :hint="`${tempNickName} will be assigned if empty`" persistent-hint
+            outlined v-model="userNickName" :maxlength="10" :minlength="3"></v-text-field>
         </v-card-text>
       </div>
       <v-card-actions>
-        <v-btn v-if = "!showProfileForm" color="deep-purple lighten-2"
-         text @click="closeDialogLogin"> Close </v-btn>
+        <v-btn v-if="!showProfileForm" color="deep-purple lighten-2" text @click="closeDialogLogin"> Close </v-btn>
         <v-btn v-if="showProfileForm" color="deep-purple lighten-2" text @click="updateNickName">
           Save and close
         </v-btn>
@@ -40,12 +31,19 @@
 </template>
 
 <script>
-import { mapGetters, mapState, mapActions } from 'vuex';
+import useUserStore from '@/stores/user';
 import 'firebaseui/dist/firebaseui.css';
 
 export default {
   name: 'LoginDialogBubble',
   components: {},
+  setup() {
+    const userStore = useUserStore();
+
+    return {
+      userStore,
+    };
+  },
   props: {
     message: Array,
   },
@@ -56,21 +54,29 @@ export default {
     loading: false,
   }),
   mounted() {
-    this.setFirebaseUiInstance();
+    this.userStore.setFirebaseUiInstance();
   },
   computed: {
-    // ...mapGetters('messages', ['getText']),
-    ...mapGetters('user', ['getCurrentUser']),
-    ...mapState('user', ['userData', 'currentUser', 'signingInUpgraded']),
+    getCurrentUser() {
+      return this.userStore.getCurrentUser;
+    },
+    userData() {
+      return this.userStore.userData;
+    },
+    currentUser() {
+      return this.userStore.currentUser;
+    },
+    signingInUpgraded() {
+      return this.userStore.signingInUpgraded;
+    },
   },
   methods: {
-    ...mapActions('user', ['setFirebaseUiInstance', 'updateUserNickName']),
 
     closeDialogLogin() {
       this.$emit('onCloseLoginDialog');
     },
     updateNickName() {
-      this.updateUserNickName(this.userNickName !== '' ? this.userNickName : this.tempNickName);
+      this.userStore.updateUserNickName(this.userNickName !== '' ? this.userNickName : this.tempNickName);
       this.$emit('onCloseLoginDialog');
     },
   },
@@ -98,12 +104,14 @@ export default {
   top: 1px;
   z-index: 1;
 }
+
 .private-text {
   margin: 10px;
   font-family: 'Nanum Pen Script', cursive !important;
   font-size: 1.3rem;
   line-height: 1.1;
 }
+
 .login-dialog {
   display: flex;
   flex-direction: column;
@@ -112,7 +120,8 @@ export default {
   height: 100%;
   background-color: aliceblue;
 }
-ul.firebaseui-idp-list{
+
+ul.firebaseui-idp-list {
   padding: 1px !important;
 }
 </style>

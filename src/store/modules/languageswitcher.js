@@ -1,7 +1,5 @@
-import Vue from 'vue';
-import { localize } from 'vee-validate';
 import i18n from '@/i18n';
-import en from '@/locales/en.json';
+// import en from '@/locales/en.json';
 
 /* eslint no-shadow: ["error", { "allow": ["state"] }] */
 
@@ -22,10 +20,10 @@ const actions = {
   async SET_LANG({ commit }, lang) {
     try {
       if (lang) {
-        await Vue.ls.set('lang', lang);
+        localStorage.setItem('lang', lang);
         commit('SET_LANG', lang);
       } else {
-        const value = await Vue.ls.get('lang') || process.env.VUE_APP_I18N_LOCALE;
+        const value = localStorage.getItem('lang') || import.meta.env.VITE_I18N_LOCALE || 'en';
         commit('SET_LANG', value);
       }
     } catch (error) {
@@ -38,8 +36,7 @@ const actions = {
 const mutations = {
   SET_LANG(state, data) {
     state.lang = data;
-    i18n.locale = data;
-    localize(data, en);
+    i18n.global.locale.value = data;
   },
   SET_LANG_ERROR() {
     window.$messageGlobal('Error switching languages');

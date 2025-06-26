@@ -1,17 +1,11 @@
 <!-- eslint-disable max-len -->
 <template>
   <v-scroll-y-reverse-transition>
-    <v-card @click="enterRoom(room, id)" class="mx-auto" >
-      <v-img
-        :src="room?.thumbnail ? room.thumbnail : room.picture"
-        class="white--text align-end"
-        height="200px"
-      >
+    <v-card @click="enterRoom(room, id)" class="mx-auto">
+      <v-img :src="room?.thumbnail ? room.thumbnail : room.picture" class="white--text align-end" height="200px" cover>
         <v-card-actions>
           <v-list-item class="roomtitle">
-            <v-list-item-content class="roomtitle">
-              <v-list-item-title class="roomtitle">{{ room?.nombre }}</v-list-item-title>
-            </v-list-item-content>
+            <v-list-item-title class="roomtitle">{{ room?.nombre }}</v-list-item-title>
 
             <v-row align="center" justify="end">
               <!-- <v-icon class="mr-1 roomtitle"> mdi-account-multiple-plus </v-icon>
@@ -28,10 +22,17 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import useRoomsStore from '@/stores/rooms';
 
 export default {
   name: 'RoomThumbnail',
+  setup() {
+    const roomsStore = useRoomsStore();
+
+    return {
+      roomsStore,
+    };
+  },
   props: {
     id: String,
     room: Object,
@@ -39,15 +40,20 @@ export default {
   data: () => ({
     usersOnline: 0,
   }),
-  mounted() {},
+  mounted() { },
   computed: {
-    ...mapState('rooms', ['roomList', 'usersOnlineNow']),
+    roomList() {
+      return this.roomsStore.roomList;
+    },
+    usersOnlineNow() {
+      return this.roomsStore.usersOnlineNow;
+    },
   },
   methods: {
     enterRoom(room, key) {
       this.$router.push({
         name: 'room',
-        params: { roomId: key, background: room.picture, maxusers: room.maxusers },
+        params: { roomId: key },
       });
     },
   },
@@ -59,10 +65,14 @@ export default {
 };
 </script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
 .roomtitle {
-  color: white!important;;
+  color: white !important;
+  ;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: 1.3em;
+  font-family: 'Nanum Pen Script', cursive !important;
   overflow: inherit;
   text-overflow: inherit;
   white-space: nowrap;
