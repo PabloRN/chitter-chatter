@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import i18n from '@/i18n';
-import en from '@/locales/en.json';
+// import en from '@/locales/en.json';
 
-export const useLanguageSwitcherStore = defineStore('languageswitcher', {
+const useLanguageSwitcherStore = defineStore('languageswitcher', {
   state: () => ({
     lang: '',
   }),
@@ -37,3 +37,5 @@ export const useLanguageSwitcherStore = defineStore('languageswitcher', {
     },
   },
 });
+
+export default useLanguageSwitcherStore;

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-export const useMainStore = defineStore('main', {
+const useMainStore = defineStore('main', {
   state: () => ({
     snackbar: false,
     drawer: false,
@@ -16,3 +16,5 @@ export const useMainStore = defineStore('main', {
     },
   },
 });
+
+export default useMainStore;

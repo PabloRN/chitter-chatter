@@ -1,22 +1,15 @@
 <template>
-  <v-snackbar
-    v-model="model"
-    :color="snackbar.type"
-    :timeout="snackbar.timeout"
-    right
-  >
-  <VIcon :dark="snackbar.type !== 'warning'" class="mr-2">
-  {{ icon }}
-</VIcon>
-    <span
-      :class="snackbar.type === 'warning' ? 'black--text' : 'white--text'"
-    >{{ snackbar.msg }}</span>
+  <v-snackbar v-model="model" :color="snackbar.type" :timeout="snackbar.timeout" right>
+    <VIcon :dark="snackbar.type !== 'warning'" class="mr-2">
+      {{ icon }}
+    </VIcon>
+    <span :class="snackbar.type === 'warning' ? 'black--text' : 'white--text'">{{ snackbar.msg }}</span>
   </v-snackbar>
 </template>
 
 <script>
 // Utilities
-import { useMainStore } from '@/stores/main';
+import useMainStore from '@/stores/main';
 
 const ICON_MAP = {
   error: 'mdi-alert-octagon',

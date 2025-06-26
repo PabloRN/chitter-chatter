@@ -3,15 +3,14 @@ import {
   getAuth, onAuthStateChanged, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
 } from 'firebase/auth';
 import {
-  getDatabase, ref, set, update, onValue, off, push, child, get, onDisconnect,
+  getDatabase, ref, set, update, onValue, off, get, onDisconnect,
 } from 'firebase/database';
 import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
-import * as firebaseui from 'firebaseui';
 import router from '@/router/index';
 import extractImageName from '@/utils/avatarName';
-import { useMainStore } from './main';
+import useMainStore from './main';
 
-export const useUserStore = defineStore('user', {
+const useUserStore = defineStore('user', {
   state: () => ({
     avatarsList: [],
     email: '',
@@ -241,7 +240,7 @@ export const useUserStore = defineStore('user', {
         const avatarName = avatarNameWithExt.replace('.png', '');
 
         await set(ref(db, `users/${currentUser.userId}/avatar/`), url);
-        const roomId = router.currentRoute.value.params.roomId;
+        const { roomId } = router.currentRoute.value.params;
         const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}_head.png`);
         const miniavatarRefUrl = await getDownloadURL(miniAvatarRef);
         await set(ref(db, `users/${currentUser.userId}/miniAvatar/`), miniavatarRefUrl);
@@ -266,7 +265,7 @@ export const useUserStore = defineStore('user', {
         const errorMessage = error.message;
 
         if (errorCode === 'auth/operation-not-allowed') {
-          alert('You must enable Anonymous auth in the Firebase Console.');
+          console.error('You must enable Anonymous auth in the Firebase Console.');
         } else {
           console.error(errorMessage);
         }
@@ -386,3 +385,5 @@ export const useUserStore = defineStore('user', {
     },
   },
 });
+
+export default useUserStore;

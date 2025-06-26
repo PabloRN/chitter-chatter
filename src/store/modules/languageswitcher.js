@@ -1,5 +1,5 @@
 import i18n from '@/i18n';
-import en from '@/locales/en.json';
+// import en from '@/locales/en.json';
 
 /* eslint no-shadow: ["error", { "allow": ["state"] }] */
 

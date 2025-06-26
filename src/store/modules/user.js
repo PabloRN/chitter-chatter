@@ -1,12 +1,10 @@
 /* eslint-disable max-len */
 /* eslint-disable no-shadow */
-// Removed Vue import for Vue 3 compatibility
 import firebase from 'firebase/app';
 import * as firebaseui from 'firebaseui';
 import 'firebase/auth'; // Import the auth module explicitly if needed
 import 'firebase/database'; // Import other Firebase modules as needed
 import 'firebase/storage';
-import router from '@/router/index';
 import extractImageName from '@/utils/avatarName';
 
 const state = {
@@ -49,7 +47,9 @@ const actions = {
     firebase.database().ref(`users/${state.usersSwitched.verifiedUser}`).off();
     ref.update({ unverified: null });
     firebase.auth().signOut().then(
-      () => {
+      async () => {
+        // eslint-disable-next-line import/no-cycle
+        const { default: router } = await import('@/router');
         router.push({ name: 'rooms' });
         commit('SET_USER_SIGNED_OUT');
       },
@@ -184,7 +184,7 @@ const actions = {
   signUserIn({ commit, state }) {
     firebase.auth().setPersistence('local').then(() => {
       firebase.auth().signInWithEmailAndPassword(state.email, state.password)
-        .then((credentials) => {
+        .then(async (credentials) => {
           if (credentials) {
             firebase.database().ref(`users/${credentials.user.uid}`).once('value').then((snapshot) => {
               commit('setUser', snapshot.val());
@@ -197,6 +197,8 @@ const actions = {
               },
               { root: true },
             );
+            // eslint-disable-next-line import/no-cycle
+            const { default: router } = await import('@/router');
             router.push({ name: 'rooms' });
           } else {
             console.log('No user is signed in.');
@@ -358,7 +360,7 @@ const actions = {
         const errorCode = error.code;
         const errorMessage = error.message;
         if (errorCode === 'auth/operation-not-allowed') {
-          alert('You must enable Anonymous auth in the Firebase Console.');
+          console.error('You must enable Anonymous auth in the Firebase Console.');
         } else {
           console.error(errorMessage);
         }

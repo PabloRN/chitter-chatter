@@ -5,9 +5,9 @@ import {
 import {
   getStorage, ref as storageRef, getDownloadURL, listAll,
 } from 'firebase/storage';
-import { useUserStore } from './user';
+import useUserStore from './user';
 
-export const useRoomsStore = defineStore('rooms', {
+const useRoomsStore = defineStore('rooms', {
   state: () => ({
     roomList: {},
     userAdded: {},
@@ -23,7 +23,7 @@ export const useRoomsStore = defineStore('rooms', {
 
   getters: {
     getAllRooms: (state) => state.roomList,
-    getUserPosition: (state) => {
+    getUserPosition: () => {
       const userStore = useUserStore();
       return userStore.usersPosition;
     },
@@ -88,10 +88,10 @@ export const useRoomsStore = defineStore('rooms', {
         onValue(usersUpgradedReference, (userSnap) => {
           const userUpgraded = userSnap.val();
           if (userUpgraded !== null
-              && userUpgraded.verifiedUser !== null
-              && userUpgraded.unverifiedUser !== null
-              && userUpgraded.verifiedUser !== userStore.currentUser.userId
-              && userUpgraded.unverifiedUser !== userStore.currentUser.userId) {
+            && userUpgraded.verifiedUser !== null
+            && userUpgraded.unverifiedUser !== null
+            && userUpgraded.verifiedUser !== userStore.currentUser.userId
+            && userUpgraded.unverifiedUser !== userStore.currentUser.userId) {
             userStore.upgradeNonCurrentUser({
               verifiedUser: userUpgraded.verifiedUser,
               unverifiedUser: userUpgraded.unverifiedUser,
@@ -187,8 +187,8 @@ export const useRoomsStore = defineStore('rooms', {
         const avatarsRef = storageRef(storage, `rooms/${roomId}/avatars/${userStore.currentUser.level}`);
         const tempRefs = await listAll(avatarsRef);
 
-        await Promise.all(tempRefs.items.map(async (ref, index) => {
-          const starsRef = storageRef(storage, ref.fullPath);
+        await Promise.all(tempRefs.items.map(async (avatarRef, index) => {
+          const starsRef = storageRef(storage, avatarRef.fullPath);
           const url = await getDownloadURL(starsRef);
           urlList.push({ avatarId: index, url });
         }));
@@ -290,3 +290,4 @@ export const useRoomsStore = defineStore('rooms', {
     },
   },
 });
+export default useRoomsStore;

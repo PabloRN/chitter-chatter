@@ -7,29 +7,17 @@
           <h3 class="avatar-selector-title">Choose Your Character</h3>
           <div class="avatar-container">
             <!-- Navigation buttons -->
-            <button
-              class="nav-button nav-button-left"
-              @click="previousSlide"
-              :disabled="currentSlide === 0"
-            >
+            <button class="nav-button nav-button-left" @click="previousSlide" :disabled="currentSlide === 0">
               <v-icon>mdi-chevron-left</v-icon>
             </button>
             <!-- Custom Vue 3 compatible slider -->
             <div class="slider-wrapper">
               <div class="avatar-slider" ref="slider">
-                <div 
-                  class="slider-track" 
-                  :style="{ transform: `translateX(-${currentSlide * slideWidth}px)` }"
-                >
-                  <div
-                    v-for="(item, index) in avatarsList"
-                    :key="index"
-                    class="slider-item-custom"
-                    @click="avatarSelected($event, item)"
-                    @touchstart="handleTouchStart"
-                    @touchmove="handleTouchMove"
-                    @touchend="handleTouchEnd"
-                  >
+                <div class="slider-track" :style="{ transform: `translateX(-${currentSlide * slideWidth}px)` }">
+                  <div v-for="(item, index) in avatarsList" :key="index" class="slider-item-custom"
+                    @click="avatarSelected($event, item)" @touchstart="handleTouchStart" @touchmove="handleTouchMove"
+                    @touchend="handleTouchEnd" tabindex="0" @keydown.enter.space="avatarSelected($event, item)"
+                    role="button" aria-label="Select avatar">
                     <div class="avatar-card">
                       <div class="avatar-frame">
                         <div class="anime-sparkles">
@@ -38,11 +26,7 @@
                           <div class="sparkle sparkle-3"></div>
                           <div class="sparkle sparkle-4"></div>
                         </div>
-                        <v-img
-                          contain
-                          class="avatar-image-selector"
-                          :src="item.url"
-                        ></v-img>
+                        <v-img contain class="avatar-image-selector" :src="item.url"></v-img>
                         <div class="manga-speed-lines"></div>
                       </div>
                       <div class="avatar-glow"></div>
@@ -53,23 +37,15 @@
                 <div v-if="avatarsList.length === 0" class="loading-text">Loading characters...</div>
               </div>
             </div>
-            <button
-              class="nav-button nav-button-right"
-              @click="nextSlide"
-              :disabled="currentSlide >= maxSlide"
-            >
+            <button class="nav-button nav-button-right" @click="nextSlide" :disabled="currentSlide >= maxSlide">
               <v-icon>mdi-chevron-right</v-icon>
             </button>
           </div>
           <!-- Slide indicators -->
           <div class="slide-indicators">
-            <div
-              v-for="(dot, index) in totalDots"
-              :key="index"
-              class="indicator-dot"
-              :class="{ active: index === currentSlide }"
-              @click="goToSlide(index)"
-            ></div>
+            <div v-for="(dot, index) in totalDots" :key="index" class="indicator-dot"
+              :class="{ active: index === currentSlide }" @click="goToSlide(index)"
+              @keydown.enter.space="goToSlide(index)" tabindex="0" role="button" aria-label="Go to slide"></div>
           </div>
         </div>
       </v-sheet>
@@ -78,8 +54,8 @@
 </template>
 
 <script>
-import { useRoomsStore } from '@/stores/rooms';
-import { useUserStore } from '@/stores/user';
+import useRoomsStore from '@/stores/rooms';
+import useUserStore from '@/stores/user';
 
 export default {
   components: {},
@@ -146,12 +122,12 @@ export default {
     },
     previousSlide() {
       if (this.currentSlide > 0) {
-        this.currentSlide--;
+        this.currentSlide -= 1;
       }
     },
     nextSlide() {
       if (this.currentSlide < this.maxSlide) {
-        this.currentSlide++;
+        this.currentSlide += 1;
       }
     },
     goToSlide(index) {
@@ -213,7 +189,7 @@ export default {
 <style scoped>
 .avatar-selector-sheet {
   background:
-   linear-gradient(135deg, #0a0a2e 0%, #1a1058 30%, #2d1b69 60%, #ff6b9d 100%) !important;
+    linear-gradient(135deg, #0a0a2e 0%, #1a1058 30%, #2d1b69 60%, #ff6b9d 100%) !important;
   border-radius: 25px 25px 0 0 !important;
   color: white;
   position: relative;
@@ -246,15 +222,19 @@ export default {
   0% {
     background-position: 0% 0%;
   }
+
   25% {
     background-position: 30% 20%;
   }
+
   50% {
     background-position: 70% 60%;
   }
+
   75% {
     background-position: 20% 80%;
   }
+
   100% {
     background-position: 100% 100%;
   }
@@ -282,6 +262,7 @@ export default {
       2px 2px 4px rgba(0, 0, 0, 0.8),
       0 0 20px rgba(255, 20, 147, 0.6);
   }
+
   100% {
     text-shadow:
       0 0 15px rgba(255, 107, 157, 1),
@@ -487,10 +468,13 @@ export default {
 }
 
 @keyframes sparkle-float {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0;
     transform: scale(0) rotate(0deg);
   }
+
   50% {
     opacity: 1;
     transform: scale(1) rotate(180deg);
@@ -505,13 +489,11 @@ export default {
   height: 100%;
   opacity: 0;
   background:
-    repeating-linear-gradient(
-      45deg,
+    repeating-linear-gradient(45deg,
       transparent,
       transparent 2px,
       rgba(255, 255, 255, 0.3) 2px,
-      rgba(255, 255, 255, 0.3) 3px
-    );
+      rgba(255, 255, 255, 0.3) 3px);
   transition: opacity 0.3s ease;
   pointer-events: none;
   z-index: 2;
@@ -550,9 +532,11 @@ export default {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -614,6 +598,7 @@ export default {
       0 0 30px rgba(255, 107, 157, 0.6),
       inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
+
   100% {
     box-shadow:
       0 20px 45px rgba(255, 20, 147, 0.6),
@@ -627,6 +612,7 @@ export default {
     filter: blur(8px);
     opacity: 1;
   }
+
   100% {
     filter: blur(12px);
     opacity: 0.7;
@@ -638,6 +624,7 @@ export default {
     opacity: 0;
     transform: scale(0.8);
   }
+
   100% {
     opacity: 0.6;
     transform: scale(1);
@@ -660,6 +647,7 @@ export default {
       0 0 10px rgba(255, 107, 157, 0.8),
       2px 2px 4px rgba(0, 0, 0, 0.8);
   }
+
   100% {
     text-shadow:
       0 0 20px rgba(255, 107, 157, 1),
@@ -673,14 +661,17 @@ export default {
   .avatar-selector-title {
     font-size: 1.8rem;
   }
+
   .avatar-container {
     height: 160px;
     gap: 5px;
   }
+
   .nav-button {
     width: 40px;
     height: 40px;
   }
+
   .nav-button .v-icon {
     font-size: 20px;
   }
@@ -713,6 +704,7 @@ export default {
     width: 4px;
     height: 4px;
   }
+
   .indicator-dot {
     width: 8px;
     height: 8px;
@@ -728,10 +720,12 @@ export default {
     height: 140px;
     gap: 3px;
   }
+
   .nav-button {
     width: 35px;
     height: 35px;
   }
+
   .nav-button .v-icon {
     font-size: 18px;
   }
@@ -770,6 +764,7 @@ export default {
     width: 3px;
     height: 3px;
   }
+
   .indicator-dot {
     width: 6px;
     height: 6px;

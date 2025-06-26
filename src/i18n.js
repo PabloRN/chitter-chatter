@@ -4,13 +4,13 @@ function loadLocaleMessages() {
   const modules = import.meta.glob('./locales/*.json', { eager: true });
   const messages = {};
 
-  for (const path in modules) {
+  Object.keys(modules).forEach((path) => {
     const matched = path.match(/([A-Za-z0-9-_]+)\.json$/i);
     if (matched && matched.length > 1) {
       const locale = matched[1];
       messages[locale] = modules[path].default;
     }
-  }
+  });
   return messages;
 }
 

@@ -3,31 +3,31 @@
   <v-app>
     <!-- <Drawer /> -->
     <v-main>
-       <router-view v-slot="{ Component }">
+      <router-view v-slot="{ Component }">
         <v-fade-transition mode="out-in">
           <component :is="Component" />
         </v-fade-transition>
       </router-view>
     </v-main>
-     <snack-bar />
+    <snack-bar />
 
-     <!-- Landscape orientation message -->
-     <div class="landscape-message">
-       <div>
-         <h2>📱 Please rotate your device</h2>
-         <p>This chat room works best in landscape mode</p>
-         <p>Rotate your device for the optimal experience</p>
-       </div>
-     </div>
+    <!-- Landscape orientation message -->
+    <div class="landscape-message">
+      <div>
+        <h2>📱 Please rotate your device</h2>
+        <p>This chat room works best in landscape mode</p>
+        <p>Rotate your device for the optimal experience</p>
+      </div>
+    </div>
 
   </v-app>
 </template>
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue';
-import SnackBar from './components/Snackbar.vue';
-import { useLanguageSwitcherStore } from './stores/languageswitcher';
-import { useUserStore } from './stores/user';
+import SnackBar from './components/Snackbar';
+import useLanguageSwitcherStore from './stores/languageswitcher';
+import useUserStore from './stores/user';
 
 const languageSwitcherStore = useLanguageSwitcherStore();
 const userStore = useUserStore();
@@ -87,7 +87,8 @@ onUnmounted(() => {
   }
 }
 
-@media screen and (min-width: 769px), screen and (max-width: 768px) and (orientation: landscape) {
+@media screen and (min-width: 769px),
+screen and (max-width: 768px) and (orientation: landscape) {
   .landscape-message {
     display: none;
   }

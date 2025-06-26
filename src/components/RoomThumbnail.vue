@@ -1,12 +1,8 @@
 <!-- eslint-disable max-len -->
 <template>
   <v-scroll-y-reverse-transition>
-    <v-card @click="enterRoom(room, id)" class="mx-auto" >
-      <v-img
-        :src="room?.thumbnail ? room.thumbnail : room.picture"
-        class="white--text align-end"
-        height="200px"
-      >
+    <v-card @click="enterRoom(room, id)" class="mx-auto">
+      <v-img :src="room?.thumbnail ? room.thumbnail : room.picture" class="white--text align-end" height="200px" cover>
         <v-card-actions>
           <v-list-item class="roomtitle">
             <v-list-item-title class="roomtitle">{{ room?.nombre }}</v-list-item-title>
@@ -26,7 +22,7 @@
 </template>
 
 <script>
-import { useRoomsStore } from '@/stores/rooms';
+import useRoomsStore from '@/stores/rooms';
 
 export default {
   name: 'RoomThumbnail',
@@ -44,7 +40,7 @@ export default {
   data: () => ({
     usersOnline: 0,
   }),
-  mounted() {},
+  mounted() { },
   computed: {
     roomList() {
       return this.roomsStore.roomList;
@@ -69,10 +65,14 @@ export default {
 };
 </script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
 .roomtitle {
-  color: white!important;;
+  color: white !important;
+  ;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: 1.3em;
+  font-family: 'Nanum Pen Script', cursive !important;
   overflow: inherit;
   text-overflow: inherit;
   white-space: nowrap;

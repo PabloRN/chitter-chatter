@@ -1,84 +1,46 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div
-    style="text-align: center"
-    :class="isCurrentUser ? 'current-user' : 'user'"
-    :id="actualUserId"
-    :ref="actualUserId"
-    @click="chatterClicked"
-  >
-    <DialogBubble
-      :ref="`$bubble_${actualUserId}`"
-      :id="`$bubble_${actualUserId}`"
-      :message="message"
-      :class="dialogSide"
-    />
-    <div
-      v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'"
-      class="nicknameWrapper"
-    >
+  <div style="text-align: center" :class="isCurrentUser ? 'current-user' : 'user'" :id="actualUserId"
+    :ref="actualUserId" @click="chatterClicked" tabindex="0" @keydown.enter="chatterClicked"
+    @keydown.space.prevent="chatterClicked" role="button">
+    <DialogBubble :ref="`$bubble_${actualUserId}`" :id="`$bubble_${actualUserId}`" :message="message"
+      :class="dialogSide" />
+    <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
       <div class="nickname">{{ nickname }}</div>
     </div>
     <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
-    <RoundedMenu
-      v-on="{
-  ['privateMessage']: invitePrivate,
-  ['showUserMessages']: () => toggleUserMessages(),
-      }"
-      ref="roundedmenu"
-      v-show="!isCurrentUser"
-    />
-    <RoundedMenuCurrent
-      :moving="mouseMoved"
-      ref="roundedmenucurrent"
-      v-show="isCurrentUser"
-      v-on="{
-        ['exitRoom']: leaveRoom,
-        ['signOut']: () => userSignOutCall(),
-        ['showAvatarList']: () => (this.showAvatarSelector = !this.showAvatarSelector),
-        ['showMessages']: () => toggleMessages(),
-      }"
-    />
-    <TypeBox
-      :ref="`keyboard_${actualUserId}`"
-      :id="`keyboard_${actualUserId}`"
-      v-if="isCurrentUser"
-      :moving="mouseMoved"
-    />
-    <AvatarSelector
-      :ref="`avatar-selector_${actualUserId}`"
-      :id="`avatar-selector_${actualUserId}`"
-      :showAvatarSelector="showAvatarSelector"
-      @onClose="closeAvatarSelector"
-      @onShowLoginDialog="showLoginDialogHandler"
-    />
-    <v-dialog
-      persistent
-      scrollable
-      v-if="showLoginDialog"
-      v-model="showLoginDialog"
-      width="600"
-      min-height="80vh"
-      class="pa-5 ma-5 private-dialog"
-    >
-      <LoginDialogBubble
-        @onCloseLoginDialog="showLoginDialog = false"
-        @onSavedNickName="updateNickName"
-      />
+    <RoundedMenu v-on="{
+      ['privateMessage']: invitePrivate,
+      ['showUserMessages']: () => toggleUserMessages(),
+    }" ref="roundedmenu" v-show="!isCurrentUser" />
+    <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-show="isCurrentUser" v-on="{
+      ['exitRoom']: leaveRoom,
+      ['signOut']: () => userSignOutCall(),
+      ['showAvatarList']: () => (this.showAvatarSelector = !this.showAvatarSelector),
+      ['showMessages']: () => toggleMessages(),
+    }" />
+    <TypeBox :ref="`keyboard_${actualUserId}`" :id="`keyboard_${actualUserId}`" v-if="isCurrentUser"
+      :moving="mouseMoved" />
+    <AvatarSelector :ref="`avatar-selector_${actualUserId}`" :id="`avatar-selector_${actualUserId}`"
+      :showAvatarSelector="showAvatarSelector" @onClose="closeAvatarSelector"
+      @onShowLoginDialog="showLoginDialogHandler" />
+    <v-dialog persistent scrollable v-if="showLoginDialog" v-model="showLoginDialog" width="600" min-height="80vh"
+      class="pa-5 ma-5 private-dialog">
+      <LoginDialogBubble @onCloseLoginDialog="showLoginDialog = false" @onSavedNickName="updateNickName" />
     </v-dialog>
   </div>
 </template>
 
 <script>
-import TypeBox from '@/components/TypeBox.vue';
-import DialogBubble from '@/components/DialogBubble.vue';
-import RoundedMenu from '@/components/RoundedMenu.vue';
-import RoundedMenuCurrent from '@/components/RoundedMenuCurrent.vue';
-import AvatarSelector from '@/components/AvatarSelector.vue';
-import LoginDialogBubble from '@/components/LoginDialogBubble.vue';
-import { useUserStore } from '@/stores/user';
-import { useMessagesStore } from '@/stores/messages';
-import { useRoomsStore } from '@/stores/rooms';
+import TypeBox from '@/components/TypeBox';
+import DialogBubble from '@/components/DialogBubble';
+import RoundedMenu from '@/components/RoundedMenu';
+import RoundedMenuCurrent from '@/components/RoundedMenuCurrent';
+import AvatarSelector from '@/components/AvatarSelector';
+import LoginDialogBubble from '@/components/LoginDialogBubble';
+import userStore from '@/stores/user';
+import useMessagesStore from '@/stores/messages';
+import useRoomsStore from '@/stores/rooms';
 
 export default {
   name: 'ChatterComponent',
@@ -97,14 +59,11 @@ export default {
     room: String,
   },
   setup() {
-    const userStore = useUserStore();
-    const messagesStore = useMessagesStore();
-    const roomsStore = useRoomsStore();
-
+    // If userStore is a singleton object, just use it directly
     return {
       userStore,
-      messagesStore,
-      roomsStore,
+      messagesStore: useMessagesStore(),
+      roomsStore: useRoomsStore(),
     };
   },
   data: () => ({
@@ -216,7 +175,9 @@ export default {
     },
     toggleMessages() {
       console.log('toggleMessages called from Chatter');
-      this.messagesStore.showMessages(true);
+      const currentStatus = this.messagesStore.showMessagesStatus;
+      console.log('Current showMessagesStatus:', currentStatus);
+      this.messagesStore.showMessages(!currentStatus);
     },
     toggleUserMessages() {
       this.messagesStore.showUserMessages(this.userId);
@@ -261,9 +222,9 @@ export default {
       }
       return 'position-right';
     },
-    changeExpresion() {},
-    beInvisible() {},
-    changeStatus() {},
+    changeExpresion() { },
+    beInvisible() { },
+    changeStatus() { },
     leaveRoom() {
       const userVal = this.userData[this.actualUserId];
       this.isDown = false;
@@ -529,15 +490,19 @@ export default {
 .chatter {
   background-size: contain;
 }
+
 .private-dialog {
   height: 80vh;
 }
+
 .current-user {
   z-index: 990;
 }
+
 .user {
   z-index: 980;
 }
+
 .nicknameWrapper {
   position: absolute;
   top: -25px;
@@ -546,6 +511,7 @@ export default {
   display: flex;
   justify-content: center;
 }
+
 .nickname {
   color: #ffffff;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 1);
@@ -557,11 +523,23 @@ export default {
   .nickname {
     font-size: 1.2em;
   }
+
+  .avatar-image {
+    width: 60px;
+    height: 165px;
+    min-height: 150px;
+  }
 }
 
 @media (max-width: 480px) {
   .nickname {
     font-size: 1em;
+  }
+
+  .avatar-image {
+    width: 45px;
+    height: 124px;
+    min-height: 110px;
   }
 }
 </style>

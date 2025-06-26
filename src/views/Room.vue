@@ -2,84 +2,38 @@
 <template>
   <div class="home" @dragover.prevent @dragenter.prevent>
     <v-card>
-      <v-img
-        v-if="background !== ''"
-        :src="background !== '' ? background : ''"
-        class="white--text align-end"
-        height="100vh"
-      >
-        <chatter-component
-          v-for="[key, { userId, avatar, nickname }] in chattersArray"
-          :userId="userId"
-          :key="key"
-          :avatar="avatar"
-          :nickname="nickname"
-          :room="roomId"
-          v-show="true"
-        />
+      <v-img v-if="background !== ''" :src="background !== '' ? background : ''" class="white--text align-end"
+        height="100vh" cover>
+        <chatter-component v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
+          :avatar="avatar" :nickname="nickname" :room="roomId" v-show="true" />
       </v-img>
       {{ $route.params.id }}
     </v-card>
-    <v-dialog
-      v-if="privateRequestDialog"
-      v-model="privateRequestDialog"
-      persistent
-      width="600"
-      class="pa-5 ma-5 progress-dialog"
-    >
+    <v-dialog v-if="privateRequestDialog" v-model="privateRequestDialog" persistent width="600"
+      class="pa-5 ma-5 progress-dialog">
       <v-card style="width: 100%">
         <v-card-title class="text-body-2"> </v-card-title>
         <v-card-text style="height: 10vh">
           {{ `User ${privateRequestUser.nickname} wants to start a private chat with you` }}
         </v-card-text>
         <v-card-actions class="text-body-2 pa-2 d-flex justify-center align-center">
-          <v-btn
-            small
-            class="px-10"
-            color="primary darken-1"
-            tile
-            @click="
-              confirmPrivateRequest();
-              privateRequestDialog = false;
-            "
-          >
-            Confirm</v-btn
-          >
-          <v-btn
-            small
-            class="px-10"
-            color="primary darken-1"
-            tile
-            outlined
-            @click="
-              rejectPrivateRequest();
-              privateRequestDialog = false;
-            "
-          >
-            Reject</v-btn
-          >
-          <v-btn
-            small
-            class="px-10"
-            color="primary darken-1"
-            tile
-            outlined
-            @click="privateRequestDialog = false"
-          >
-            Reject and block</v-btn
-          >
+          <v-btn small class="px-10" color="primary darken-1" tile @click="
+            confirmPrivateRequest();
+          privateRequestDialog = false;
+          ">
+            Confirm</v-btn>
+          <v-btn small class="px-10" color="primary darken-1" tile outlined @click="
+            rejectPrivateRequest();
+          privateRequestDialog = false;
+          ">
+            Reject</v-btn>
+          <v-btn small class="px-10" color="primary darken-1" tile outlined @click="privateRequestDialog = false">
+            Reject and block</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog
-      persistent
-      scrollable
-      v-if="showDialog"
-      v-model="showDialog"
-      width="600"
-      min-height="80vh"
-      class="pa-5 ma-5 private-dialog"
-    >
+    <v-dialog persistent scrollable v-if="showDialog" v-model="showDialog" width="600" min-height="80vh"
+      class="pa-5 ma-5 private-dialog">
       <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
     </v-dialog>
     <TimeMachine style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
@@ -87,12 +41,13 @@
 </template>
 
 <script>
-import ChatterComponent from '@/components/Chatter.vue';
-import TimeMachine from '@/components/TimeMachine.vue';
-import PrivateDialogBubble from '@/components/PrivateDialogBubble.vue';
-import { useUserStore } from '@/stores/user';
-import { useRoomsStore } from '@/stores/rooms';
-import { useMessagesStore } from '@/stores/messages';
+import ChatterComponent from '@/components/Chatter';
+import TimeMachine from '@/components/TimeMachine';
+import PrivateDialogBubble from '@/components/PrivateDialogBubble';
+// import useUserStore from '@/stores/user';
+import userStore from '@/stores/user';
+import useRoomsStore from '@/stores/rooms';
+import useMessagesStore from '@/stores/messages';
 
 export default {
   name: 'RoomComponent',
@@ -103,17 +58,17 @@ export default {
   },
   props: {
     roomId: String,
-  },
-  setup() {
-    const userStore = useUserStore();
-    const roomsStore = useRoomsStore();
-    const messagesStore = useMessagesStore();
+    setup() {
+      // const userStore = useUserStore();
+      const roomsStore = useRoomsStore();
+      const messagesStore = useMessagesStore();
 
-    return {
-      userStore,
-      roomsStore,
-      messagesStore,
-    };
+      return {
+        userStore,
+        roomsStore,
+        messagesStore,
+      };
+    },
   },
   data: () => ({
     innerHeight: '',
@@ -151,8 +106,8 @@ export default {
       setTimeout(async () => {
         if (
           Object.keys(this.currentRoom).length > 0
-        && this.currentRoom.users
-        && Object.keys(this.currentRoom.users).length > 0
+          && this.currentRoom.users
+          && Object.keys(this.currentRoom.users).length > 0
         ) {
           const userIDs = Object.keys(this.currentRoom.users);
           // eslint-disable-next-line no-restricted-syntax
@@ -278,12 +233,24 @@ export default {
 };
 </script>
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+
 .closedialog {
   position: relative;
   top: 60px;
   left: 629px;
 }
+
 .chatter {
   animation: flop 1s ease-in-out;
+}
+
+/* Clean dialog styling */
+:deep(.v-card-text) {
+  font-size: 1rem;
+}
+
+:deep(.v-btn) {
+  font-size: 0.9rem;
 }
 </style>

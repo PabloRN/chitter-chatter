@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import { initializeApp } from 'firebase/app';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
-import App from './App.vue';
+import App from './App';
 import './registerServiceWorker';
 import router from './router';
 import pinia from './stores';
@@ -34,6 +34,7 @@ app.config.errorHandler = (err, instance, info) => {
     console.warn('DOM element access error caught and ignored:', err.message);
     return false;
   }
+  return true;
 };
 
 const storageOptions = {

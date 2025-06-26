@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia';
 import {
-  getDatabase, ref, push, update, onValue, onChildAdded, onChildRemoved, off, set, get,
+  getDatabase, ref, push, update, onChildAdded, onChildRemoved, off, set, get,
 } from 'firebase/database';
-import { useMainStore } from './main';
+import useMainStore from './main';
 
-export const useMessagesStore = defineStore('messages', {
+const useMessagesStore = defineStore('messages', {
   state: () => ({
     roomMessages: [],
     roomMessagesToShow: [],
@@ -275,3 +275,5 @@ export const useMessagesStore = defineStore('messages', {
     },
   },
 });
+
+export default useMessagesStore;
