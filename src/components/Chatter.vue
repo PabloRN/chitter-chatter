@@ -38,7 +38,7 @@ import RoundedMenu from '@/components/RoundedMenu';
 import RoundedMenuCurrent from '@/components/RoundedMenuCurrent';
 import AvatarSelector from '@/components/AvatarSelector';
 import LoginDialogBubble from '@/components/LoginDialogBubble';
-import userStore from '@/stores/user';
+import useUserStore from '@/stores/user';
 import useMessagesStore from '@/stores/messages';
 import useRoomsStore from '@/stores/rooms';
 
@@ -59,9 +59,8 @@ export default {
     room: String,
   },
   setup() {
-    // If userStore is a singleton object, just use it directly
     return {
-      userStore,
+      userStore: useUserStore(),
       messagesStore: useMessagesStore(),
       roomsStore: useRoomsStore(),
     };
@@ -154,7 +153,7 @@ export default {
       return this.userStore.currentUser;
     },
     isCurrentUser() {
-      return this.actualUserId === this.getCurrentUser.userId;
+      return this.actualUserId === this.getCurrentUser?.userId;
     },
   },
   methods: {
@@ -233,7 +232,7 @@ export default {
         userId: this.actualUserId,
         roomId: this.$route.params.roomId,
         roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
-        isAnonymous: this.getCurrentUser.nickname === 'anonymous',
+        isAnonymous: this.getCurrentUser?.nickname === 'anonymous',
       });
       this.messagesStore.cleanMessages();
       this.$router.push({
@@ -243,7 +242,7 @@ export default {
     invitePrivate() {
       // eslint-disable-next-line max-len
       this.messagesStore.sendPrivateMessageRequest({
-        currentUser: this.getCurrentUser.userId,
+        currentUser: this.getCurrentUser?.userId,
         userId: this.actualUserId,
       });
     },
@@ -253,7 +252,7 @@ export default {
         userId: this.actualUserId,
         roomId: this.$route.params.roomId,
         roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
-        isAnonymous: this.getCurrentUser.nickname === 'anonymous',
+        isAnonymous: this.getCurrentUser?.nickname === 'anonymous',
       });
       this.userStore.userSignOut(this.actualUserId);
       this.messagesStore.cleanMessages();
@@ -417,7 +416,7 @@ export default {
       this.windowHeight = window.innerHeight;
       this.windowWidth = window.innerWidth;
 
-      if (this.chatterManager && this.usersPosition[this.actualUserId] && this.usersPosition[this.actualUserId].position) {
+      if (this.chatterManager && this.usersPosition?.[this.actualUserId]?.position) {
         const currentLeft = parseInt(this.usersPosition[this.actualUserId].position.left, 10);
         const currentTop = parseInt(this.usersPosition[this.actualUserId].position.top, 10);
 

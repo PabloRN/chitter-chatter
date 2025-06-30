@@ -44,8 +44,7 @@
 import ChatterComponent from '@/components/Chatter';
 import TimeMachine from '@/components/TimeMachine';
 import PrivateDialogBubble from '@/components/PrivateDialogBubble';
-// import useUserStore from '@/stores/user';
-import userStore from '@/stores/user';
+import useUserStore from '@/stores/user';
 import useRoomsStore from '@/stores/rooms';
 import useMessagesStore from '@/stores/messages';
 
@@ -58,17 +57,17 @@ export default {
   },
   props: {
     roomId: String,
-    setup() {
-      // const userStore = useUserStore();
-      const roomsStore = useRoomsStore();
-      const messagesStore = useMessagesStore();
+  },
+  setup() {
+    const userStore = useUserStore();
+    const roomsStore = useRoomsStore();
+    const messagesStore = useMessagesStore();
 
-      return {
-        userStore,
-        roomsStore,
-        messagesStore,
-      };
-    },
+    return {
+      userStore,
+      roomsStore,
+      messagesStore,
+    };
   },
   data: () => ({
     innerHeight: '',
@@ -80,6 +79,7 @@ export default {
     showDialog: false,
     pMessage: [],
     chattersCounter: 0,
+    userInitialized: false,
   }),
   computed: {
     userAdded() { return this.roomsStore.userAdded; },
@@ -121,12 +121,16 @@ export default {
             }
           }
         }
-        // eslint-disable-next-line max-len
-        if (this.$route.params.roomId && this.getCurrentUser.userId) {
-          this.roomsStore.pushUser({ roomId: this.$route.params.roomId, userId: this.getCurrentUser.userId });
-          this.roomsStore.getAvatars(this.$route.params.roomId);
-        }
+        this.tryPushUser();
       }, 100);
+    },
+    tryPushUser() {
+      const user = this.getCurrentUser || this.currentUser;
+      if (this.$route.params.roomId && user && user.userId && !this.userInitialized) {
+        this.userInitialized = true;
+        this.roomsStore.pushUser({ roomId: this.$route.params.roomId, userId: user.userId });
+        this.roomsStore.getAvatars(this.$route.params.roomId);
+      }
     },
     confirmPrivateRequest() {
       this.messagesStore.confirmPrivate({
@@ -227,6 +231,11 @@ export default {
         });
         this.messagesStore.cleanPrivateMessages();
         this.pMessage = [];
+      }
+    },
+    currentUser(newUser) {
+      if (newUser && newUser.userId && !this.userInitialized) {
+        this.tryPushUser();
       }
     },
   },

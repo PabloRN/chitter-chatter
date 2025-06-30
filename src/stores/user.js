@@ -65,8 +65,12 @@ const useUserStore = defineStore('user', {
       const auth = getAuth();
       const db = getDatabase();
 
+      console.log('getUser() called - setting up auth state listener');
+
       onAuthStateChanged(auth, async (user) => {
+        console.log('Auth state changed:', user);
         if (user) {
+          console.log('User authenticated:', user.uid, 'isAnonymous:', user.isAnonymous);
           const userRef = ref(db, `users/${user.uid}`);
 
           if (user.isAnonymous) {
@@ -98,9 +102,12 @@ const useUserStore = defineStore('user', {
           });
 
           onValue(userRef, (snapshot) => {
+            console.log('User data from Firebase:', snapshot.val());
             this.setCurrentUser({ data: snapshot.val(), userId: user.uid });
+            console.log('Current user set to:', this.currentUser);
           });
         } else {
+          console.log('No user authenticated, logging in anonymously');
           this.loginAnonymously();
         }
       });
@@ -258,8 +265,10 @@ const useUserStore = defineStore('user', {
     async loginAnonymously() {
       const auth = getAuth();
 
+      console.log('Starting anonymous login...');
       try {
-        await signInAnonymously(auth);
+        const result = await signInAnonymously(auth);
+        console.log('Anonymous login successful:', result.user);
       } catch (error) {
         const errorCode = error.code;
         const errorMessage = error.message;
@@ -294,7 +303,9 @@ const useUserStore = defineStore('user', {
     },
 
     setCurrentUser(payload) {
+      console.log('setCurrentUser called with payload:', payload);
       Object.assign(this.currentUser, { ...payload.data, userId: payload.userId });
+      console.log('currentUser after assignment:', this.currentUser);
     },
 
     setUserData(data) {

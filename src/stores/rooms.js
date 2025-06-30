@@ -117,11 +117,29 @@ const useRoomsStore = defineStore('rooms', {
 
       try {
         const { currentUser } = userStore;
-        const defaultAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/${currentUser.level}/defaultAvatar/defaultAvatar.png`);
-        const defaultMiniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/${currentUser.level}/miniavatars/defaultAvatar_head.png`);
+        const userLevel = currentUser.level || 'L1'; // Default to L1 if level not set
+        console.log('pushUser - currentUser:', currentUser);
+        console.log('pushUser - userLevel:', userLevel);
 
-        const defaultUrl = await getDownloadURL(defaultAvatarRef);
-        const defaultMiniUrl = await getDownloadURL(defaultMiniAvatarRef);
+        const defaultAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/${userLevel}/defaultAvatar/defaultAvatar.png`);
+        const defaultMiniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/${userLevel}/miniavatars/defaultAvatar_head.png`);
+
+        let defaultUrl; let
+          defaultMiniUrl;
+
+        try {
+          defaultUrl = await getDownloadURL(defaultAvatarRef);
+          console.log('Got default avatar URL:', defaultUrl);
+        } catch (error) {
+          console.error('Failed to get default avatar:', error);
+        }
+
+        try {
+          defaultMiniUrl = await getDownloadURL(defaultMiniAvatarRef);
+          console.log('Got default mini avatar URL:', defaultMiniUrl);
+        } catch (error) {
+          console.error('Failed to get default mini avatar:', error);
+        }
 
         if (defaultUrl) {
           await set(ref(db, `users/${currentUser.userId}/avatar/`), defaultUrl);
