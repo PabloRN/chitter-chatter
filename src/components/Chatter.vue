@@ -173,9 +173,7 @@ export default {
       this.keyboardClicked = true;
     },
     toggleMessages() {
-      console.log('toggleMessages called from Chatter');
       const currentStatus = this.messagesStore.showMessagesStatus;
-      console.log('Current showMessagesStatus:', currentStatus);
       this.messagesStore.showMessages(!currentStatus);
     },
     toggleUserMessages() {

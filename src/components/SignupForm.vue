@@ -99,7 +99,6 @@ export default {
       this.isLoading = val;
     },
     onSignup() {
-      console.log(this.userData.avatar);
       if (this.userData.avatar.length === 0) {
         this.userData.avatar = this.getAllAvatars[0].url;
       }

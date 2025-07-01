@@ -82,10 +82,9 @@ export default {
   },
   watch: {
     signingInUpgraded: {
-      handler(newVal, oldVal) {
+      handler(newVal) {
         // here having access to the new and old value
         // do stuff
-        console.log({ newVal, oldVal });
         if (newVal === true) {
           this.userNickName = this.currentUser.nickname;
           this.tempNickName = JSON.parse(JSON.stringify(this.userNickName))

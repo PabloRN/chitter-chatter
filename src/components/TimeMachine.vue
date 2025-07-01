@@ -114,12 +114,10 @@ export default {
   computed: {
     getText() {
       const messages = this.messagesStore.getText;
-      console.log('TimeMachine getText:', messages.length, 'messages');
       return messages;
     },
     showMessagesStatus() {
       const status = this.messagesStore.showMessagesStatus;
-      console.log('TimeMachine showMessagesStatus:', status);
       return status;
     },
     isMobileDevice() {
@@ -136,9 +134,7 @@ export default {
   },
   watch: {
     showMessagesStatus(value) {
-      console.log('TimeMachine watch showMessagesStatus:', value);
       this.showHistory = value;
-      console.log('TimeMachine showHistory set to:', this.showHistory);
     },
   },
 };

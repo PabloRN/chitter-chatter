@@ -114,7 +114,6 @@ export default {
       this.showWelcomeDialog = true;
       localStorage.setItem('hasVisited', 'true');
     }
-    // console.log('usersOnline', this.usersOnline);
   },
   watch: {
     // ...

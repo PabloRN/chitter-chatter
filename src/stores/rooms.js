@@ -54,7 +54,6 @@ const useRoomsStore = defineStore('rooms', {
         return 'rooms ready';
       } catch (error) {
         this.setRoomsFail();
-        console.log(error);
       }
       return 'ready';
     },
@@ -104,7 +103,6 @@ const useRoomsStore = defineStore('rooms', {
         return snapshot.val();
       } catch (error) {
         this.setRoomsFail();
-        console.log(error);
         return error;
       }
     },
@@ -118,9 +116,6 @@ const useRoomsStore = defineStore('rooms', {
       try {
         const { currentUser } = userStore;
         const userLevel = currentUser.level || 'L1'; // Default to L1 if level not set
-        console.log('pushUser - currentUser:', currentUser);
-        console.log('pushUser - userLevel:', userLevel);
-
         const defaultAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/${userLevel}/defaultAvatar/defaultAvatar.png`);
         const defaultMiniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/${userLevel}/miniavatars/defaultAvatar_head.png`);
 
@@ -129,14 +124,12 @@ const useRoomsStore = defineStore('rooms', {
 
         try {
           defaultUrl = await getDownloadURL(defaultAvatarRef);
-          console.log('Got default avatar URL:', defaultUrl);
         } catch (error) {
           console.error('Failed to get default avatar:', error);
         }
 
         try {
           defaultMiniUrl = await getDownloadURL(defaultMiniAvatarRef);
-          console.log('Got default mini avatar URL:', defaultMiniUrl);
         } catch (error) {
           console.error('Failed to get default mini avatar:', error);
         }
@@ -159,7 +152,7 @@ const useRoomsStore = defineStore('rooms', {
         await update(ref(db), updates);
         this.pushUserSuccess();
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
 
@@ -189,9 +182,10 @@ const useRoomsStore = defineStore('rooms', {
         }
 
         await update(ref(db), updates);
+
         this.exitRoom({ roomId, userId, roomUsersKey });
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
 
@@ -213,7 +207,6 @@ const useRoomsStore = defineStore('rooms', {
 
         this.getAvatarsSucceed(urlList);
       } catch (error) {
-        console.log(error);
         this.getAvatarsFailed();
       }
     },

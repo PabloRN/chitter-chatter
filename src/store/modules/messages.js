@@ -54,7 +54,7 @@ const actions = {
       await firebase.database().ref().update(updates);
       // commit('SEND_MESSAGE_SUCCESS');
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   },
   async sendPrivateMessage({ commit, state }, { message, userId }) {
@@ -66,7 +66,7 @@ const actions = {
       await firebase.database().ref().update(updates);
       // commit('SEND_MESSAGE_SUCCESS');
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   },
   async confirmPrivate({ commit }, { requestedBy, currentUser }) {
@@ -95,7 +95,7 @@ const actions = {
         });
       // commit('CONFIRM_REQUEST_SUCCESS');
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   },
   async sendPrivateMessageRequest({ commit }, { currentUser, userId }) {
@@ -136,7 +136,7 @@ const actions = {
           commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
         });
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   },
   async getDialogs({ commit, state }, roomId) {
@@ -175,7 +175,6 @@ const actions = {
       });
     } catch (error) {
       commit('SET_ROOMS_FAIL');
-      console.log(error);
     }
   },
   async removeDialogs({ commit }, roomId) {
@@ -189,7 +188,6 @@ const actions = {
       commit('REMOVE_DIALOGS_SUCCESS');
     } catch (error) {
       commit('SET_ROOMS_FAIL');
-      console.log(error);
     }
   },
   async cleanMessages({ commit }) {
@@ -206,7 +204,6 @@ const actions = {
       commit('CLOSE_PRIVATE_MESSAGE_DIALOG');
     } catch (error) {
       commit('SET_ROOMS_FAIL');
-      console.log(error);
     }
   },
   cleanPrivateMessages({ commit }) {
@@ -236,9 +233,7 @@ const mutations = {
       .filter(({ userId }) => userId === payload);
     state.showMessagesStatus = true;
   },
-  SEND_TEXT_ERROR() {
-    console.log('Error sending text');
-  },
+  SEND_TEXT_ERROR() { },
   MESSAGE_ADDED_SUCCESS(state, message) {
     state.roomMessages.push(message);
   },

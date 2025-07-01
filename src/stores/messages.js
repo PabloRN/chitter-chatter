@@ -28,10 +28,7 @@ const useMessagesStore = defineStore('messages', {
     },
 
     showMessages(payload) {
-      console.log('showMessages called with:', payload);
-      console.log('Current roomMessages length:', this.roomMessages.length);
       this.setShowMessages(payload);
-      console.log('roomMessagesToShow after setShowMessages:', this.roomMessagesToShow.length);
     },
 
     showUserMessages(payload) {
@@ -58,7 +55,7 @@ const useMessagesStore = defineStore('messages', {
 
         await update(ref(db), updates);
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
 
@@ -72,7 +69,7 @@ const useMessagesStore = defineStore('messages', {
         updates[`privateMessages/${this.privateUsers}/${roomMessagesKey}`] = { message, userId };
         await update(ref(db), updates);
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
 
@@ -101,7 +98,7 @@ const useMessagesStore = defineStore('messages', {
           this.closePrivateMessageDialog();
         });
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
 
@@ -140,7 +137,7 @@ const useMessagesStore = defineStore('messages', {
           this.closePrivateMessageDialog();
         });
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     },
 
@@ -172,7 +169,6 @@ const useMessagesStore = defineStore('messages', {
         });
       } catch (error) {
         this.setRoomsFail();
-        console.log(error);
       }
     },
 
@@ -187,7 +183,6 @@ const useMessagesStore = defineStore('messages', {
         this.removeDialogsSuccess();
       } catch (error) {
         this.setRoomsFail();
-        console.log(error);
       }
     },
 
@@ -206,7 +201,6 @@ const useMessagesStore = defineStore('messages', {
         this.closePrivateMessageDialog();
       } catch (error) {
         this.setRoomsFail();
-        console.log(error);
       }
     },
 
@@ -236,13 +230,11 @@ const useMessagesStore = defineStore('messages', {
       this.showMessagesStatus = true;
     },
 
-    sendTextError() {
-      console.log('Error sending text');
-    },
+    sendTextError() { },
 
     sendTextSuccess(text) {
+      console.log(text);
       // Implementation for successful text send
-      console.log('Text sent successfully:', text);
     },
 
     setSendMessage() {
@@ -271,7 +263,6 @@ const useMessagesStore = defineStore('messages', {
     },
 
     setRoomsFail() {
-      console.log('Rooms operation failed');
     },
   },
 });

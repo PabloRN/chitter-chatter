@@ -68,7 +68,6 @@ const actions = {
       return 'rooms ready';
     } catch (error) {
       commit('SET_ROOMS_FAIL');
-      console.log(error);
     }
     return 'ready';
   },
@@ -104,7 +103,6 @@ const actions = {
       return snapshot.val();
     } catch (error) {
       commit('SET_ROOMS_FAIL');
-      console.log(error);
       return error;
     }
   },
@@ -136,7 +134,7 @@ const actions = {
 
       commit('PUSH_USER_SUCCESS');
     } catch (error) {
-      console.log(error);
+      commit('PUSH_USER_FAIL');
     }
   },
   async removeUser({ commit, rootState }, {
@@ -173,7 +171,7 @@ const actions = {
       });
       // commit('PUSH_USER_SUCCESS');
     } catch (error) {
-      console.log(error);
+      commit('PUSH_USER_FAIL');
     }
   },
   async getAvatars({ commit, rootState }, roomId) {
@@ -194,7 +192,6 @@ const actions = {
       })));
       commit('GET_AVATARS_SUCCEED', urlList);
     } catch (error) {
-      console.log(error);
       commit('GET_AVATARS_FAILED');
     }
   },

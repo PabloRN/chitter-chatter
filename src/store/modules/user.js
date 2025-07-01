@@ -177,7 +177,14 @@ const actions = {
       })
       .catch(
         (error) => {
-          console.log(error);
+          commit(
+            'main/setSnackbar',
+            {
+              type: 'error',
+              msg: `${error}`,
+            },
+            { root: true },
+          );
         },
       );
   },
@@ -201,7 +208,14 @@ const actions = {
             const { default: router } = await import('@/router');
             router.push({ name: 'rooms' });
           } else {
-            console.log('No user is signed in.');
+            commit(
+              'main/setSnackbar',
+              {
+                type: 'error',
+                msg: 'User does not exist',
+              },
+              { root: true },
+            );
           }
         })
         .catch(
@@ -214,7 +228,6 @@ const actions = {
               },
               { root: true },
             );
-            console.log(error);
           },
         );
     });
@@ -233,7 +246,6 @@ const actions = {
       commit('SET_CURRENT_USER_AVATAR', { avatar: url, miniAvatar: miniavatarRefUrl });
     } catch (error) {
       // commit('SET_USER_AVATAR_FAILED');
-      console.log(error);
     }
   },
   upgradeNonCurrentUser({ commit }, { verifiedUser, unverifiedUser }) {
@@ -287,9 +299,7 @@ const actions = {
     try {
       const uiConfig = {
         callbacks: {
-          signInSuccessWithAuthResult: (authResult, redirectUrl) => {
-            console.log({ redirectUrl });
-
+          signInSuccessWithAuthResult: (authResult) => {
             const { user } = authResult;
 
             // Call handleUpgrade without awaiting it to ensure we return false immediately
@@ -346,7 +356,7 @@ const actions = {
 
       ui.start('#firebaseui-auth-container', uiConfig);
     } catch (error) {
-      console.log(error);
+      console.error('Error starting Firebase UI:', error);
     }
   },
 

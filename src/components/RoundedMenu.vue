@@ -126,7 +126,6 @@ export default {
           if (this.movingTouch === false) {
             this.toggleMenu();
             this.$emit('showUserMessages');
-            console.log('caseshowUserMessages');
           }
           break;
 
