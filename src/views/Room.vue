@@ -142,6 +142,14 @@ export default {
       this.showDialog = false;
       this.messagesStore.closePrivate();
     },
+    removeUser({ userId, roomId, roomUsersKey }) {
+      this.roomsStore.removeUser({
+        userId,
+        roomId,
+        roomUsersKey,
+        isAnonymous: false,
+      });
+    },
   },
   created() {
     // eslint-disable-next-line max-len
@@ -162,15 +170,25 @@ export default {
     }
     this.messagesStore.getDialogs(this.$route.params.roomId);
   },
-  // beforeRouteLeave(from, to, next) {
-  //   const userVal = Object.values(this.currentUser)[0];
-  //   this.removeUser({
-  //     userId: Object.keys(this.currentUser)[0],
-  //     roomId: this.$route.params.roomId,
-  //     roomUsersKey: userVal.rooms[this.$route.params.roomId].roomUsersKey,
-  //   });
-  //   next();
-  // },
+  beforeRouteLeave(from, to, next) {
+    if (this.currentUser && this.currentUser.userId) {
+      const { roomId } = this.$route.params;
+      const { userId } = this.currentUser;
+
+      if (this.currentUser.rooms && this.currentUser.rooms[roomId]) {
+        this.removeUser({
+          userId,
+          roomId,
+          roomUsersKey: this.currentUser.rooms[roomId].roomUsersKey,
+        });
+      } else {
+        console.log('no room');
+      }
+    } else {
+      console.log('no user');
+    }
+    next();
+  },
   watch: {
     async userAdded(newUser) {
       if (newUser && newUser?.roomId === this.$route.params.roomId) {
