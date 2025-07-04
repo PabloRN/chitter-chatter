@@ -106,8 +106,8 @@ export default {
 
 /* Circular Keyboard Button - Same style as menu items */
 .manga-keyboard-icon {
-  background: #1a1a1a !important;
-  border: 2px solid #ffffff !important;
+  background: var(--button-background) !important;
+  border: var(--border-width) solid var(--button-border) !important;
   border-radius: 50% !important;
   z-index: 1000;
   width: 40px !important;
@@ -115,16 +115,16 @@ export default {
   min-width: 40px !important;
 
   .v-icon {
-    color: #ffffff !important;
+    color: var(--button-text) !important;
     font-size: 18px !important;
   }
 
   &:hover {
-    background: #2a2a2a !important;
-    border: 3px solid #ffffff !important;
+    background: var(--button-background-hover) !important;
+    border: var(--border-width-hover) solid var(--button-border) !important;
 
     .v-icon {
-      color: #ffffff !important;
+      color: var(--button-text) !important;
     }
   }
 }
