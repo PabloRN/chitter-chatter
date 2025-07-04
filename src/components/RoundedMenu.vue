@@ -1,5 +1,5 @@
 <template>
-  <div style="text-align: center; height: 200">
+  <div style="text-align: center; height: 200; position: fixed; top: 180px">
     <v-btn height="200" class="mx-2 menu-activator" dark @click.prevent.stop="toggleMenu"
       v-touch="{ end: () => toggleMenuTouch }">
     </v-btn>

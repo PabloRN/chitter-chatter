@@ -1,5 +1,5 @@
 <template>
-  <div style="text-align: center; height: 200; z-index: 1000">
+  <div style="text-align: center; height: 200; z-index: 1000;">
     <v-btn height="200" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-activator" dark
       @click.prevent.stop="toggleMenu" v-touch="{
         start: () => (movingTouch = false),
@@ -175,7 +175,7 @@ export default {
 .menu-item {
   z-index: 1000;
   width: min-content;
-  top: 65px;
+  top: -65px;
   left: 15px;
   margin-left: -40px;
   position: absolute;

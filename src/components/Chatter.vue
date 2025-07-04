@@ -2,7 +2,7 @@
 <template>
   <div style="text-align: center" :class="isCurrentUser ? 'current-user' : 'user'" :id="actualUserId"
     :ref="actualUserId" @click="chatterClicked" tabindex="0" @keydown.enter="chatterClicked"
-    @keydown.space.prevent="chatterClicked" role="button">
+    @keydown.space="handleSpaceKey" role="button">
     <DialogBubble :ref="`$bubble_${actualUserId}`" :id="`$bubble_${actualUserId}`" :message="message"
       :class="dialogSide" />
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
@@ -167,6 +167,14 @@ export default {
     showLoginDialogHandler() {
       this.showLoginDialog = true;
     },
+    handleSpaceKey(e) {
+      // Only prevent default if this chatter element is the active element (focused)
+      // Don't prevent if user is typing in an input field
+      if (document.activeElement === e.currentTarget) {
+        e.preventDefault();
+        this.chatterClicked(e);
+      }
+    },
     keyboardCLicked(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -304,6 +312,10 @@ export default {
       this.chatterManager.addEventListener(
         'mousedown',
         (e) => {
+          // Don't interfere with input fields
+          if (e.target.tagName === 'INPUT' || e.target.closest('.v-text-field') || e.target.closest('input')) {
+            return;
+          }
           e.preventDefault();
           e.stopPropagation();
           this.isDown = true;
@@ -318,6 +330,10 @@ export default {
       this.chatterManager.addEventListener(
         'mousemove',
         (e) => {
+          // Don't interfere with input fields
+          if (e.target.tagName === 'INPUT' || e.target.closest('.v-text-field') || e.target.closest('input')) {
+            return;
+          }
           e.preventDefault();
           e.stopPropagation();
           if (this.isDown && this.actualUserId === this.getCurrentUser.userId) {
@@ -350,6 +366,10 @@ export default {
       this.chatterManager.addEventListener(
         'mouseup',
         (e) => {
+          // Don't interfere with input fields
+          if (e.target.tagName === 'INPUT' || e.target.closest('.v-text-field') || e.target.closest('input')) {
+            return;
+          }
           e.preventDefault();
           e.stopPropagation();
           this.isDown = false;

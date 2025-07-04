@@ -11,6 +11,18 @@
     </v-main>
     <snack-bar />
 
+    <!-- Connection overlay -->
+    <div v-if="!mainStore.isConnected && mainStore.connectionChecked" class="connection-overlay">
+      <div class="connection-overlay-content">
+        <v-icon size="64" color="red">mdi-wifi-off</v-icon>
+        <h2>Connection Lost</h2>
+        <p>Please check your internet connection</p>
+        <v-btn color="primary" @click="mainStore.retryConnection()" class="mt-4">
+          Try Again
+        </v-btn>
+      </div>
+    </div>
+
     <!-- Landscape orientation message -->
     <div class="landscape-message">
       <div>
@@ -28,9 +40,11 @@ import { onMounted, onUnmounted } from 'vue';
 import SnackBar from './components/Snackbar';
 import useLanguageSwitcherStore from './stores/languageswitcher';
 import useUserStore from './stores/user';
+import useMainStore from './stores/main';
 
 const languageSwitcherStore = useLanguageSwitcherStore();
 const userStore = useUserStore();
+const mainStore = useMainStore();
 
 function lockLandscapeOrientation() {
   if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
@@ -92,5 +106,41 @@ screen and (max-width: 768px) and (orientation: landscape) {
   .landscape-message {
     display: none;
   }
+}
+
+.connection-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+}
+
+.connection-overlay-content {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  margin: 20px;
+}
+
+.connection-overlay-content h2 {
+  margin: 16px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.connection-overlay-content p {
+  margin: 16px 0;
+  color: #666;
+  font-size: 16px;
 }
 </style>

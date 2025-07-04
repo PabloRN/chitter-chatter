@@ -11,12 +11,11 @@
       </v-icon>
     </v-btn>
     <v-expand-transition>
-      <v-row v-if="!hideKeyboard" no-gutters class="pa-1 manga-typebox mt-3">
+      <v-row v-if="!hideKeyboard" no-gutters class="manga-typebox mt-3">
         <v-col cols="9" class="input-section">
-          <v-text-field @keypress.enter.prevent="enterPress" class="manga-input" rows="1" row-height="2" max="10"
+          <v-text-field @keydown.enter.prevent="enterPress" class="manga-input" rows="1" row-height="2" max="10"
             :maxlength="61" ref="refDialog" v-model="message" hide-details variant="outlined"
-            :rules="[rules.length(61)]" placeholder="Type your message..." inputmode="text" @blur="handleBlur"
-            @focus="handleFocus" @input="handleInput">
+            placeholder="Type your message..." inputmode="text">
           </v-text-field>
         </v-col>
         <v-col cols="3" class="button-section">
@@ -56,13 +55,7 @@ export default {
     message: '',
     hideKeyboard: true,
     inputFocused: false,
-    rules: {
-      length: (len) => (v) => (v || '').length < len || '',
-    },
   }),
-  mounted() {
-
-  },
   computed: {
     getCurrentUser() {
       return this.userStore.getCurrentUser;
@@ -70,14 +63,14 @@ export default {
   },
   methods: {
     enterPress(e) {
-      if (e.type === 'keypress' && e.key === 'Enter') {
-        e.preventDefault();
-        this.talk(e);
-      }
+      e.preventDefault();
+      this.talk(e);
     },
     talk(e) {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
 
       if (!this.message.trim()) {
         return;
@@ -92,25 +85,6 @@ export default {
       });
 
       this.message = '';
-
-      // For mobile, ensure the input stays active and ready for next message
-      if (isMobile()) {
-        this.$nextTick(() => {
-          if (!this.hideKeyboard && this.$refs.refDialog) {
-            // Force focus and selection to ensure the input is ready
-            const input = this.$refs.refDialog.$refs.input || this.$refs.refDialog;
-            if (input) {
-              input.focus();
-              // Ensure cursor is positioned correctly
-              setTimeout(() => {
-                if (input.setSelectionRange) {
-                  input.setSelectionRange(0, 0);
-                }
-              }, 50);
-            }
-          }
-        });
-      }
     },
     toggleKeyBoard(e) {
       e.preventDefault();
@@ -120,42 +94,9 @@ export default {
       this.hideKeyboard = !this.hideKeyboard;
       this.$nextTick(() => {
         if (!this.hideKeyboard && this.$refs.refDialog) {
-          // Add a small delay for mobile devices to ensure proper focus
-          if (isMobile()) {
-            setTimeout(() => {
-              this.$refs.refDialog.focus();
-            }, 150);
-          } else {
-            this.$refs.refDialog.focus();
-          }
+          this.$refs.refDialog.focus();
         }
       });
-    },
-    handleFocus() {
-      // Track that the input is focused
-      this.inputFocused = true;
-    },
-    handleBlur() {
-      // Track that the input lost focus
-      this.inputFocused = false;
-
-      // On mobile, if the keyboard is supposed to be open but focus is lost, refocus
-      if (isMobile() && !this.hideKeyboard) {
-        setTimeout(() => {
-          if (!this.hideKeyboard && this.$refs.refDialog && !this.inputFocused) {
-            const input = this.$refs.refDialog.$refs.input || this.$refs.refDialog;
-            if (input) {
-              input.focus();
-            }
-          }
-        }, 100);
-      }
-    },
-    handleInput() {
-      // Ensure focus is maintained during typing on mobile
-      if (isMobile() && !this.inputFocused) {
-        this.inputFocused = true;
-      }
     },
   },
 };
@@ -193,11 +134,13 @@ export default {
   z-index: 1100;
   -webkit-transform: translate3d(0, 0, 0);
   left: -120px;
-  bottom: 45px;
+  bottom: -70px;
   position: absolute;
+  color: #ffffff !important;
   width: 300px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  padding: 1px !important;
 
   .input-section {
     background: rgba(255, 255, 255, 0.1);
@@ -209,6 +152,7 @@ export default {
     box-shadow:
       0 8px 32px 0 rgba(31, 38, 135, 0.37),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    pointer-events: auto !important;
   }
 
   .button-section {
@@ -226,29 +170,39 @@ export default {
 
 /* Manga Input Field */
 .manga-input {
-  font-family: 'Nanum Pen Script', cursive !important;
+  pointer-events: auto !important;
+  user-select: text !important;
 
   :deep(.v-field) {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    pointer-events: auto !important;
 
     .v-field__outline {
       display: none !important;
     }
 
     .v-field__input {
-      font-family: 'Nanum Pen Script', cursive !important;
       font-size: 1.2rem !important;
-      font-weight: bold !important;
-      color: #000000 !important;
+      font-weight: normal !important;
+      color: #ffffff !important;
       padding: 8px 12px !important;
       line-height: 1.3 !important;
+      pointer-events: auto !important;
+
+      input {
+        color: #ffffff !important;
+        pointer-events: auto !important;
+        cursor: text !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+      }
 
       &::placeholder {
-        color: #666666 !important;
-        font-family: 'Nanum Pen Script', cursive !important;
+        color: #cccccc !important;
         opacity: 0.7;
       }
     }
@@ -287,8 +241,7 @@ export default {
   }
 
   .talk-text {
-    font-family: 'Nanum Pen Script', cursive !important;
-    font-size: 1.1rem !important;
+    font-size: 0.8rem !important;
     font-weight: bold !important;
     color: #ffffff !important;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);

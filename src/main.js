@@ -6,6 +6,7 @@ import App from './App';
 import './registerServiceWorker';
 import router from './router';
 import pinia from './stores';
+import useMainStore from './stores/main';
 // import store from './store' // Removed again to avoid Firebase conflicts
 import vuetify from './plugins/vuetify';
 import i18n from './i18n';
@@ -51,4 +52,9 @@ app.use(Storage, storageOptions);
 
 app.config.globalProperties._ = lodash;
 
+// Start connection monitoring after app is mounted
 app.mount('#app');
+
+// Initialize connection monitoring
+const mainStore = useMainStore();
+mainStore.startConnectionMonitoring();
