@@ -1,5 +1,5 @@
 <template>
-  <div style="text-align: center; height: 200; position: fixed; top: 180px">
+  <div style="text-align: center; height: 200; z-index: 1000;">
     <v-btn height="200" class="mx-2 menu-activator" dark @click.prevent.stop="toggleMenu"
       v-touch="{ end: () => toggleMenuTouch }">
     </v-btn>
@@ -58,7 +58,7 @@
       </div>
       <div class="icon-caption">User Messages</div>
     </v-btn>
-    <v-btn :class="'oculted'" class="mx-2 menu-item" fab dark small @click.prevent.stop="toggleMenu" v-touch="{
+    <v-btn class="mx-2 menu-item hidden" fab dark small @click.prevent.stop="toggleMenu" v-touch="{
       start: () => (movingTouch = false),
       end: () => toggleMenuTouch,
       left: () => (movingTouch = true),

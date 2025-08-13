@@ -41,10 +41,12 @@ import SnackBar from './components/Snackbar';
 import useLanguageSwitcherStore from './stores/languageswitcher';
 import useUserStore from './stores/user';
 import useMainStore from './stores/main';
+import useTheme from './composables/useTheme';
 
 const languageSwitcherStore = useLanguageSwitcherStore();
 const userStore = useUserStore();
 const mainStore = useMainStore();
+const { initTheme } = useTheme();
 
 function lockLandscapeOrientation() {
   if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
@@ -62,6 +64,7 @@ onMounted(() => {
   lockLandscapeOrientation();
   languageSwitcherStore.SET_LANG();
   userStore.getUser();
+  initTheme();
   window.addEventListener('beforeunload', leaveBrowser);
 });
 

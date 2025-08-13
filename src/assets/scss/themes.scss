@@ -1,0 +1,111 @@
+// Theme Definitions
+// Each theme overrides the CSS custom properties defined in variables.scss
+
+// General Theme (Default - current colors)
+[data-theme="general"] {
+  /* Main Theme Colors */
+  --primary-color: #1976d2;
+  --primary-dark: #1565c0;
+  --primary-light: #42a5f5;
+
+  /* Background Colors */
+  --background-primary: #ffffff;
+  --background-secondary: #f5f5f5;
+  --background-overlay: rgba(0, 0, 0, 0.8);
+  --background-overlay-light: rgba(0, 0, 0, 0.95);
+
+  /* Text Colors */
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-light: #ffffff;
+  --text-dark: #000000;
+
+  /* Button Colors */
+  --button-background: #1a1a1a;
+  --button-background-hover: #2a2a2a;
+  --button-border: #ffffff;
+  --button-text: #ffffff;
+
+  /* Dialog/Bubble Colors */
+  --bubble-background: #ffffff;
+  --bubble-border: #000000;
+  --bubble-shadow: #424242;
+
+  /* Status Colors */
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
+  --info-color: #2196f3;
+
+  /* Card/Menu Colors */
+  --card-background: #ffffff;
+  --card-border: #e0e0e0;
+  --card-hover: #f5f5f5;
+  --menu-background: #ffffff;
+  --menu-text: #333333;
+  --menu-hover: #f0f0f0;
+
+  /* Avatar/Selection Colors */
+  --avatar-background: #f5f5f5;
+  --avatar-border: #e0e0e0;
+  --avatar-selected: #1976d2;
+  --selection-background: #ffffff;
+  --selection-hover: #f0f0f0;
+}
+
+// Crunchyroll Theme (Orange/Black theme inspired by Crunchyroll)
+[data-theme="crunchyroll"] {
+  /* Main Theme Colors */
+  --primary-color: #ff6600;
+  --primary-dark: #e55100;
+  --primary-light: #ff9800;
+
+  /* Background Colors */
+  --background-primary: #0f0f0f;
+  --background-secondary: #1a1a1a;
+  --background-overlay: rgba(255, 102, 0, 0.8);
+  --background-overlay-light: rgba(15, 15, 15, 0.95);
+
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-light: #ffffff;
+  --text-dark: #000000;
+
+  /* Button Colors */
+  --button-background: #ff6600;
+  --button-background-hover: #ff7700;
+  --button-border: #ffffff;
+  --button-text: #ffffff;
+
+  /* Dialog/Bubble Colors */
+  --bubble-background: #ffffff;
+  --bubble-border: #000000;
+  --bubble-shadow: #424242;
+
+  /* Status Colors */
+  --success-color: #66bb6a;
+  --warning-color: #ffb74d;
+  --error-color: #ef5350;
+  --info-color: #42a5f5;
+
+  /* Override shadow with orange glow for crunchyroll theme */
+  --shadow-light: 0 0 8px rgba(255, 102, 0, 0.3);
+  --shadow-medium: 0 4px 6px rgba(255, 102, 0, 0.4);
+  --shadow-heavy: 0 8px 24px rgba(255, 102, 0, 0.5);
+
+  /* Card/Menu Colors */
+  --card-background: #1a1a1a;
+  --card-border: #ff6600;
+  --card-hover: #2a2a2a;
+  --menu-background: #1a1a1a;
+  --menu-text: #ffffff;
+  --menu-hover: #2a2a2a;
+
+  /* Avatar/Selection Colors */
+  --avatar-background: #2a2a2a;
+  --avatar-border: #ff6600;
+  --avatar-selected: #ff6600;
+  --selection-background: #1a1a1a;
+  --selection-hover: #2a2a2a;
+}

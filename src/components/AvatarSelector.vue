@@ -188,10 +188,10 @@ export default {
 </script>
 <style scoped>
 .avatar-selector-sheet {
-  background:
-    linear-gradient(135deg, #0a0a2e 0%, #1a1058 30%, #2d1b69 60%, #ff6b9d 100%) !important;
+  background: var(--selection-background) !important;
+  border: 2px solid var(--avatar-border) !important;
   border-radius: 25px 25px 0 0 !important;
-  color: white;
+  color: var(--text-primary);
   position: relative;
   overflow: hidden;
   height: auto !important;
@@ -207,11 +207,12 @@ export default {
   right: -30%;
   bottom: -20%;
   background:
-    radial-gradient(circle at 20% 30%, rgba(255, 107, 157, 0.3) 0%, transparent 50%),
+    /* radial-gradient(circle at 20% 30%, rgba(255, 107, 157, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, rgba(138, 43, 226, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 40% 80%, rgba(255, 20, 147, 0.2) 0%, transparent 50%),
     radial-gradient(circle at 60% 20%, rgba(138, 43, 226, 0.2) 0%, transparent 40%),
-    radial-gradient(circle at 10% 60%, rgba(255, 20, 147, 0.3) 0%, transparent 45%);
+    radial-gradient(circle at 10% 60%, rgba(255, 20, 147, 0.3) 0%, transparent 45%), */
+    linear-gradient(116deg, rgb(244, 117, 34) 32.01%, rgb(239, 68, 35) 67.87%);
   background-size: 200% 200%;
   background-position: center;
   animation: background-shift 8s ease-in-out infinite alternate;
@@ -243,14 +244,10 @@ export default {
 .avatar-selector-title {
   font-family: 'Nanum Pen Script', cursive;
   font-size: 2.2rem;
-  color: #fff;
-  text-shadow:
-    0 0 10px rgba(255, 107, 157, 0.8),
-    2px 2px 4px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(255, 20, 147, 0.6);
+  color: var(--text-primary);
+  text-shadow: var(--shadow-light);
   margin-bottom: 1rem;
   font-weight: bold;
-  animation: title-glow 3s ease-in-out infinite alternate;
   position: relative;
   z-index: 2;
 }
@@ -307,8 +304,8 @@ export default {
 }
 
 .nav-button {
-  background: linear-gradient(45deg, #ff6b9d, #8a2be2);
-  border: none;
+  background: var(--avatar-selected);
+  border: var(--border-width) solid var(--avatar-border);
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -317,15 +314,15 @@ export default {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+  box-shadow: var(--shadow-medium);
   z-index: 10;
   flex-shrink: 0;
 }
 
 .nav-button:hover:not(:disabled) {
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.6);
-  background: linear-gradient(45deg, #ff1493, #da70d6);
+  box-shadow: var(--shadow-heavy);
+  background: var(--button-background-hover);
 }
 
 .nav-button:disabled {
@@ -335,7 +332,7 @@ export default {
 }
 
 .nav-button .v-icon {
-  color: white;
+  color: var(--button-text);
   font-size: 24px;
 }
 
@@ -359,9 +356,9 @@ export default {
 }
 
 .indicator-dot.active {
-  background: linear-gradient(45deg, #ff6b9d, #8a2be2);
+  background: var(--avatar-selected);
   transform: scale(1.2);
-  box-shadow: 0 0 10px rgba(255, 107, 157, 0.6);
+  box-shadow: var(--shadow-light);
 }
 
 .indicator-dot:hover {
@@ -396,20 +393,14 @@ export default {
   position: relative;
   width: 90px;
   height: 160px;
-  background:
-    linear-gradient(145deg, #2a1458, #1a0d3a),
-    linear-gradient(45deg, rgba(255, 107, 157, 0.1), rgba(138, 43, 226, 0.1));
+  background: var(--avatar-background);
   border-radius: 20px;
-  border: 3px solid;
-  border-image: linear-gradient(45deg, #ff6b9d, #8a2be2, #ff1493, #da70d6) 1;
+  border: 3px solid var(--avatar-border);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow:
-    0 8px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 0 20px rgba(255, 107, 157, 0.3);
+  box-shadow: var(--shadow-medium);
   transition: all 0.4s ease;
 }
 

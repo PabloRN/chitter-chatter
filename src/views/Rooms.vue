@@ -19,7 +19,7 @@
       </div> -->
     </div>
     <div style="width: 100%;display: flex; justify-content: center;align-items: center;margin-top: 20px;">
-      <v-card style="width: 40%">
+      <v-card style="width: 40%" class="themed-card">
         <v-card-text class="text-subtitle-1" style="height: 20vh">
           <p>This is a temporary url created especially for you, our beloved early tester. Please note that it will
             expire soon.</p>
@@ -40,7 +40,7 @@
     </v-footer>
     <v-dialog v-if="showWelcomeDialog" v-model="showWelcomeDialog" persistent width="600"
       class="pa-5 ma-5 progress-dialog">
-      <v-card style="width: 100%">
+      <v-card style="width: 100%" class="themed-card">
         <v-card-title class="text-h6">Welcome, Early Tester! </v-card-title>
         <v-card-text class="text-subtitle-1" style="height: 20vh">
           <p>Thank you for being one of the selected few to try out our beta version. Your feedback is incredibly
@@ -130,15 +130,22 @@ export default {
 }
 
 .panel {
-  background-color: #fff;
-  border: solid 2px #000;
-  box-shadow: 0 6px 6px -6px #000;
+  background-color: var(--card-background);
+  border: solid var(--border-width) var(--card-border);
+  box-shadow: var(--shadow-medium);
   display: inline-block;
   height: 200px;
   margin: 0.5vmin;
   overflow: hidden;
   position: relative;
   flex: 1 1 auto;
+  transition: all 0.3s ease;
+}
+
+.panel:hover {
+  background-color: var(--card-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-heavy);
 }
 
 div#default_avatar_character_12345 .avatar-image {
@@ -159,6 +166,19 @@ div#default_avatar_character_12345 .avatar-image {
   background-repeat: no-repeat, no-repeat;
   position: relative;
   overflow: hidden;
+}
 
+.themed-card {
+  background-color: var(--card-background) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--card-border) !important;
+}
+
+.themed-card .v-card-title {
+  color: var(--text-primary) !important;
+}
+
+.themed-card .v-card-text {
+  color: var(--text-secondary) !important;
 }
 </style>
