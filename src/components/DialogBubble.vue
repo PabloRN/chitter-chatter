@@ -83,9 +83,9 @@ export default {
 }
 
 .bubble {
-  background-color: #fff;
-  border: solid 2px #000;
-  border-radius: 12px;
+  background-color: var(--bubble-background);
+  border: solid var(--border-width) var(--bubble-border);
+  border-radius: var(--border-radius);
   display: inline-block;
   margin: 0.5em;
   padding: 0.5em 1em;
@@ -95,12 +95,12 @@ export default {
   line-height: 1.1 !important;
   width: 200px;
   height: auto;
-  background: #fff;
-  border-radius: 6px;
-  color: #000;
+  background: var(--bubble-background);
+  border-radius: var(--border-radius-small);
+  color: var(--text-dark);
   bottom: 230px;
   text-align: center;
-  box-shadow: 1px 1px 3px #424242;
+  box-shadow: var(--shadow-light);
   z-index: 1000;
 
   &.position-left {
@@ -132,8 +132,8 @@ export default {
 
 .position-right:before {
   border: solid 12px transparent;
-  border-left: solid 12px #000;
-  border-top: solid 12px #000;
+  border-left: solid 12px var(--bubble-border);
+  border-top: solid 12px var(--bubble-border);
   bottom: -24px;
   content: '';
   height: 0;
@@ -145,8 +145,8 @@ export default {
 
 .position-right:after {
   border: solid 10px transparent;
-  border-left: solid 10px #fff;
-  border-top: solid 10px #fff;
+  border-left: solid 10px var(--bubble-background);
+  border-top: solid 10px var(--bubble-background);
   bottom: -19px;
   content: '';
   height: 0;
@@ -158,8 +158,8 @@ export default {
 
 .position-left:before {
   border: solid 12px transparent;
-  border-left: solid 12px #000;
-  border-top: solid 12px #000;
+  border-left: solid 12px var(--bubble-border);
+  border-top: solid 12px var(--bubble-border);
   bottom: -24px;
   content: '';
   height: 0;
@@ -171,8 +171,8 @@ export default {
 
 .position-left:after {
   border: solid 10px transparent;
-  border-left: solid 10px #fff;
-  border-top: solid 10px #fff;
+  border-left: solid 10px var(--bubble-background);
+  border-top: solid 10px var(--bubble-background);
   bottom: -19px;
   content: '';
   height: 0;

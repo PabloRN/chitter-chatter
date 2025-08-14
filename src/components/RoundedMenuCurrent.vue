@@ -187,7 +187,7 @@ export default {
   transition: opacity transform ease-out 200ms, -webkit-transform ease-out 200ms;
   -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
   transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-  border: 2px solid white;
+  border: var(--border-width) solid var(--button-border);
 }
 
 .menu-item:nth-child(2) {
@@ -309,7 +309,7 @@ export default {
   top: 35px;
   font-weight: bold;
   font-size: 0.8rem;
-  color: #ffffff;
+  color: var(--button-text);
 }
 
 .hidden {
@@ -321,8 +321,8 @@ export default {
 
 /* Circular Icon Button Styling */
 .v-btn.menu-item {
-  background: #1a1a1a !important;
-  border: 2px solid #ffffff !important;
+  background: var(--button-background) !important;
+  border: var(--border-width) solid var(--button-border) !important;
   border-radius: 50% !important;
   width: 40px !important;
   height: 40px !important;
@@ -330,16 +330,16 @@ export default {
   top: 90px;
 
   .manga-icon {
-    color: #ffffff !important;
+    color: var(--button-text) !important;
     font-size: 18px !important;
   }
 
   &:hover {
-    background: #2a2a2a !important;
-    border: 3px solid #ffffff !important;
+    background: var(--button-background-hover) !important;
+    border: var(--border-width-hover) solid var(--button-border) !important;
 
     .manga-icon {
-      color: #ffffff !important;
+      color: var(--button-text) !important;
     }
   }
 }

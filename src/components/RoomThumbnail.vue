@@ -68,14 +68,13 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
 
 .roomtitle {
-  color: white !important;
-  ;
+  color: var(--text-light) !important;
   font-weight: bold;
   font-size: 1.3em;
   font-family: 'Nanum Pen Script', cursive !important;
   overflow: inherit;
   text-overflow: inherit;
   white-space: nowrap;
-  text-shadow: 1px 1px 2px black;
+  text-shadow: var(--shadow-light);
 }
 </style>
