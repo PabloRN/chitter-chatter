@@ -41,10 +41,12 @@ import SnackBar from './components/Snackbar';
 import useLanguageSwitcherStore from './stores/languageswitcher';
 import useUserStore from './stores/user';
 import useMainStore from './stores/main';
+import useTheme from './composables/useTheme';
 
 const languageSwitcherStore = useLanguageSwitcherStore();
 const userStore = useUserStore();
 const mainStore = useMainStore();
+const { initTheme } = useTheme();
 
 function lockLandscapeOrientation() {
   if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
@@ -62,6 +64,7 @@ onMounted(() => {
   lockLandscapeOrientation();
   languageSwitcherStore.SET_LANG();
   userStore.getUser();
+  initTheme();
   window.addEventListener('beforeunload', leaveBrowser);
 });
 
@@ -79,8 +82,8 @@ onUnmounted(() => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    color: white;
+    background: var(--background-overlay-light);
+    color: var(--text-light);
     align-items: center;
     justify-content: center;
     flex-direction: column;
@@ -114,33 +117,33 @@ screen and (max-width: 768px) and (orientation: landscape) {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--background-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  backdrop-filter: blur(5px);
+  backdrop-filter: var(--backdrop-blur);
 }
 
 .connection-overlay-content {
-  background: white;
+  background: var(--background-primary);
   padding: 40px;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-heavy);
   max-width: 400px;
   margin: 20px;
 }
 
 .connection-overlay-content h2 {
   margin: 16px 0;
-  color: #333;
+  color: var(--text-primary);
   font-size: 24px;
 }
 
 .connection-overlay-content p {
   margin: 16px 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 </style>

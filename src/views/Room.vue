@@ -37,6 +37,24 @@
       <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
     </v-dialog>
     <TimeMachine style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
+    <div class="theme-switcher-container">
+      <v-btn icon size="small" @click="showThemeSelector = !showThemeSelector" class="theme-toggle-btn">
+        <v-icon>mdi-palette</v-icon>
+      </v-btn>
+      <v-menu v-model="showThemeSelector" :close-on-content-click="false" location="top">
+        <template v-slot:activator="{ }">
+        </template>
+        <v-card min-width="200">
+          <v-card-title class="text-body-2">Theme</v-card-title>
+          <v-card-text>
+            <v-radio-group v-model="currentTheme" @update:modelValue="setTheme">
+              <v-radio v-for="theme in availableThemes" :key="theme.name" :label="theme.label" :value="theme.name"
+                density="compact" />
+            </v-radio-group>
+          </v-card-text>
+        </v-card>
+      </v-menu>
+    </div>
   </div>
 </template>
 
@@ -47,6 +65,7 @@ import PrivateDialogBubble from '@/components/PrivateDialogBubble';
 import useUserStore from '@/stores/user';
 import useRoomsStore from '@/stores/rooms';
 import useMessagesStore from '@/stores/messages';
+import useTheme from '@/composables/useTheme';
 
 export default {
   name: 'RoomComponent',
@@ -62,11 +81,15 @@ export default {
     const userStore = useUserStore();
     const roomsStore = useRoomsStore();
     const messagesStore = useMessagesStore();
+    const { currentTheme, availableThemes, setTheme } = useTheme();
 
     return {
       userStore,
       roomsStore,
       messagesStore,
+      currentTheme,
+      availableThemes,
+      setTheme,
     };
   },
   data: () => ({
@@ -79,6 +102,7 @@ export default {
     showDialog: false,
     pMessage: [],
     chattersCounter: 0,
+    showThemeSelector: false,
     userInitialized: false,
   }),
   computed: {
@@ -279,5 +303,23 @@ export default {
 
 :deep(.v-btn) {
   font-size: 0.9rem;
+}
+
+/* Theme Switcher Styles */
+.theme-switcher-container {
+  position: fixed;
+  bottom: 50px;
+  right: 15px;
+  z-index: 1001;
+}
+
+.theme-toggle-btn {
+  background: var(--button-background) !important;
+  border: var(--border-width) solid var(--button-border) !important;
+  color: var(--button-text) !important;
+
+  &:hover {
+    background: var(--button-background-hover) !important;
+  }
 }
 </style>
