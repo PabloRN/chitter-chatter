@@ -3,7 +3,7 @@
   <div class="home">
     <v-app-bar dense elevation="4" rounded shaped>
       <v-toolbar-title style="display: flex; justify-content: flex-start">
-        <v-img src="../assets/logotype_landing_page.png" class="my-3" contain width="6em" height="35"
+        <v-img src="/logotype_landing_page.png" class="my-3" contain width="6em" height="35"
           style="background-position: left!important;" />
       </v-toolbar-title>
     </v-app-bar>
@@ -24,7 +24,7 @@
           <p>This is a temporary url created especially for you, our beloved early tester. Please note that it will
             expire soon.</p>
           <p>If you find this product amazing and you want to hear more from us and share your experience join us on our
-            Discord channel <a href="https://discord.gg/MKtRuUfG" target="_blank">discord channel</a>. We'd love to hear
+            Discord channel <a href="https://discord.gg/Hspt8B2u" target="_blank">discord channel</a>. We'd love to hear
             from you! </p>
         </v-card-text>
       </v-card>
