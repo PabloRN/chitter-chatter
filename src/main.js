@@ -16,7 +16,7 @@ import './assets/scss/main.scss';
 const firebaseConfig = {
   apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
   authDomain: 'chitter-chatter-f762a.firebaseapp.com',
-  databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
+  databaseURL: 'toonstalk.com',
   projectId: 'chitter-chatter-f762a',
   storageBucket: 'chitter-chatter-f762a.appspot.com',
   messagingSenderId: '63563490823',
