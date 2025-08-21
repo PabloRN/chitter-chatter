@@ -58,7 +58,9 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import ChatterComponent from '@/components/Chatter';
 import TimeMachine from '@/components/TimeMachine';
 import PrivateDialogBubble from '@/components/PrivateDialogBubble';
@@ -67,222 +69,267 @@ import useRoomsStore from '@/stores/rooms';
 import useMessagesStore from '@/stores/messages';
 import useTheme from '@/composables/useTheme';
 
-export default {
-  name: 'RoomComponent',
-  components: {
-    ChatterComponent,
-    PrivateDialogBubble,
-    TimeMachine,
-  },
-  props: {
-    roomId: String,
-  },
-  setup() {
-    const userStore = useUserStore();
-    const roomsStore = useRoomsStore();
-    const messagesStore = useMessagesStore();
-    const { currentTheme, availableThemes, setTheme } = useTheme();
+// Props
+defineProps({
+  roomId: String,
+});
 
-    return {
-      userStore,
-      roomsStore,
-      messagesStore,
-      currentTheme,
-      availableThemes,
-      setTheme,
-    };
-  },
-  data: () => ({
-    innerHeight: '',
-    chatters: new Map(),
-    initialUsers: [],
-    background: '',
-    privateRequestDialog: false,
-    privateRequestUser: {},
-    showDialog: false,
-    pMessage: [],
-    chattersCounter: 0,
-    showThemeSelector: false,
-    userInitialized: false,
-  }),
-  computed: {
-    userAdded() { return this.roomsStore.userAdded; },
-    userExit() { return this.roomsStore.userExit; },
-    roomList() { return this.roomsStore.roomList; },
-    avatarList() { return this.roomsStore.avatarsList; },
-    currentRoom() { return this.roomsStore.currentRoom; },
-    currentUser() { return this.userStore.currentUser; },
-    requestedBy() { return this.userStore.requestedBy; },
-    avatarUpdated() { return this.userStore.avatarUpdated; },
-    usersSwitched() { return this.userStore.usersSwitched; },
-    userData() { return this.userStore.userData; },
-    signingInUpgraded() { return this.userStore.signingInUpgraded; },
-    privateMessage() { return this.messagesStore.privateMessage; },
-    privateUsers() { return this.messagesStore.privateUsers; },
-    showMessagesStatus() { return this.messagesStore.showMessagesStatus; },
-    getCurrentUser() { return this.userStore.getCurrentUser; },
-    chattersArray() {
-      return this.chattersCounter && Array.from(this.chatters);
-    },
-  },
-  methods: {
-    async initUsers() {
-      setTimeout(async () => {
-        if (
-          Object.keys(this.currentRoom).length > 0
-          && this.currentRoom.users
-          && Object.keys(this.currentRoom.users).length > 0
-        ) {
-          const userIDs = Object.keys(this.currentRoom.users);
-          // eslint-disable-next-line no-restricted-syntax
-          for (const roomUserID of userIDs) {
-            const { userId } = this.currentRoom.users[roomUserID];
-            // eslint-disable-next-line no-await-in-loop
-            const userDataNew = await this.userStore.getUserData(userId);
-            if (Object.keys(userDataNew).length > 0) {
-              this.chatters.set(userId, userDataNew);
-              this.chattersCounter += 1;
-            }
-          }
+// Composables
+const route = useRoute();
+const router = useRouter();
+const userStore = useUserStore();
+const roomsStore = useRoomsStore();
+const messagesStore = useMessagesStore();
+const { currentTheme, availableThemes, setTheme } = useTheme();
+
+// Reactive data
+const innerHeight = ref('');
+const chatters = ref(new Map());
+const initialUsers = ref([]);
+const background = ref('');
+const privateRequestDialog = ref(false);
+const privateRequestUser = ref({});
+const showDialog = ref(false);
+const pMessage = ref([]);
+const chattersCounter = ref(0);
+const showThemeSelector = ref(false);
+const userInitialized = ref(false);
+
+// Computed properties
+const userAdded = computed(() => roomsStore.userAdded);
+const userExit = computed(() => roomsStore.userExit);
+const roomList = computed(() => roomsStore.roomList);
+const avatarList = computed(() => roomsStore.avatarsList);
+const currentRoom = computed(() => roomsStore.currentRoom);
+const currentUser = computed(() => userStore.currentUser);
+const requestedBy = computed(() => userStore.requestedBy);
+const avatarUpdated = computed(() => userStore.avatarUpdated);
+const usersSwitched = computed(() => userStore.usersSwitched);
+const userData = computed(() => userStore.userData);
+const signingInUpgraded = computed(() => userStore.signingInUpgraded);
+const privateMessage = computed(() => messagesStore.privateMessage);
+const privateUsers = computed(() => messagesStore.privateUsers);
+const showMessagesStatus = computed(() => messagesStore.showMessagesStatus);
+const getCurrentUser = computed(() => userStore.getCurrentUser);
+const chattersArray = computed(() => {
+  // Make this more reactive by accessing the properties that should trigger updates
+  const avatarTrigger = avatarUpdated.value;
+  const dataTrigger = userData.value;
+  // Use the variables to avoid unused expression warnings
+  return (avatarTrigger || dataTrigger || chattersCounter.value > 0) ? Array.from(chatters.value) : [];
+});
+
+// Methods
+const initUsers = async () => {
+  setTimeout(async () => {
+    if (
+      Object.keys(currentRoom.value).length > 0
+      && currentRoom.value.users
+      && Object.keys(currentRoom.value.users).length > 0
+    ) {
+      const userIDs = Object.keys(currentRoom.value.users);
+      for (const roomUserID of userIDs) {
+        const { userId } = currentRoom.value.users[roomUserID];
+        const userDataNew = await userStore.getUserData(userId);
+        if (Object.keys(userDataNew).length > 0) {
+          chatters.value.set(userId, userDataNew);
+          chattersCounter.value += 1;
         }
-        this.tryPushUser();
-      }, 100);
-    },
-    tryPushUser() {
-      const user = this.getCurrentUser || this.currentUser;
-      if (this.$route.params.roomId && user && user.userId && !this.userInitialized) {
-        this.userInitialized = true;
-        this.roomsStore.pushUser({ roomId: this.$route.params.roomId, userId: user.userId });
-        this.roomsStore.getAvatars(this.$route.params.roomId);
       }
-    },
-    confirmPrivateRequest() {
-      this.messagesStore.confirmPrivate({
-        requestedBy: this.requestedBy.userId,
-        currentUser: this.currentUser.userId,
-      });
-    },
-    privateMessageClosed() {
-      this.showDialog = false;
-      this.messagesStore.closePrivate();
-    },
-    removeUser({ userId, roomId, roomUsersKey }) {
-      this.roomsStore.removeUser({
+    }
+    // Remove the tryPushUser call from here since we'll handle it differently
+  }, 100);
+};
+
+const tryPushUser = () => {
+  const user = getCurrentUser.value || currentUser.value;
+  const roomId = route.params.roomId;
+
+  if (!roomId || !user || !user.userId || userInitialized.value) {
+    return;
+  }
+
+  userInitialized.value = true;
+  roomsStore.pushUser({ roomId, userId: user.userId });
+  roomsStore.getAvatars(roomId);
+};
+
+const confirmPrivateRequest = () => {
+  messagesStore.confirmPrivate({
+    requestedBy: requestedBy.value.userId,
+    currentUser: currentUser.value.userId,
+  });
+};
+
+const privateMessageClosed = () => {
+  showDialog.value = false;
+  messagesStore.closePrivate();
+};
+
+const removeUser = ({ userId, roomId, roomUsersKey }) => {
+  roomsStore.removeUser({
+    userId,
+    roomId,
+    roomUsersKey,
+    isAnonymous: false,
+  });
+};
+
+const updateWindowSize = () => {
+  innerHeight.value = window.innerHeight;
+};
+
+// Lifecycle hooks
+onMounted(async () => {
+  innerHeight.value = window.innerHeight;
+  window.addEventListener('resize', updateWindowSize);
+  
+  if (Object.keys(currentRoom.value).length === 0) {
+    await roomsStore.getRoomDetails(route.params.roomId);
+    background.value = currentRoom.value.picture;
+  } else {
+    background.value = currentRoom.value.picture;
+  }
+  
+  // Wait for user to be available before trying to add them to room
+  if (currentUser.value && currentUser.value.userId) {
+    tryPushUser();
+    initUsers();
+  } else {
+    // Fallback: Check for user every 500ms for up to 10 seconds
+    let attempts = 0;
+    const maxAttempts = 20;
+    const checkUserInterval = setInterval(() => {
+      attempts++;
+      const user = getCurrentUser.value || currentUser.value;
+      
+      if (user && user.userId && !userInitialized.value) {
+        clearInterval(checkUserInterval);
+        tryPushUser();
+        initUsers();
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkUserInterval);
+      }
+    }, 500);
+  }
+  
+  messagesStore.getDialogs(route.params.roomId);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateWindowSize);
+});
+
+onBeforeRouteLeave((from, to, next) => {
+  if (currentUser.value && currentUser.value.userId) {
+    const roomId = route.params.roomId;
+    const { userId } = currentUser.value;
+
+    if (currentUser.value.rooms && currentUser.value.rooms[roomId]) {
+      removeUser({
         userId,
         roomId,
-        roomUsersKey,
-        isAnonymous: false,
+        roomUsersKey: currentUser.value.rooms[roomId].roomUsersKey,
       });
-    },
-  },
-  created() {
-    // eslint-disable-next-line max-len
-  },
-  mounted() {
-    // eslint-disable-next-line max-len
-    this.innerHeight = window.innerHeight;
-    if (Object.keys(this.currentRoom).length === 0) {
-      this.roomsStore.getRoomDetails(this.$route.params.roomId)
-        // eslint-disable-next-line max-len
-        .then(() => {
-          this.background = this.currentRoom.picture;
-          this.initUsers();
-        });
     } else {
-      this.background = this.currentRoom.picture;
-      this.initUsers();
+      console.log('no room');
     }
-    this.messagesStore.getDialogs(this.$route.params.roomId);
-  },
-  beforeRouteLeave(from, to, next) {
-    if (this.currentUser && this.currentUser.userId) {
-      const { roomId } = this.$route.params;
-      const { userId } = this.currentUser;
+  } else {
+    console.log('no user');
+  }
+  next();
+});
 
-      if (this.currentUser.rooms && this.currentUser.rooms[roomId]) {
-        this.removeUser({
-          userId,
-          roomId,
-          roomUsersKey: this.currentUser.rooms[roomId].roomUsersKey,
-        });
-      } else {
-        console.log('no room');
-      }
-    } else {
-      console.log('no user');
+// Watchers
+watch(userAdded, async (newUser) => {
+  if (newUser && newUser?.roomId === route.params.roomId) {
+    const userDataNew = await userStore.getUserData(newUser.userId);
+    if (Object.keys(userDataNew).length > 0) {
+      chatters.value.set(newUser.userId, userDataNew);
+      chattersCounter.value += 1;
     }
-    next();
-  },
-  watch: {
-    async userAdded(newUser) {
-      if (newUser && newUser?.roomId === this.$route.params.roomId) {
-        const userDataNew = await this.userStore.getUserData(newUser.userId);
+  }
+});
+
+watch(signingInUpgraded, async (newVal) => {
+  if (userData.value[usersSwitched.value.verifiedUser]) {
+    const { rooms } = userData.value[usersSwitched.value.verifiedUser];
+    if (newVal === true && Object.keys(rooms).length > 0) {
+      if (Object.keys(rooms)[0] === route.params.roomId) {
+        const userDataNew = await userStore.getUserData(usersSwitched.value.verifiedUser);
         if (Object.keys(userDataNew).length > 0) {
-          this.chatters.set(newUser.userId, userDataNew);
-          this.chattersCounter += 1;
+          chatters.value.delete(usersSwitched.value.unverifiedUser);
+          chatters.value.set(usersSwitched.value.verifiedUser, userDataNew);
+          chattersCounter.value += 1;
         }
       }
-    },
-    async signingInUpgraded(newVal) {
-      if (this.userData[this.usersSwitched.verifiedUser]) {
-        const { rooms } = this.userData[this.usersSwitched.verifiedUser];
-        if (newVal === true && Object.keys(rooms).length > 0) {
-          if (Object.keys(rooms)[0] === this.$route.params.roomId) {
-            const userDataNew = await this.getUserData(this.usersSwitched.verifiedUser);
-            if (Object.keys(userDataNew).length > 0) {
-              this.chatters.delete(this.usersSwitched.unverifiedUser);
-              this.chatters.set(this.usersSwitched.verifiedUser, userDataNew);
-              this.chattersCounter += 1;
-            }
-          }
-        }
+    }
+  }
+});
+
+watch(userExit, ({ roomId, userId }) => {
+  if (roomId === route.params.roomId) {
+    chatters.value.delete(userId);
+    chattersCounter.value -= 1;
+  }
+});
+
+watch(avatarUpdated, ({ url, userId }) => {
+  nextTick(() => {
+    const tempUser = chatters.value.get(userId);
+    if (tempUser) {
+      tempUser.avatar = url;
+      chatters.value.set(userId, tempUser);
+      chattersCounter.value += 1;
+    }
+  });
+});
+
+watch(requestedBy, (user) => {
+  if (user) {
+    privateRequestDialog.value = true;
+    privateRequestUser.value = user;
+  }
+});
+
+watch(privateMessage, (newVal) => {
+  if (newVal) {
+    showDialog.value = true;
+    pMessage.value = [...newVal];
+  }
+});
+
+watch(privateUsers, async (newVal) => {
+  if (newVal === null) {
+    nextTick(() => {
+      showDialog.value = false;
+    });
+    messagesStore.cleanPrivateMessages();
+    pMessage.value = [];
+  }
+});
+
+// CRUCIAL: Watch for when currentUser becomes available and then add to room
+watch(currentUser, (newUser, oldUser) => {
+  if (newUser && newUser.userId && !userInitialized.value) {
+    tryPushUser();
+    initUsers();
+  }
+}, { immediate: true });
+
+watch(currentRoom, (newRoom) => {
+  // When room data becomes available, check if we need to add the user
+  if (newRoom && Object.keys(newRoom).length > 0 && !userInitialized.value) {
+    nextTick(() => {
+      if (currentUser.value && currentUser.value.userId) {
+        tryPushUser();
+        initUsers();
       }
-    },
-    userExit({ roomId, userId }) {
-      if (roomId === this.$route.params.roomId) {
-        this.chatters.delete(userId);
-        this.chattersCounter -= 1;
-      }
-    },
-    avatarUpdated({ url, userId }) {
-      this.$nextTick(() => {
-        const tempUser = this.chatters.get(userId);
-        if (tempUser) {
-          tempUser.avatar = url;
-          this.chatters.set(userId, tempUser);
-          this.chattersCounter += 1;
-        }
-      });
-    },
-    requestedBy(user) {
-      if (user) {
-        this.privateRequestDialog = true;
-        this.privateRequestUser = user;
-      }
-    },
-    privateMessage(newVal) {
-      if (newVal) {
-        this.showDialog = true;
-        this.pMessage = [...newVal];
-      }
-    },
-    async privateUsers(newVal) {
-      if (newVal === null) {
-        this.$nextTick(() => {
-          this.showDialog = false;
-        });
-        this.messagesStore.cleanPrivateMessages();
-        this.pMessage = [];
-      }
-    },
-    currentUser(newUser) {
-      if (newUser && newUser.userId && !this.userInitialized) {
-        this.tryPushUser();
-      }
-    },
-  },
-};
+    });
+  }
+});
 </script>
+
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
 

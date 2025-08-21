@@ -147,7 +147,9 @@ const useRoomsStore = defineStore('rooms', {
         updates[`/users/${userId}/rooms/${roomId}`] = { roomUsersKey };
 
         const refRoom = ref(db, `rooms/${roomId}/users/${roomUsersKey}/`);
-        onDisconnect(refRoom).update({ userId: null });
+        // Instead of setting userId to null (which triggers onChildRemoved),
+        // just remove the entire key on disconnect to avoid cleanup issues on refresh
+        onDisconnect(refRoom).remove();
 
         await update(ref(db), updates);
         this.pushUserSuccess();
