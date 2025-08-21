@@ -163,7 +163,7 @@ export default {
       }
       e.stopPropagation();
       e.preventDefault();
-      if (!this.currentUser.isAnonymous) {
+      if (this.currentUser.isAnonymous) {
         this.userStore.changeAvatar(itemSelected.url);
         this.$emit('onClose');
       } else {
@@ -179,7 +179,7 @@ export default {
     async signingInUpgraded(newVal) {
       setTimeout(() => {
         if (newVal === true && this.itemSelectedUrl !== '') {
-          this.userStore.changeAvatar(this.itemSelectedUrl);
+          this.changeAvatar(this.itemSelectedUrl);
         }
       }, 1000);
     },

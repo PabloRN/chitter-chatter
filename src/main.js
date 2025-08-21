@@ -7,30 +7,23 @@ import './registerServiceWorker';
 import router from './router';
 import pinia from './stores';
 import useMainStore from './stores/main';
+// import store from './store' // Removed again to avoid Firebase conflicts
 import vuetify from './plugins/vuetify';
 import i18n from './i18n';
 // import './utils/vee-validate' // Removed for now
 import './assets/scss/main.scss';
 
-// Firebase configuration
-const firebaseConfig = {
+// Initialize Firebase
+initializeApp({
   apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
-  authDomain: 'chitter-chatter-f762a.firebaseapp.com',
+  authDomain: 'toonstalk.com',
   databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
   projectId: 'chitter-chatter-f762a',
   storageBucket: 'chitter-chatter-f762a.appspot.com',
   messagingSenderId: '63563490823',
   appId: '1:63563490823:web:a6b6dc9011861f6d0d2ca2',
   measurementId: 'G-JCDBMEBPZZ',
-};
-
-// Initialize Firebase (modular v10+)
-initializeApp(firebaseConfig);
-
-// Initialize Firebase compat for FirebaseUI
-if (typeof window !== 'undefined' && window.firebase) {
-  window.firebase.initializeApp(firebaseConfig);
-}
+});
 
 const app = createApp(App);
 
@@ -51,6 +44,7 @@ const storageOptions = {
 };
 
 app.use(pinia);
+// app.use(store) // Removed again to avoid Firebase conflicts
 app.use(router);
 app.use(vuetify);
 app.use(i18n);
