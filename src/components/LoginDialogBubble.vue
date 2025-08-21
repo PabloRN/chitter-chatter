@@ -30,71 +30,48 @@
   </v-scroll-y-reverse-transition>
 </template>
 
-<script>
+<script setup>
+import {
+  ref, onMounted, computed, watch, defineProps, defineEmits,
+} from 'vue';
 import useUserStore from '@/stores/user';
-import 'firebaseui/dist/firebaseui.css';
 
-export default {
-  name: 'LoginDialogBubble',
-  components: {},
-  setup() {
-    const userStore = useUserStore();
+defineProps({
+  message: Array,
+});
+const emit = defineEmits(['onCloseLoginDialog']);
 
-    return {
-      userStore,
-    };
-  },
-  props: {
-    message: Array,
-  },
-  data: () => ({
-    showProfileForm: false,
-    userNickName: '',
-    tempNickName: '',
-    loading: false,
-  }),
-  mounted() {
-    this.userStore.setFirebaseUiInstance();
-  },
-  computed: {
-    getCurrentUser() {
-      return this.userStore.getCurrentUser;
-    },
-    userData() {
-      return this.userStore.userData;
-    },
-    currentUser() {
-      return this.userStore.currentUser;
-    },
-    signingInUpgraded() {
-      return this.userStore.signingInUpgraded;
-    },
-  },
-  methods: {
+const userStore = useUserStore();
 
-    closeDialogLogin() {
-      this.$emit('onCloseLoginDialog');
-    },
-    updateNickName() {
-      this.userStore.updateUserNickName(this.userNickName !== '' ? this.userNickName : this.tempNickName);
-      this.$emit('onCloseLoginDialog');
-    },
-  },
-  watch: {
-    signingInUpgraded: {
-      handler(newVal) {
-        // here having access to the new and old value
-        // do stuff
-        if (newVal === true) {
-          this.userNickName = this.currentUser.nickname;
-          this.tempNickName = JSON.parse(JSON.stringify(this.userNickName))
-            || this.currentUser.nickname;
-          this.showProfileForm = true;
-        }
-      },
-    },
-  },
-};
+const showProfileForm = ref(false);
+const userNickName = ref('');
+const tempNickName = ref('');
+const loading = ref(false);
+
+onMounted(() => {
+  userStore.setFirebaseUiInstance(userStore.roomIn.roomId);
+});
+
+const currentUser = computed(() => userStore.currentUser);
+const signingInUpgraded = computed(() => userStore.signingInUpgraded);
+
+function closeDialogLogin() {
+  emit('onCloseLoginDialog');
+}
+
+function updateNickName() {
+  userStore.updateUserNickName(userNickName.value !== '' ? userNickName.value : tempNickName.value);
+  emit('onCloseLoginDialog');
+}
+
+watch(signingInUpgraded, (newVal) => {
+  if (newVal === true) {
+    userNickName.value = currentUser.value.nickname;
+    tempNickName.value = JSON.parse(JSON.stringify(userNickName.value)) || currentUser.value.nickname;
+    showProfileForm.value = true;
+  }
+});
+
 </script>
 <style scoped>
 .closedialog {
