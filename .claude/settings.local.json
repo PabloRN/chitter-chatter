@@ -15,8 +15,7 @@
       "Bash(pkill:*)",
       "Bash(grep:*)",
       "Bash(npm run lint)",
-      "Bash(/dev/null)",
-      "Bash(npm run lint:*)"
+      "Bash(/dev/null)"
     ],
     "deny": []
   }
