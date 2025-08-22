@@ -289,6 +289,8 @@ const useRoomsStore = defineStore('rooms', {
         userStore.usersPosition = {};
         userStore.roomIn = {};
         this.currentRoom = {};
+        userStore.currentUser.rooms = {};
+        userStore.currentUser.position = {};
       } else {
         delete userStore.userData[userId];
         delete userStore.usersPosition[userId];

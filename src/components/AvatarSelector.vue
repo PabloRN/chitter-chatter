@@ -1,4 +1,3 @@
-<!-- eslint-disable max-len -->
 <template>
   <div class="text-center">
     <v-bottom-sheet v-model="sheet" width="70%">
@@ -10,7 +9,7 @@
             <button class="nav-button nav-button-left" @click="previousSlide" :disabled="currentSlide === 0">
               <v-icon>mdi-chevron-left</v-icon>
             </button>
-            <!-- Custom Vue 3 compatible slider -->
+            <!-- Slider -->
             <div class="slider-wrapper">
               <div class="avatar-slider" ref="slider">
                 <div class="slider-track" :style="{ transform: `translateX(-${currentSlide * slideWidth}px)` }">
@@ -52,140 +51,142 @@
     </v-bottom-sheet>
   </div>
 </template>
-
-<script>
+<script setup>
+import { ref, computed, watch, onMounted, nextTick, } from 'vue';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 
-export default {
-  components: {},
-  props: {
-    showAvatarSelector: {
-      default: false,
-      type: Boolean,
-    },
+// Props
+const props = defineProps({
+  showAvatarSelector: {
+    type: Boolean,
+    default: false,
   },
-  setup() {
-    const roomsStore = useRoomsStore();
-    const userStore = useUserStore();
+});
 
-    return {
-      roomsStore,
-      userStore,
-    };
-  },
-  data: () => ({
-    showLoginDialog: false,
-    isLoading: false,
-    sheet: false,
-    itemSelectedUrl: '',
-    currentSlide: 0,
-    touchStartX: 0,
-    touchStartTime: 0,
-    isDragging: false,
-    slideWidth: 150, // Width of each slide including margin
-    avatars: [],
-  }),
-  computed: {
-    avatarsList() {
-      return this.roomsStore.avatarsList;
-    },
-    currentUser() {
-      return this.userStore.currentUser;
-    },
-    signingInUpgraded() {
-      return this.userStore.signingInUpgraded;
-    },
-    maxSlide() {
-      return Math.max(0, this.avatarsList.length - 1);
-    },
-    totalDots() {
-      return this.avatarsList.length;
-    },
-  },
-  created() {
-    this.avatars = this.avatarsList;
-  },
-  mounted() {
-    this.avatars = this.avatarsList;
-    // Ensure proper initialization after DOM is ready
-    this.$nextTick(() => {
-      this.currentSlide = 0;
-    });
-  },
-  methods: {
-    setIsLoading(val) {
-      this.isLoading = val;
-    },
-    submit() {
-      this.userStore.signUserIn();
-    },
-    previousSlide() {
-      if (this.currentSlide > 0) {
-        this.currentSlide -= 1;
-      }
-    },
-    nextSlide() {
-      if (this.currentSlide < this.maxSlide) {
-        this.currentSlide += 1;
-      }
-    },
-    goToSlide(index) {
-      this.currentSlide = index;
-    },
-    handleTouchStart(e) {
-      this.touchStartX = e.touches[0].clientX;
-      this.touchStartTime = Date.now();
-      this.isDragging = false;
-    },
-    handleTouchMove(e) {
-      if (Math.abs(e.touches[0].clientX - this.touchStartX) > 10) {
-        this.isDragging = true;
-        e.preventDefault();
-      }
-    },
-    handleTouchEnd(e) {
-      const touchEndTime = Date.now();
-      const touchDuration = touchEndTime - this.touchStartTime;
-      if (this.isDragging || touchDuration > 300) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      setTimeout(() => {
-        this.isDragging = false;
-      }, 100);
-    },
-    avatarSelected(e, itemSelected) {
-      if (this.isDragging) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      e.stopPropagation();
-      e.preventDefault();
-      if (!this.currentUser.isAnonymous) {
-        this.userStore.changeAvatar(itemSelected.url);
-        this.$emit('onClose');
-      } else {
-        this.itemSelectedUrl = itemSelected.url;
-        this.$emit('onShowLoginDialog');
-      }
-    },
-  },
-  watch: {
-    showAvatarSelector(newVal) {
-      this.sheet = newVal;
-    },
-    async signingInUpgraded(newVal) {
-      setTimeout(() => {
-        if (newVal === true && this.itemSelectedUrl !== '') {
-          this.userStore.changeAvatar(this.itemSelectedUrl);
-        }
-      }, 1000);
-    },
-  },
-};
+// Emits
+const emit = defineEmits(['onClose', 'onShowLoginDialog']);
+
+// Stores
+const roomsStore = useRoomsStore();
+const userStore = useUserStore();
+
+// Refs
+const sheet = ref(false);
+const itemSelectedUrl = ref('');
+const currentSlide = ref(0);
+const touchStartX = ref(0);
+const touchStartTime = ref(0);
+const isDragging = ref(false);
+const slideWidth = ref(150); // Width of each slide including margin
+const avatars = ref([]);
+const isLoading = ref(false);
+
+// Computed
+const avatarsList = computed(() => roomsStore.avatarsList);
+const currentUser = computed(() => userStore.currentUser);
+const signingInUpgraded = computed(() => userStore.signingInUpgraded);
+const maxSlide = computed(() => Math.max(0, avatarsList.value.length - 1));
+const totalDots = computed(() => avatarsList.value.length);
+
+// Lifecycle
+onMounted(() => {
+  avatars.value = avatarsList.value;
+  nextTick(() => {
+    currentSlide.value = 0;
+  });
+});
+
+// Watchers
+watch(() => props.showAvatarSelector, (newVal) => {
+  console.log('newVal', newVal)
+  sheet.value = newVal;
+});
+
+watch(signingInUpgraded, (newVal, oldVal) => {
+  console.log('🔍 AvatarSelector signingInUpgraded changed:', { newVal, oldVal, itemSelectedUrl: itemSelectedUrl.value });
+  // Only trigger when signingInUpgraded changes from false to true
+  if (newVal === true && oldVal === false && itemSelectedUrl.value !== '') {
+    console.log('🎨 User upgraded, applying selected avatar:', itemSelectedUrl.value);
+    setTimeout(() => {
+      userStore.changeAvatar(itemSelectedUrl.value);
+      // Close the avatar selector after successful avatar change
+      console.log('🔄 Closing avatar selector');
+      emit('onClose');
+      // Reset the selected URL
+      itemSelectedUrl.value = '';
+    }, 1000);
+  }
+});
+
+// Methods
+function setIsLoading(val) {
+  isLoading.value = val;
+}
+
+function submit() {
+  userStore.signUserIn();
+}
+
+function previousSlide() {
+  if (currentSlide.value > 0) {
+    currentSlide.value -= 1;
+  }
+}
+
+function nextSlide() {
+  if (currentSlide.value < maxSlide.value) {
+    currentSlide.value += 1;
+  }
+}
+
+function goToSlide(index) {
+  currentSlide.value = index;
+}
+
+function handleTouchStart(e) {
+  touchStartX.value = e.touches[0].clientX;
+  touchStartTime.value = Date.now();
+  isDragging.value = false;
+}
+
+function handleTouchMove(e) {
+  if (Math.abs(e.touches[0].clientX - touchStartX.value) > 10) {
+    isDragging.value = true;
+    e.preventDefault();
+  }
+}
+
+function handleTouchEnd(e) {
+  const touchEndTime = Date.now();
+  const touchDuration = touchEndTime - touchStartTime.value;
+  if (isDragging.value || touchDuration > 300) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  setTimeout(() => {
+    isDragging.value = false;
+  }, 100);
+}
+
+function avatarSelected(e, item) {
+  if (isDragging.value) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  e.stopPropagation();
+  e.preventDefault();
+  if (!currentUser.value.isAnonymous) {
+    userStore.changeAvatar(item.url);
+    emit('onClose');
+  } else {
+    itemSelectedUrl.value = item.url;
+    emit('onShowLoginDialog');
+  }
+}
 </script>
+
 <style scoped>
 .avatar-selector-sheet {
   background: var(--selection-background) !important;

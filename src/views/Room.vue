@@ -59,7 +59,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import {
+  ref, computed, onMounted, onBeforeUnmount, watch, nextTick,
+} from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import ChatterComponent from '@/components/Chatter';
 import TimeMachine from '@/components/TimeMachine';
@@ -143,7 +145,7 @@ const initUsers = async () => {
 
 const tryPushUser = () => {
   const user = getCurrentUser.value || currentUser.value;
-  const roomId = route.params.roomId;
+  const { roomId } = route.params;
 
   if (!roomId || !user || !user.userId || userInitialized.value) {
     return;
@@ -183,14 +185,14 @@ const updateWindowSize = () => {
 onMounted(async () => {
   innerHeight.value = window.innerHeight;
   window.addEventListener('resize', updateWindowSize);
-  
+
   if (Object.keys(currentRoom.value).length === 0) {
     await roomsStore.getRoomDetails(route.params.roomId);
     background.value = currentRoom.value.picture;
   } else {
     background.value = currentRoom.value.picture;
   }
-  
+
   // Wait for user to be available before trying to add them to room
   if (currentUser.value && currentUser.value.userId) {
     tryPushUser();
@@ -202,7 +204,7 @@ onMounted(async () => {
     const checkUserInterval = setInterval(() => {
       attempts++;
       const user = getCurrentUser.value || currentUser.value;
-      
+
       if (user && user.userId && !userInitialized.value) {
         clearInterval(checkUserInterval);
         tryPushUser();
@@ -212,17 +214,19 @@ onMounted(async () => {
       }
     }, 500);
   }
-  
+
   messagesStore.getDialogs(route.params.roomId);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateWindowSize);
+
 });
 
 onBeforeRouteLeave((from, to, next) => {
   if (currentUser.value && currentUser.value.userId) {
-    const roomId = route.params.roomId;
+    console.log('currentUser.value', currentUser.value);
+    const { roomId } = route.params;
     const { userId } = currentUser.value;
 
     if (currentUser.value.rooms && currentUser.value.rooms[roomId]) {
@@ -258,11 +262,25 @@ watch(signingInUpgraded, async (newVal) => {
       if (Object.keys(rooms)[0] === route.params.roomId) {
         const userDataNew = await userStore.getUserData(usersSwitched.value.verifiedUser);
         if (Object.keys(userDataNew).length > 0) {
+          // Always update the chatters map for any user upgrade to show new avatar
           chatters.value.delete(usersSwitched.value.unverifiedUser);
           chatters.value.set(usersSwitched.value.verifiedUser, userDataNew);
           chattersCounter.value += 1;
         }
       }
+    }
+  }
+});
+
+// Also watch for other user upgrades specifically
+watch(() => userStore.otherUserUpgraded, async (newVal) => {
+  if (newVal) {
+    // Another user in the room has upgraded, update their data
+    const userDataNew = await userStore.getUserData(newVal.verifiedUser);
+    if (Object.keys(userDataNew).length > 0) {
+      chatters.value.delete(newVal.unverifiedUser);
+      chatters.value.set(newVal.verifiedUser, userDataNew);
+      chattersCounter.value += 1;
     }
   }
 });

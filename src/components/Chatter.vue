@@ -24,9 +24,9 @@
     <AvatarSelector :ref="`avatar-selector_${actualUserId}`" :id="`avatar-selector_${actualUserId}`"
       :showAvatarSelector="showAvatarSelector" @onClose="closeAvatarSelector"
       @onShowLoginDialog="showLoginDialogHandler" />
-    <v-dialog persistent scrollable v-if="showLoginDialog" v-model="showLoginDialog" width="600" min-height="80vh"
+    <v-dialog persistent scrollable v-model="showLoginDialog" width="600" min-height="80vh"
       class="pa-5 ma-5 private-dialog">
-      <LoginDialogBubble @onCloseLoginDialog="showLoginDialog = false" @onSavedNickName="updateNickName" />
+      <LoginDialogBubble @onCloseLoginDialog="closeLoggingDialog" @onSavedNickName="updateNickName" />
     </v-dialog>
   </div>
 </template>
@@ -158,13 +158,20 @@ export default {
   },
   methods: {
     updateNickName() {
+      console.log('🏠 Chatter updateNickName called');
       this.userStore.updateUserNickName();
       this.showLoginDialog = false;
     },
+    closeLoggingDialog() {
+      console.log('🏠 Chatter closeLoggingDialog called');
+      this.showLoginDialog = false;
+    },
     closeAvatarSelector() {
+      console.log('🏠 Chatter closeAvatarSelector called');
       this.showAvatarSelector = false;
     },
     showLoginDialogHandler() {
+      console.log('🏠 Chatter showLoginDialogHandler called');
       this.showLoginDialog = true;
     },
     handleSpaceKey(e) {
@@ -457,6 +464,9 @@ export default {
     window.removeEventListener('resize', this.updateWindowSize);
   },
   watch: {
+    showLoginDialog(newVal, oldVal) {
+      console.log('🏠 Chatter showLoginDialog changed:', { newVal, oldVal, userId: this.actualUserId });
+    },
     roomMessages(newVal) {
       if (newVal.length > 0) {
         const lastMessage = newVal[newVal.length - 1];
