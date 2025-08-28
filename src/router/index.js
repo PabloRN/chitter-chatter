@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import LoadingPage from '@/views/LoadingPage';
 import Login from '@/views/Login';
 import Rooms from '@/views/Rooms';
 import Room from '@/views/Room';
-import LoadingPage from '@/views/LoadingPage';
+import Profile from '@/views/Profile';
+// import RoomEdit from '@/views/RoomEdit';
 
 const routes = [
   {
@@ -21,6 +23,26 @@ const routes = [
     component: Room,
     props: true,
   },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: Profile,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  // {
+  //   path: '/rooms/create',
+  //   name: 'room-create',
+  //   component: RoomEdit,
+  //   props: { isEdit: false }, // pass flag to indicate creation mode
+  // },
+  // {
+  //   path: '/rooms/:roomId/edit',
+  //   name: 'room-edit',
+  //   component: RoomEdit,
+  //   props: (route) => ({ roomId: route.params.roomId, isEdit: true }),
+  // },
   {
     path: '/signup',
     name: 'Signup',
@@ -50,6 +72,9 @@ const routes = [
         },
         component: () => import('@/components/SignupForm'),
       },
+      // {
+      //   path: 'profile', name: 'profile', component: Profile, meta: { auth: ['USER'] },
+      // },
     ],
   },
 ];
@@ -59,9 +84,15 @@ const router = createRouter({
   routes,
 });
 
-// router.beforeEach((to, from, next) => {
-//   console.log({ to, from, next });
-//   next();
-// });
+// Navigation guards
+router.beforeEach((to, from, next) => {
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    // In a real app, you'd check the user's authentication status here
+    // For now, we'll allow access and handle it in the component
+    console.log('Accessing protected route:', to.name);
+  }
+  next();
+});
 
 export default router;
