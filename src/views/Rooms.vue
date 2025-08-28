@@ -6,7 +6,90 @@
         <v-img src="/logotype_landing_page.png" class="my-3" contain width="6em" height="35"
           style="background-position: left!important;" />
       </v-toolbar-title>
+
+      <v-spacer></v-spacer>
+
+      <!-- Authentication buttons for non-authenticated users -->
+      <div v-if="!isUserAuthenticated" class="auth-buttons">
+        <v-btn text class="login-btn" @click="showAuthDialog = true">
+          Login / Sign Up
+        </v-btn>
+      </div>
+
+      <!-- Profile menu for authenticated users -->
+      <div v-else class="profile-section">
+        <v-menu offset-y z-index="99999">
+          <template v-slot:activator="{ props }">
+            <v-btn icon v-bind="props" class="profile-menu-btn">
+              <v-avatar size="32" class="profile-avatar">
+                <v-img v-if="getCurrentUser?.avatar || getCurrentUser?.miniAvatar"
+                  :src="getCurrentUser?.miniAvatar || getCurrentUser?.avatar" />
+                <v-icon v-else>mdi-account-circle</v-icon>
+              </v-avatar>
+            </v-btn>
+          </template>
+
+          <v-list class="profile-dropdown">
+            <v-list-item @click="goToProfile">
+              <v-list-item-icon>
+                <v-icon>mdi-account</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Profile</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-list-item @click="goToNotifications">
+              <v-list-item-icon>
+                <v-icon>mdi-bell</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Notifications</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-list-item @click="goToFavorites">
+              <v-list-item-icon>
+                <v-icon>mdi-heart</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Favorites</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+
+            <v-divider></v-divider>
+
+            <v-list-item @click="logout" class="logout-item">
+              <v-list-item-icon>
+                <v-icon color="red">mdi-logout</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title class="red--text">Log Out</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
     </v-app-bar>
+
+    <!-- Auth Dialog for Login/Signup -->
+    <v-dialog v-model="showAuthDialog" max-width="400" :persistent="!isUserAuthenticated">
+      <v-card class="auth-dialog">
+        <v-card-title class="text-h6 text-center">
+          Welcome to ToonsTalk
+        </v-card-title>
+        <v-card-text class="text-center">
+          <p class="mb-4">Join our community to save favorites, get notifications, and customize your profile!</p>
+          <div id="firebaseui-auth-container"></div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="closeAuthDialog">
+            Continue as Guest
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <div class="d-flex flex-nowrap flex-direction-row pa-2">
       <div class="panel-container">
@@ -30,7 +113,7 @@
       </v-card>
     </div>
 
-    <v-footer padless absolute>
+    <v-footer padless absolute class="footer">
       <v-card flat tile width="100%" class="text-center">
         <v-divider></v-divider>
         <v-card-text>
@@ -78,6 +161,7 @@ export default {
   },
   data: () => ({
     showWelcomeDialog: false,
+    showAuthDialog: false,
     usersOnline: 0,
     flexBasisValues: ['25%'],
     variant: 'absolute',
@@ -98,12 +182,42 @@ export default {
     getCurrentUser() {
       return this.userStore.getCurrentUser;
     },
+    isUserAuthenticated() {
+      return this.userStore.currentUser?.userId && !this.userStore.currentUser?.isAnonymous;
+    },
   },
   methods: {
     getRandomFlexBasis() {
       const randomFlexBasis = this.flexBasisValues[Math.floor(Math.random()
         * this.flexBasisValues.length)];
       return { flexBasis: randomFlexBasis };
+    },
+    goToProfile() {
+      this.$router.push({ name: 'profile' });
+    },
+    goToNotifications() {
+      // TODO: Implement notifications view
+      console.log('Navigate to notifications');
+    },
+    goToFavorites() {
+      // TODO: Implement favorites view
+      console.log('Navigate to favorites');
+    },
+    async logout() {
+      try {
+        await this.userStore.userSignOut();
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    },
+    closeAuthDialog() {
+      this.showAuthDialog = false;
+    },
+    checkAuthenticationStatus() {
+      // Check if user just became authenticated and close dialog
+      if (this.isUserAuthenticated && this.showAuthDialog) {
+        this.showAuthDialog = false;
+      }
     },
   },
   created() {
@@ -114,9 +228,46 @@ export default {
       this.showWelcomeDialog = true;
       localStorage.setItem('hasVisited', 'true');
     }
+
+    // Set up interval to check auth status periodically
+    this.authCheckInterval = setInterval(() => {
+      this.checkAuthenticationStatus();
+    }, 1000);
+  },
+  beforeUnmount() {
+    if (this.authCheckInterval) {
+      clearInterval(this.authCheckInterval);
+    }
   },
   watch: {
-    // ...
+    showAuthDialog(newVal) {
+      if (newVal) {
+        // Initialize Firebase UI when dialog opens
+        this.$nextTick(() => {
+          this.userStore.setFirebaseUiInstance('rooms');
+        });
+      }
+    },
+    // Watch for authentication state changes
+    'userStore.currentUser.isAnonymous': function (newVal, oldVal) {
+      // Close auth dialog when user becomes authenticated
+      if (oldVal === true && newVal === false) {
+        this.showAuthDialog = false;
+      }
+    },
+    // Also watch for user ID changes (from null to having a user ID)
+    'userStore.currentUser.userId': function (newVal, oldVal) {
+      // Close auth dialog when user gets authenticated
+      if (!oldVal && newVal && !this.userStore.currentUser.isAnonymous) {
+        this.showAuthDialog = false;
+      }
+    },
+    // Watch for signin upgrade completed
+    'userStore.signingInUpgraded': function (newVal) {
+      if (newVal) {
+        this.showAuthDialog = false;
+      }
+    },
   },
 };
 </script>
@@ -126,7 +277,8 @@ export default {
   flex-wrap: wrap;
   gap: 0.5vmin;
   width: 100%;
-  height: fit-content
+  height: fit-content;
+  overflow: visible;
 }
 
 .panel {
@@ -136,7 +288,7 @@ export default {
   display: inline-block;
   height: 200px;
   margin: 0.5vmin;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   flex: 1 1 auto;
   transition: all 0.3s ease;
@@ -180,5 +332,116 @@ div#default_avatar_character_12345 .avatar-image {
 
 .themed-card .v-card-text {
   color: var(--text-secondary) !important;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  /* background-color: #333; */
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+}
+
+/* Authentication and Profile Styles */
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-btn {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  border-radius: 20px !important;
+  padding: 0 16px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+}
+
+.profile-menu-btn {
+  transition: transform 0.2s ease;
+}
+
+.profile-menu-btn:hover {
+  transform: scale(1.05);
+}
+
+.profile-avatar {
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: border-color 0.2s ease;
+}
+
+.profile-avatar:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.profile-dropdown {
+  min-width: 200px;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+  background: var(--card-background) !important;
+  z-index: 99999 !important;
+}
+
+/* Ensure Vuetify menu has proper z-index */
+.v-menu__content {
+  z-index: 99999 !important;
+}
+
+.profile-dropdown .v-list-item {
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: all 0.2s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.profile-dropdown .v-list-item:hover {
+  background: var(--card-hover) !important;
+  transform: translateX(4px);
+}
+
+.profile-dropdown .v-list-item-icon {
+  margin-right: 12px !important;
+}
+
+.logout-item:hover {
+  background: rgba(244, 67, 54, 0.1) !important;
+}
+
+.auth-dialog {
+  border-radius: 16px !important;
+  background: var(--card-background) !important;
+  color: var(--text-primary) !important;
+}
+
+.auth-dialog .v-card-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-dialog .v-card-text p {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 </style>
