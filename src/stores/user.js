@@ -101,6 +101,7 @@ const useUserStore = defineStore('user', {
               onlineState: true,
               status: 'online',
               isAnonymous: true,
+              favoriteRooms: [],
             };
             await set(userRef, initialUser);
           } else {
@@ -208,6 +209,7 @@ const useUserStore = defineStore('user', {
           avatar,
           age,
           miniAvatar,
+          favoriteRooms: [],
         });
 
         mainStore.setSnackbar({
