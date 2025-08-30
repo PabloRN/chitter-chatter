@@ -31,8 +31,8 @@ const useMessagesStore = defineStore('messages', {
       this.setShowMessages(payload);
     },
 
-    showUserMessages(payload) {
-      this.setShowUserMessages(payload);
+    showUserMessages(userId) {
+      this.setShowUserMessages(userId);
     },
 
     async sendMessage({

@@ -6,7 +6,7 @@
       <v-card flat>
         <v-card-title class="d-flex justify-space-between align-center pa-4">
           <span>Message History</span>
-          <v-btn icon size="small" @click="showHistory = false">
+          <v-btn icon size="small" @click="hideRoomMessages">
             <v-icon class="manga-icon">mdi-close</v-icon>
           </v-btn>
         </v-card-title>
@@ -86,59 +86,52 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue';
 import useMessagesStore from '@/stores/messages';
 import formatDate from '@/utils/timeTools';
 import isMobile from '@/utils/mobileDetection';
 
-export default {
-  name: 'TimeMachine',
-  components: {
+const props = defineProps({
+  message: {
+    type: Array,
+    default: () => [],
   },
-  setup() {
-    const messagesStore = useMessagesStore();
+});
 
-    return {
-      messagesStore,
-    };
-  },
-  props: {
-    message: Array,
-  },
-  data: () => ({
-    showHistory: false,
-  }),
-  mounted() {
-    this.text = this.message;
-  },
-  computed: {
-    getText() {
-      const messages = this.messagesStore.getText;
-      return messages;
-    },
-    showMessagesStatus() {
-      const status = this.messagesStore.showMessagesStatus;
-      return status;
-    },
-    isMobileDevice() {
-      return isMobile();
-    },
-  },
-  methods: {
-    onTransitionend(value) {
-      if (!value) this.messagesStore.showMessages(false);
-    },
-    formattedDateTime(timestamp) {
-      return formatDate(timestamp);
-    },
-  },
-  watch: {
-    showMessagesStatus(value) {
-      this.showHistory = value;
-    },
-  },
+const messagesStore = useMessagesStore();
+const showHistory = ref(false);
+const text = ref([]);
+
+// lifecycle
+onMounted(() => {
+  text.value = props.message;
+});
+
+// computed
+const getText = computed(() => messagesStore.getText);
+const showMessagesStatus = computed(() => messagesStore.showMessagesStatus);
+const isMobileDevice = computed(() => isMobile());
+
+// methods
+const onTransitionend = (value) => {
+  if (!value) messagesStore.showMessages(false);
 };
+
+const hideRoomMessages = () => {
+  messagesStore.showMessages(false);
+};
+
+const formattedDateTime = (timestamp) => {
+  return formatDate(timestamp);
+};
+
+// watch
+watch(showMessagesStatus, (value) => {
+  showHistory.value = value;
+});
 </script>
+
 <style scoped>
 @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,300italic,regular,italic,500,500italic,700,700italic);
 

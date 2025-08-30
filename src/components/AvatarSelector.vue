@@ -52,7 +52,9 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, } from 'vue';
+import {
+  ref, computed, watch, onMounted, nextTick,
+} from 'vue';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 
@@ -99,7 +101,7 @@ onMounted(() => {
 
 // Watchers
 watch(() => props.showAvatarSelector, (newVal) => {
-  console.log('newVal', newVal)
+  console.log('newVal', newVal);
   sheet.value = newVal;
 });
 
