@@ -51,94 +51,85 @@
   </v-card> -->
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { getDatabase, ref as dbRef, update, get } from 'firebase/database';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
-import {
-  getDatabase, ref, update, get,
-} from 'firebase/database';
 
-export default {
-  name: 'RoomThumbnail',
-  setup() {
-    const roomsStore = useRoomsStore();
-    const userStore = useUserStore();
+// ✅ Props
+const props = defineProps({
+  id: String,
+  room: Object,
+});
 
-    return {
-      roomsStore,
-      userStore,
-    };
-  },
-  props: {
-    id: String,
-    room: Object,
-  },
-  data: () => ({
-    usersOnline: 0,
-    showPreview: false,
-  }),
-  mounted() { },
-  computed: {
-    roomList() {
-      return this.roomsStore.roomList;
-    },
-    usersOnlineNow() {
-      return this.roomsStore.usersOnlineNow;
-    },
-    isUserAuthenticated() {
-      return this.userStore.currentUser?.userId && !this.userStore.currentUser?.isAnonymous;
-    },
-    isFavorite() {
-      const favoriteRooms = this.userStore.currentUser?.favoriteRooms || [];
-      return favoriteRooms.includes(this.id);
-    },
-  },
-  methods: {
-    enterRoom(room, key) {
-      this.$router.push({
-        name: 'room',
-        params: { roomId: key },
-      });
-    },
-    async toggleFavorite() {
-      if (!this.isUserAuthenticated) return;
+// ✅ Stores
+const roomsStore = useRoomsStore();
+const userStore = useUserStore();
+const router = useRouter();
 
-      const db = getDatabase();
-      const { userId } = this.userStore.currentUser;
-      const userRef = ref(db, `users/${userId}`);
+// ✅ Local state
+const usersOnline = ref(0);
+const showPreview = ref(false);
 
-      try {
-        // Get current user data
-        const snapshot = await get(userRef);
-        const userData = snapshot.val();
-        const currentFavorites = userData?.favoriteRooms || [];
+// ✅ Computed
+const roomList = computed(() => roomsStore.roomList);
+const usersOnlineNow = computed(() => roomsStore.usersOnlineNow);
 
-        let newFavorites;
-        if (this.isFavorite) {
-          // Remove from favorites
-          newFavorites = currentFavorites.filter((roomId) => roomId !== this.id);
-        } else {
-          // Add to favorites
-          newFavorites = [...currentFavorites, this.id];
-        }
+const isUserAuthenticated = computed(() => {
+  return userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous;
+});
 
-        // Update in Firebase
-        await update(userRef, { favoriteRooms: newFavorites });
+const isFavorite = computed(() => {
+  const favoriteRooms = userStore.currentUser?.favoriteRooms || [];
+  return favoriteRooms.includes(props.id);
+});
 
-        // Update local state
-        this.userStore.currentUser.favoriteRooms = newFavorites;
-      } catch (error) {
-        console.error('Error updating favorites:', error);
-      }
-    },
-  },
-  watch: {
-    usersOnlineNow() {
-      this.usersOnline = this.roomList[this.id]?.usersOnline;
-    },
-  },
+// ✅ Methods
+const enterRoom = (room, key) => {
+  router.push({
+    name: 'room',
+    params: { roomId: key },
+  });
 };
+
+const toggleFavorite = async () => {
+  if (!isUserAuthenticated.value) return;
+
+  const db = getDatabase();
+  const { userId } = userStore.currentUser;
+  const userRef = dbRef(db, `users/${userId}`);
+
+  try {
+    const snapshot = await get(userRef);
+    const userData = snapshot.val();
+    const currentFavorites = userData?.favoriteRooms || [];
+
+    let newFavorites;
+    if (isFavorite.value) {
+      newFavorites = currentFavorites.filter((roomId) => roomId !== props.id);
+    } else {
+      newFavorites = [...currentFavorites, props.id];
+    }
+
+    // Update in Firebase
+    await update(userRef, { favoriteRooms: newFavorites });
+
+    // Update local state
+    userStore.currentUser.favoriteRooms = newFavorites;
+  } catch (error) {
+    console.error('Error updating favorites:', error);
+  }
+};
+
+// ✅ Watchers
+watch(usersOnlineNow, () => {
+  usersOnline.value = roomList.value[props.id]?.usersOnline || 0;
+});
 </script>
+
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
