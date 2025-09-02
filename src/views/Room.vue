@@ -38,7 +38,46 @@
     </v-dialog>
     <TimeMachine style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
     <div class="theme-switcher-container">
-      <v-btn icon size="small" @click="showThemeSelector = !showThemeSelector" class="theme-toggle-btn">
+      <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
+        <template v-slot:activator="{ props: activatorProps }">
+          <v-fab v-bind="activatorProps" size="large" icon="mdi-dots-vertical"></v-fab>
+        </template>
+        <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('exitRoom')"
+          @touchstart.native.prevent="handleEmit('exitRoom')">
+          <div>
+            <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
+          </div>
+        </v-btn>
+        <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('reportRoom')"
+          @touchstart.native.prevent="handleEmit('reportRoom')">
+          <div>
+            <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
+          </div>
+        </v-btn>
+        <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('roomInfo')"
+          @touchstart.native.prevent="handleEmit('roomInfo')">
+          <div>
+            <v-icon class="manga-icon"> mdi-information </v-icon>
+          </div>
+        </v-btn>
+
+        <v-btn key="1" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('showMessages')"
+          @touchstart.native.prevent="handleEmit('showMessages')">
+          <div>
+            <v-icon class="manga-icon"> mdi-message-text-fast-outline </v-icon>
+          </div>
+        </v-btn>
+
+        <v-btn :disabled="!isUserAuthenticated" key="2" class="mx-2 speed-dial-menu-item" fab dark small
+          @click.prevent.stop="handleEmit('toggleFavorite')" @touchstart.native.prevent="handleEmit('toggleFavorite')">
+          <div>
+            <v-icon v-if="isFavorite" class="manga-icon"> mdi-heart-minus </v-icon>
+            <v-icon v-else class="manga-icon">
+              mdi-heart-plus </v-icon>
+          </div>
+        </v-btn>
+      </v-speed-dial>
+      <!-- <v-btn icon size="small" @click="showThemeSelector = !showThemeSelector" class="theme-toggle-btn">
         <v-icon>mdi-palette</v-icon>
       </v-btn>
       <v-menu v-model="showThemeSelector" :close-on-content-click="false" location="top">
@@ -53,7 +92,7 @@
             </v-radio-group>
           </v-card-text>
         </v-card>
-      </v-menu>
+      </v-menu> -->
     </div>
   </div>
 </template>
@@ -72,7 +111,7 @@ import useMessagesStore from '@/stores/messages';
 import useTheme from '@/composables/useTheme';
 
 // Props
-defineProps({
+const props = defineProps({
   roomId: String,
 });
 
@@ -96,9 +135,13 @@ const pMessage = ref([]);
 const chattersCounter = ref(0);
 const showThemeSelector = ref(false);
 const userInitialized = ref(false);
+const isOpen = ref(false)
 
 // Computed properties
 const userAdded = computed(() => roomsStore.userAdded);
+const isUserAuthenticated = computed(() => {
+  return userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous;
+});
 const userExit = computed(() => roomsStore.userExit);
 const roomList = computed(() => roomsStore.roomList);
 const avatarList = computed(() => roomsStore.avatarsList);
@@ -120,8 +163,13 @@ const chattersArray = computed(() => {
   // Use the variables to avoid unused expression warnings
   return (avatarTrigger || dataTrigger || chattersCounter.value > 0) ? Array.from(chatters.value) : [];
 });
-
+const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms.some(room => room === props.roomId));
 // Methods
+
+const toggleMessages = () => {
+  const currentStatus = messagesStore.showMessagesStatus;
+  messagesStore.showMessages(!currentStatus);
+};
 const initUsers = async () => {
   setTimeout(async () => {
     if (
@@ -181,6 +229,49 @@ const updateWindowSize = () => {
   innerHeight.value = window.innerHeight;
 };
 
+const handleEmit = (item) => {
+  switch (item) {
+    case 'privateMessage':
+      emit('privateMessage');
+      break;
+    case 'exitRoom':
+      leaveRoom()
+      break;
+    case 'toggleFavorite':
+
+      toggleFavorite();
+      isOpen.value = false
+      break;
+    case 'reportRoom':
+      console.log('Report room');
+      break;
+    case 'showMessages':
+
+      toggleMessages();
+      isOpen.value = false
+      break;
+  }
+};
+
+const leaveRoom = () => {
+  roomsStore.removeUser({
+    userId: roomsStore.getCurrentUser?.value.userId,
+    roomId: route.params.roomId,
+    roomUsersKey: roomsStore.getCurrentUser?.value.rooms[route.params.roomId].roomUsersKey,
+    isAnonymous: roomsStore.getCurrentUser?.value.isAnonymous,
+  });
+  messagesStore.cleanMessages();
+  router.push({
+    name: 'rooms',
+  });
+};
+
+const toggleFavorite = async () => {
+  if (isUserAuthenticated.value) {
+    await userStore.toggleFavorite(props.roomId);
+  }
+};
+
 // Lifecycle hooks
 onMounted(async () => {
   innerHeight.value = window.innerHeight;
@@ -220,7 +311,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateWindowSize);
-
 });
 
 onBeforeRouteLeave((from, to, next) => {
@@ -243,6 +333,7 @@ onBeforeRouteLeave((from, to, next) => {
   }
   next();
 });
+
 
 // Watchers
 watch(userAdded, async (newUser) => {
@@ -357,6 +448,29 @@ watch(currentRoom, (newRoom) => {
   left: 629px;
 }
 
+.v-btn.speed-dial-menu-item {
+  background: var(--button-background) !important;
+  border: var(--border-width) solid var(--button-border) !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+
+  .manga-icon {
+    color: var(--button-text) !important;
+    font-size: 18px !important;
+  }
+
+  &:hover {
+    background: var(--button-background-hover) !important;
+    border: var(--border-width-hover) solid var(--button-border) !important;
+
+    .manga-icon {
+      color: var(--button-text) !important;
+    }
+  }
+}
+
 .chatter {
   animation: flop 1s ease-in-out;
 }
@@ -374,7 +488,7 @@ watch(currentRoom, (newRoom) => {
 .theme-switcher-container {
   position: fixed;
   bottom: 50px;
-  right: 15px;
+  right: 55px;
   z-index: 1001;
 }
 

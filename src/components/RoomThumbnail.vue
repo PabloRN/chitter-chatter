@@ -95,31 +95,8 @@ const enterRoom = (room, key) => {
 };
 
 const toggleFavorite = async () => {
-  if (!isUserAuthenticated.value) return;
-
-  const db = getDatabase();
-  const { userId } = userStore.currentUser;
-  const userRef = dbRef(db, `users/${userId}`);
-
-  try {
-    const snapshot = await get(userRef);
-    const userData = snapshot.val();
-    const currentFavorites = userData?.favoriteRooms || [];
-
-    let newFavorites;
-    if (isFavorite.value) {
-      newFavorites = currentFavorites.filter((roomId) => roomId !== props.id);
-    } else {
-      newFavorites = [...currentFavorites, props.id];
-    }
-
-    // Update in Firebase
-    await update(userRef, { favoriteRooms: newFavorites });
-
-    // Update local state
-    userStore.currentUser.favoriteRooms = newFavorites;
-  } catch (error) {
-    console.error('Error updating favorites:', error);
+  if (isUserAuthenticated.value) {
+    await userStore.toggleFavorite(props.id);
   }
 };
 

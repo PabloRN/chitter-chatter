@@ -22,7 +22,7 @@
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
       @click.prevent.stop="handleEmit('showAvatarList')" @touchstart.native.prevent="handleEmit('showAvatarList')">
       <div>
-        <v-icon class="manga-icon"> mdi-account-switch </v-icon>
+        <v-icon class="manga-icon"> mdi-cards </v-icon>
       </div>
       <div class="icon-caption">Switch Avatar</div>
     </v-btn>
