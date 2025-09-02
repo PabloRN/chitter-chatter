@@ -49,6 +49,41 @@ const useUserStore = defineStore('user', {
   },
 
   actions: {
+    async toggleFavorite(roomId) {
+      const auth = getAuth();
+      const db = getDatabase();
+      const { currentUser } = auth;
+      const userRef = ref(db, `users/${currentUser.uid}`);
+
+      try {
+        const mainStore = useMainStore();
+        const snapshot = await get(userRef);
+        const userData = snapshot.val();
+        const currentFavorites = userData?.favoriteRooms || [];
+
+        let newFavorites;
+        if (currentFavorites.includes(roomId)) {
+          newFavorites = currentFavorites.filter((currentRoomId) => roomId !== currentRoomId);
+          mainStore.setSnackbar({
+            type: 'success',
+            msg: 'Removed from favorites successfully',
+          });
+        } else {
+          mainStore.setSnackbar({
+            type: 'success',
+            msg: 'Added to favorites successfully',
+          });
+          newFavorites = [...currentFavorites, roomId];
+        }
+
+        await update(userRef, { favoriteRooms: newFavorites });
+
+        // Update local state
+        this.currentUser.favoriteRooms = newFavorites;
+      } catch (error) {
+        console.error('Error updating favorites:', error);
+      }
+    },
     async userSignOut() {
       const auth = getAuth();
       const db = getDatabase();
@@ -200,7 +235,6 @@ const useUserStore = defineStore('user', {
       } = data;
       const auth = getAuth();
       const db = getDatabase();
-      const mainStore = useMainStore();
 
       try {
         const credentials = await createUserWithEmailAndPassword(auth, this.email, this.password);
@@ -211,7 +245,7 @@ const useUserStore = defineStore('user', {
           miniAvatar,
           favoriteRooms: [],
         });
-
+        const mainStore = useMainStore();
         mainStore.setSnackbar({
           type: 'success',
           msg: `Created user ${nickname} successfully`,
@@ -221,6 +255,7 @@ const useUserStore = defineStore('user', {
           nickname, avatar, age, userId: credentials.user.uid,
         });
       } catch (error) {
+        const mainStore = useMainStore();
         mainStore.setSnackbar({
           type: 'error',
           msg: `${error}`,
@@ -232,7 +267,6 @@ const useUserStore = defineStore('user', {
       const auth = getAuth();
       const db = getDatabase();
       const mainStore = useMainStore();
-
       try {
         const credentials = await signInWithEmailAndPassword(auth, this.email, this.password);
 
