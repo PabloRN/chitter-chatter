@@ -210,13 +210,13 @@ const confirmPrivateRequest = () => {
     currentUser: currentUser.value.userId,
   });
 };
-
-const rejectPrivateRequest = async () => {
-  const db = getDatabase();
-  await set(dbRef(db, `users/${currentUser.value.userId}/privateMessage/`), {
-    requestedBy: null,
+const rejectPrivateRequest = () => {
+  messagesStore.rejectPrivate({
+    requestedBy: requestedBy.value.userId,
+    currentUser: currentUser.value.userId,
   });
 };
+
 
 const privateMessageClosed = () => {
   showDialog.value = false;

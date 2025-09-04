@@ -220,7 +220,6 @@ const useUserStore = defineStore('user', {
     setupPrivateMessageListener() {
       const db = getDatabase();
       const privateMessage = ref(db, `users/${this.currentUser.userId}/privateMessage/requestedBy`);
-      
       onValue(privateMessage, (snapPrivate) => {
         if (snapPrivate.val()) {
           this.privateRequested({ requestedBy: this.userData[snapPrivate.val()], userId: snapPrivate.val() });
