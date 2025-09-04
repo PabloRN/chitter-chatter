@@ -101,6 +101,7 @@
 import {
   ref, computed, onMounted, onBeforeUnmount, watch, nextTick,
 } from 'vue';
+import { getDatabase, ref as dbRef, set } from 'firebase/database';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import ChatterComponent from '@/components/Chatter';
 import TimeMachine from '@/components/TimeMachine';
@@ -187,7 +188,6 @@ const initUsers = async () => {
         }
       }
     }
-    // Remove the tryPushUser call from here since we'll handle it differently
   }, 100);
 };
 
@@ -208,6 +208,13 @@ const confirmPrivateRequest = () => {
   messagesStore.confirmPrivate({
     requestedBy: requestedBy.value.userId,
     currentUser: currentUser.value.userId,
+  });
+};
+
+const rejectPrivateRequest = async () => {
+  const db = getDatabase();
+  await set(dbRef(db, `users/${currentUser.value.userId}/privateMessage/`), {
+    requestedBy: null,
   });
 };
 
@@ -402,7 +409,7 @@ watch(requestedBy, (user) => {
 });
 
 watch(privateMessage, (newVal) => {
-  if (newVal) {
+  if (newVal && newVal.length > 0) {
     showDialog.value = true;
     pMessage.value = [...newVal];
   }

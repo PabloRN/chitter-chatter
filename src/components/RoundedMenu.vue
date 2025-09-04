@@ -111,7 +111,7 @@ const handleEmit = (item) => {
       if (movingTouch.value === false) {
         toggleMenu();
         // emit event to parent
-        // this.emit('privateMessage');
+        emit('privateMessage');
       }
       break;
     case 'showUserMessages':

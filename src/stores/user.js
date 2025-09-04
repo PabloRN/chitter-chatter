@@ -156,6 +156,7 @@ const useUserStore = defineStore('user', {
           onValue(userRef, (snapshot) => {
             const userData = snapshot.val();
             this.setCurrentUser({ data: userData, userId: user.uid });
+            this.setupPrivateMessageListener();
           });
         } else {
           this.loginAnonymously();
@@ -188,7 +189,6 @@ const useUserStore = defineStore('user', {
       this.setUserData({ ...userDataTemp, userId });
 
       const userPosition = ref(db, `users/${userId}/position/`);
-      const privateMessage = ref(db, `users/${this.currentUser.userId}/privateMessage/requestedBy`);
       const userAvatar = ref(db, `users/${userId}/avatar`);
       const userMiniAvatar = ref(db, `users/${userId}/miniAvatar`);
       const userSwitched = ref(db, `users/${userId}/unverified`);
@@ -206,10 +206,6 @@ const useUserStore = defineStore('user', {
         this.setUserPosition({ position: snapPosition.val(), userId });
       });
 
-      onValue(privateMessage, (snapPrivate) => {
-        this.privateRequested({ requestedBy: this.userData[snapPrivate.val()], userId: snapPrivate.val() });
-      });
-
       onValue(userSwitched, (snapUnverified) => {
         if (snapUnverified.val()) this.setUserUpgradeSuccess({ userId: snapUnverified.val() });
       });
@@ -219,6 +215,17 @@ const useUserStore = defineStore('user', {
       });
 
       return { ...userDataTemp, userId };
+    },
+
+    setupPrivateMessageListener() {
+      const db = getDatabase();
+      const privateMessage = ref(db, `users/${this.currentUser.userId}/privateMessage/requestedBy`);
+      
+      onValue(privateMessage, (snapPrivate) => {
+        if (snapPrivate.val()) {
+          this.privateRequested({ requestedBy: this.userData[snapPrivate.val()], userId: snapPrivate.val() });
+        }
+      });
     },
 
     setEmailAction(payload) {

@@ -10,7 +10,7 @@
     </div>
     <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
     <RoundedMenu v-on="{
-      ['privateMessage']: invitePrivate,
+      ['privateMessage']: () => invitePrivate(),
       ['showUserMessages']: () => toggleUserMessages(),
     }" ref="roundedmenu" v-show="!isCurrentUser" />
     <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-show="isCurrentUser" v-on="{
@@ -123,23 +123,19 @@ const currentUser = computed(() => userStore.currentUser);
 const isCurrentUser = computed(() => actualUserId.value === getCurrentUser.value?.userId);
 
 const updateNickName = () => {
-  console.log('🏠 Chatter updateNickName called');
   userStore.updateUserNickName();
   showLoginDialog.value = false;
 };
 
 const closeLoggingDialog = () => {
-  console.log('🏠 Chatter closeLoggingDialog called');
   showLoginDialog.value = false;
 };
 
 const closeAvatarSelector = () => {
-  console.log('🏠 Chatter closeAvatarSelector called');
   showAvatarSelector.value = false;
 };
 
 const showLoginDialogHandler = () => {
-  console.log('🏠 Chatter showLoginDialogHandler called');
   showLoginDialog.value = true;
 };
 
@@ -162,7 +158,6 @@ const toggleMessages = () => {
 };
 
 const toggleUserMessages = () => {
-  console.log('🏠 Chatter toggleUserMessages called');
   messagesStore.showUserMessages(props.userId);
 };
 
