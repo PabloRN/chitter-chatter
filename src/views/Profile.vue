@@ -190,7 +190,7 @@ const joinedDate = computed(() => 'Dec 2024') // TODO: fetch from user data
 
 // redirect if not authenticated
 onMounted(() => {
-  if (!userStore.currentUser?.userId || userStore.currentUser?.isAnonymous) {
+  if (getCurrentUser.value?.isAnonymous) {
     router.push({ name: 'rooms' })
   }
 })
