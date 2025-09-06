@@ -27,7 +27,7 @@
       <div class="icon-caption">Switch Avatar</div>
     </v-btn>
     <v-btn class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
-      @click.prevent.stop="handleEmit('privateMessage')" @touchstart.native.prevent="handleEmit('privateMessage')">
+      @click.prevent.stop="handleEmit('showProfile')" @touchstart.native.prevent="handleEmit('showProfile')">
       <div>
         <v-icon class="manga-icon">mdi-account-cog</v-icon>
       </div>
@@ -149,6 +149,12 @@ const handleEmit = (item) => {
       toggleMenu();
       if (!getCurrentUser.value.isAnonymous) {
         emit('signOut');
+      }
+      break;
+    case 'showProfile':
+      toggleMenu();
+      if (!getCurrentUser.value.isAnonymous) {
+        emit('showProfile');
       }
       break;
     case 'showMessages':
