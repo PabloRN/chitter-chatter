@@ -11,20 +11,20 @@
       </div>
       <div class="icon-caption" style="opacity: 0.3;">Buffer</div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+    <v-btn :disabled="isBlockedBy" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
       <div>
-        <v-icon class="manga-icon"> mdi-account-plus </v-icon>
+        <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-account-plus </v-icon>
       </div>
-      <div class="icon-caption">Add friend</div>
+      <div :disabled="isBlockedBy" class="icon-caption">Add friend</div>
     </v-btn>
-    <v-btn class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
+    <v-btn :disabled="isBlockedBy" class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
       @click.prevent.stop="handleEmit('privateMessage')" @touchstart.native.prevent.stop="handleEmit('privateMessage')">
 
       <div>
-        <v-icon class="manga-icon"> mdi-forum-outline </v-icon>
+        <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-forum-outline </v-icon>
       </div>
-      <div class="icon-caption">Talk privately</div>
+      <div :disabled="isBlockedBy" class="icon-caption">Talk privately</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
@@ -34,20 +34,22 @@
       </div>
       <div class="icon-caption">Info</div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="handleEmit('blockUser')" @touchstart.native.prevent="handleEmit('blockUser')">
 
       <div>
-        <v-icon class="manga-icon"> mdi-volume-off </v-icon>
+
+        <v-icon v-if="isBlocked" class="manga-icon"> mdi-account-lock-open </v-icon>
+        <v-icon v-else class="manga-icon"> mdi-account-lock </v-icon>
       </div>
-      <div class="icon-caption"> Mute</div>
+      <div class="icon-caption"> {{ isBlocked ? 'Unblock' : 'Block' }} </div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+    <v-btn disabled :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
       <div>
-        <v-icon class="manga-icon"> mdi-car-emergency </v-icon>
+        <v-icon disabled class="manga-icon"> mdi-car-emergency </v-icon>
       </div>
-      <div class="icon-caption">Report</div>
+      <div disabled class="icon-caption">Report</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
       @click.prevent.stop="handleEmit('showUserMessages')" @touchstart.native.prevent="handleEmit('showUserMessages')">
@@ -76,20 +78,24 @@
 
 <script setup>
 import useUserStore from '@/stores/user';
-import useMessagesStore from '@/stores/messages';
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, onMounted } from 'vue';
 
+const props = defineProps({
+  userId: String,
+});
 const userStore = useUserStore();
-const messagesStore = useMessagesStore();
-
 // emits
 const emit = defineEmits(['showUserMessages', 'privateMessage']);
-
-const message = ref('');
 const hideMenu = ref(true);
 const movingTouch = ref(false);
 
 const getCurrentUser = computed(() => userStore.getCurrentUser);
+const isBlocked = computed(() => userStore.isBlocked(props.userId));
+const isBlockedBy = computed(() => userStore.isBlockedBy(props.userId));
+
+onMounted(() => {
+  console.log('RoundedMenu mounted props', props);
+});
 
 const toggleMenu = () => {
   nextTick(() => {
@@ -119,6 +125,13 @@ const handleEmit = (item) => {
         toggleMenu();
         // emit event to parent
         emit('showUserMessages');
+      }
+      break;
+    case 'blockUser':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        // emit event to parent
+        emit('blockUser');
       }
       break;
 

@@ -27,7 +27,8 @@
           privateRequestDialog = false;
           ">
             Reject</v-btn>
-          <v-btn small class="px-10" color="primary darken-1" tile outlined @click="privateRequestDialog = false">
+          <v-btn small class="px-10" color="primary darken-1" tile outlined
+            @click="rejectPrivateAndBlockUserRequest(); privateRequestDialog = false;">
             Reject and block</v-btn>
         </v-card-actions>
       </v-card>
@@ -215,6 +216,12 @@ const rejectPrivateRequest = () => {
     requestedBy: requestedBy.value.userId,
     currentUser: currentUser.value.userId,
   });
+};
+const rejectPrivateAndBlockUserRequest = () => {
+  rejectPrivateRequest();
+  userStore.toggleBlockUser(
+    requestedBy.value.userId,
+  );
 };
 
 

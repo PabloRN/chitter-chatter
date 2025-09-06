@@ -9,15 +9,18 @@
       <div class="nickname">{{ nickname }}</div>
     </div>
     <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
-    <RoundedMenu v-on="{
+    <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" v-on="{
       ['privateMessage']: () => invitePrivate(),
       ['showUserMessages']: () => toggleUserMessages(),
-    }" ref="roundedmenu" v-show="!isCurrentUser" />
-    <RoundedMenuCurrent :moving="mouseMoved" ref="roundedmenucurrent" v-show="isCurrentUser" v-on="{
+      ['blockUser']: () => toggleBlockUser(),
+
+    }" ref="roundedmenu" />
+    <RoundedMenuCurrent v-else :moving="mouseMoved" ref="roundedmenucurrent" v-on="{
       ['exitRoom']: leaveRoom,
       ['signOut']: () => userSignOutCall(),
       ['showAvatarList']: () => (showAvatarSelector = !showAvatarSelector),
       ['showMessages']: () => toggleMessages(),
+      ['showProfile']: () => showProfile(),
     }" />
     <TypeBox :ref="`keyboard_${actualUserId}`" :id="`keyboard_${actualUserId}`" v-if="isCurrentUser"
       :moving="mouseMoved" />
@@ -120,7 +123,8 @@ const usersPosition = computed(() => userStore.usersPosition);
 const userPositionModified = computed(() => userStore.userPositionModified);
 const userData = computed(() => userStore.userData);
 const currentUser = computed(() => userStore.currentUser);
-const isCurrentUser = computed(() => actualUserId.value === getCurrentUser.value?.userId);
+// const isCurrentUser = computed(() => actualUserId.value === getCurrentUser.value?.userId);
+const isCurrentUser = computed(() => props.userId === getCurrentUser.value?.userId);
 
 const updateNickName = () => {
   userStore.updateUserNickName();
@@ -160,6 +164,13 @@ const toggleMessages = () => {
 const toggleUserMessages = () => {
   messagesStore.showUserMessages(props.userId);
 };
+const toggleBlockUser = () => {
+  userStore.toggleBlockUser(props.userId);
+};
+
+function showProfile() {
+  window.open('/profile', '_blank');
+}
 
 const findClosestDivPosition = (givenDivId) => {
   const divPositions = usersPosition.value;
@@ -223,6 +234,10 @@ const leaveRoom = () => {
 };
 
 const invitePrivate = () => {
+  if (getCurrentUser.value?.isAnonymous) {
+    showLoginDialog.value = true;
+    return;
+  }
   messagesStore.sendPrivateMessageRequest({
     currentUser: getCurrentUser.value?.userId,
     userId: actualUserId.value,

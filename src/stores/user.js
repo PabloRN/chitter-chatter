@@ -42,13 +42,41 @@ const useUserStore = defineStore('user', {
     usersSwitched: {},
     otherUserUpgraded: null, // For tracking other users' upgrades
     showWelcomeForm: false, // For controlling welcome form visibility
+    blockListeners: [], // cleanup functions
   }),
 
   getters: {
     getCurrentUser: (state) => state.currentUser,
+    blockedUsers: (state) => state.currentUser?.blocked || {},
+    blockedByUsers: (state) => state.currentUser?.blockedBy || {},
+    isBlocked: (state) => (userId) => !!state.currentUser?.blocked?.[userId],
+    isBlockedBy: (state) => (userId) => !!state.currentUser?.blockedBy?.[userId],
   },
 
   actions: {
+
+    initBlockListeners(userId) {
+      const db = getDatabase();
+      const userStore = useUserStore();
+
+      // Clean up old listeners (in case user switches account)
+      this.blockListeners.forEach((unsubscribe) => unsubscribe());
+      this.blockListeners = [];
+
+      // 🔔 Listen to "blocked" (who I blocked)
+      const blockedRef = ref(db, `users/${userId}/blocked`);
+      const unsubscribeBlocked = onValue(blockedRef, (snap) => {
+        userStore.currentUser.blocked = snap.val() || {};
+      });
+      this.blockListeners.push(() => off(blockedRef, 'value', unsubscribeBlocked));
+
+      // 🔔 Listen to "blockedBy" (who blocked me)
+      const blockedByRef = ref(db, `users/${userId}/blockedBy`);
+      const unsubscribeBlockedBy = onValue(blockedByRef, (snap) => {
+        userStore.currentUser.blockedBy = snap.val() || {};
+      });
+      this.blockListeners.push(() => off(blockedByRef, 'value', unsubscribeBlockedBy));
+    },
     async toggleFavorite(roomId) {
       const auth = getAuth();
       const db = getDatabase();
@@ -82,6 +110,42 @@ const useUserStore = defineStore('user', {
         this.currentUser.favoriteRooms = newFavorites;
       } catch (error) {
         console.error('Error updating favorites:', error);
+      }
+    },
+    async toggleBlockUser(targetUserId) {
+      const db = getDatabase();
+      const mainStore = useMainStore();
+
+      try {
+        if (this.currentUser.blocked?.[targetUserId]) {
+          // UNBLOCK: remove entries
+          await update(ref(db), {
+            [`users/${this.currentUser.userId}/blocked/${targetUserId}`]: null,
+            [`users/${targetUserId}/blockedBy/${this.currentUser.userId}`]: null,
+          });
+
+          mainStore.setSnackbar({
+            type: 'success',
+            msg: 'User unblocked successfully',
+          });
+        } else {
+          // BLOCK: add entries
+          await update(ref(db), {
+            [`users/${this.currentUser.userId}/blocked/${targetUserId}`]: true,
+            [`users/${targetUserId}/blockedBy/${this.currentUser.userId}`]: true,
+          });
+
+          mainStore.setSnackbar({
+            type: 'warning',
+            msg: 'User has been blocked',
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error in toggleBlockUser:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: 'Something went wrong. Please try again',
+        });
       }
     },
     async userSignOut() {
@@ -157,6 +221,7 @@ const useUserStore = defineStore('user', {
             const userData = snapshot.val();
             this.setCurrentUser({ data: userData, userId: user.uid });
             this.setupPrivateMessageListener();
+            this.initBlockListeners(user.uid);
           });
         } else {
           this.loginAnonymously();
