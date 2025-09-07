@@ -16,7 +16,7 @@
           <div class="text-overlay">
             <!-- Title and created by (left bottom) -->
             <div class="left-content">
-              <div class="room-title">{{ room?.nombre }}</div>
+              <div class="room-title">{{ room?.name }}</div>
               <div class="created-by">Created by {{ room?.createdBy || 'ToonsTalk' }}</div>
             </div>
 

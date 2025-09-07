@@ -38,7 +38,7 @@
       <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
     </v-dialog>
     <TimeMachine style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
-    <div class="theme-switcher-container">
+    <div class="room-menu-container">
       <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
         <template v-slot:activator="{ props: activatorProps }">
           <v-fab v-bind="activatorProps" size="large" icon="mdi-dots-vertical"></v-fab>
@@ -295,7 +295,7 @@ onMounted(async () => {
     await roomsStore.getRoomDetails(route.params.roomId);
     background.value = currentRoom.value.picture;
   } else {
-    background.value = currentRoom.value.picture;
+    background.value = currentRoom.value.picture; // TODO: Add a default background toonstalk image if no image
   }
 
   // Wait for user to be available before trying to add them to room
@@ -499,7 +499,7 @@ watch(currentRoom, (newRoom) => {
 }
 
 /* Theme Switcher Styles */
-.theme-switcher-container {
+.room-menu-container {
   position: fixed;
   bottom: 50px;
   right: 55px;

@@ -25,7 +25,7 @@
     <TypeBox :ref="`keyboard_${actualUserId}`" :id="`keyboard_${actualUserId}`" v-if="isCurrentUser"
       :moving="mouseMoved" />
     <AvatarSelector :ref="`avatar-selector_${actualUserId}`" :id="`avatar-selector_${actualUserId}`"
-      :showAvatarSelector="showAvatarSelector" @onClose="closeAvatarSelector"
+      :showAvatarSelector="showAvatarSelector" :roomId="route.params.roomId" @onClose="closeAvatarSelector"
       @onShowLoginDialog="showLoginDialogHandler" />
     <v-dialog persistent scrollable v-model="showLoginDialog" width="600" min-height="80vh"
       class="pa-5 ma-5 private-dialog">

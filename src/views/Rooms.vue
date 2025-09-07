@@ -3,14 +3,8 @@
   <div class="home">
     <v-app-bar dense elevation="4" rounded shaped>
       <v-toolbar-title style="display: flex; justify-content: flex-start">
-        <v-img
-          src="/logotype_landing_page.png"
-          class="my-3"
-          contain
-          width="6em"
-          height="35"
-          style="background-position: left!important;"
-        />
+        <v-img src="/logotype_landing_page.png" class="my-3" contain width="6em" height="35"
+          style="background-position: left!important;" />
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
@@ -28,110 +22,109 @@
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props" class="profile-menu-btn">
               <v-avatar size="32" class="profile-avatar">
-                <v-img
-                  v-if="getCurrentUser?.avatar || getCurrentUser?.miniAvatar"
-                  :src="getCurrentUser?.miniAvatar || getCurrentUser?.avatar"
-                />
+                <v-img v-if="getCurrentUser?.avatar || getCurrentUser?.miniAvatar"
+                  :src="getCurrentUser?.miniAvatar || getCurrentUser?.avatar" />
                 <v-icon v-else>mdi-account-circle</v-icon>
               </v-avatar>
             </v-btn>
           </template>
 
-<v-list class="profile-dropdown">
-  <v-list-item prepend-icon="mdi-account" title="Profile" @click="goToProfile" />
-  <v-list-item prepend-icon="mdi-bell" title="Notifications" @click="goToNotifications" />
-  <v-list-item prepend-icon="mdi-heart" title="Favorites" @click="goToFavorites" />
-  <v-divider></v-divider>
-  <v-list-item prepend-icon="mdi-logout" title="Log Out" @click="logout" class="logout-item">
-    <template #prepend>
+          <v-list class="profile-dropdown">
+            <v-list-item prepend-icon="mdi-account" title="Profile" @click="goToProfile" />
+            <v-list-item prepend-icon="mdi-bell" title="Notifications" @click="goToNotifications" />
+            <v-list-item prepend-icon="mdi-heart" title="Favorites" @click="goToFavorites" />
+            <v-divider></v-divider>
+            <v-list-item prepend-icon="mdi-logout" title="Log Out" @click="logout" class="logout-item">
+              <template #prepend>
                 <v-icon color="red">mdi-logout</v-icon>
               </template>
-    <template #title>
+              <template #title>
                 <span class="text-red">Log Out</span>
               </template>
-  </v-list-item>
-</v-list>
-</v-menu>
-</div>
-</v-app-bar>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
+    </v-app-bar>
 
-<!-- Auth Dialog for Login/Signup -->
-<v-dialog v-model="showAuthDialog" max-width="400" :persistent="!isUserAuthenticated">
-  <v-card class="auth-dialog">
-    <v-card-title class="text-h6 text-center">
-      Welcome to ToonsTalk
-    </v-card-title>
-    <v-card-text class="text-center">
-      <p class="mb-4">
-        Join our community to save favorites, get notifications, and
-        customize your profile!
-      </p>
-      <div id="firebaseui-auth-container"></div>
-    </v-card-text>
-    <v-card-actions>
-      <v-spacer></v-spacer>
-      <v-btn text @click="closeAuthDialog"> Continue as Guest </v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
+    <!-- Auth Dialog for Login/Signup -->
+    <v-dialog v-model="showAuthDialog" max-width="400" :persistent="!isUserAuthenticated">
+      <v-card class="auth-dialog">
+        <v-card-title class="text-h6 text-center">
+          Welcome to ToonsTalk
+        </v-card-title>
+        <v-card-text class="text-center">
+          <p class="mb-4">
+            Join our community to save favorites, get notifications, and
+            customize your profile!
+          </p>
+          <div id="firebaseui-auth-container"></div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="closeAuthDialog"> Continue as Guest </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
-<div class="d-flex flex-nowrap flex-direction-row pa-2">
-  <div class="panel-container">
-    <div class="panel" v-for="(room, key) in getAllRooms" :key="key" :style="getRandomFlexBasis()">
-      <RoomThumbnail :room="room" :id="key" :key="key" />
+    <div class="d-flex flex-nowrap flex-direction-row pa-2">
+      <div class="panel-container">
+        <div class="panel" v-for="(room, key) in getAllRooms" :key="key" :style="getRandomFlexBasis()">
+          <RoomThumbnail :room="room" :id="key" :key="key" />
+        </div>
+      </div>
     </div>
+
+    <div style="width: 100%;display: flex; justify-content: center;align-items: center;margin-top: 20px;">
+      <v-card style="width: 40%" class="themed-card">
+        <v-card-text class="text-subtitle-1" style="height: 20vh">
+          <p>
+            This is a temporary url created especially for you, our beloved
+            early tester. Please note that it will expire soon.
+          </p>
+          <p>
+            If you find this product amazing and you want to hear more from us
+            and share your experience join us on our Discord channel
+            <a href="https://discord.gg/Hspt8B2u" target="_blank">discord channel</a>. We'd love to hear from you!
+          </p>
+        </v-card-text>
+      </v-card>
+    </div>
+
+    <v-footer padless absolute class="footer">
+      <v-card flat tile width="100%" class="text-center">
+        <v-divider></v-divider>
+        <v-card-text>
+          Copyright © {{ new Date().getFullYear() }} —
+          <strong>toonstalk</strong>
+        </v-card-text>
+      </v-card>
+    </v-footer>
+
+    <v-dialog v-if="showWelcomeDialog" v-model="showWelcomeDialog" persistent width="600"
+      class="pa-5 ma-5 progress-dialog">
+      <v-card style="width: 100%" class="themed-card">
+        <v-card-title class="text-h6">Welcome, Early Tester! </v-card-title>
+        <v-card-text class="text-subtitle-1" style="height: 20vh">
+          <p>
+            Thank you for being one of the selected few to try out our beta
+            version. Your feedback is incredibly valuable in helping us shape
+            the final product.
+          </p>
+          <p>
+            Please remember that this is a beta version, so you may encounter
+            some bugs or incomplete features. Also is only working on PC and
+            tablet. We’d love to hear your thoughts on how we can improve!
+          </p>
+        </v-card-text>
+        <v-card-actions class="text-body-2 pa-2 d-flex justify-end align-end">
+          <v-btn small class="px-10" color="primary darken-1" tile @click="showWelcomeDialog = false">
+            Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
-</div>
-
-<div style="width: 100%;display: flex; justify-content: center;align-items: center;margin-top: 20px;">
-  <v-card style="width: 40%" class="themed-card">
-    <v-card-text class="text-subtitle-1" style="height: 20vh">
-      <p>
-        This is a temporary url created especially for you, our beloved
-        early tester. Please note that it will expire soon.
-      </p>
-      <p>
-        If you find this product amazing and you want to hear more from us
-        and share your experience join us on our Discord channel
-        <a href="https://discord.gg/Hspt8B2u" target="_blank">discord channel</a>. We'd love to hear from you!
-      </p>
-    </v-card-text>
-  </v-card>
-</div>
-
-<v-footer padless absolute class="footer">
-  <v-card flat tile width="100%" class="text-center">
-    <v-divider></v-divider>
-    <v-card-text>
-      Copyright © {{ new Date().getFullYear() }} —
-      <strong>toonstalk</strong>
-    </v-card-text>
-  </v-card>
-</v-footer>
-
-<v-dialog v-if="showWelcomeDialog" v-model="showWelcomeDialog" persistent width="600" class="pa-5 ma-5 progress-dialog">
-  <v-card style="width: 100%" class="themed-card">
-    <v-card-title class="text-h6">Welcome, Early Tester! </v-card-title>
-    <v-card-text class="text-subtitle-1" style="height: 20vh">
-      <p>
-        Thank you for being one of the selected few to try out our beta
-        version. Your feedback is incredibly valuable in helping us shape
-        the final product.
-      </p>
-      <p>
-        Please remember that this is a beta version, so you may encounter
-        some bugs or incomplete features. Also is only working on PC and
-        tablet. We’d love to hear your thoughts on how we can improve!
-      </p>
-    </v-card-text>
-    <v-card-actions class="text-body-2 pa-2 d-flex justify-end align-end">
-      <v-btn small class="px-10" color="primary darken-1" tile @click="showWelcomeDialog = false">
-        Close
-      </v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
-</div>
 </template>
 
 <script setup>
@@ -268,12 +261,14 @@ watch(
 
 <style>
 .panel-container {
-  display: flex;
   flex-wrap: wrap;
   gap: 0.5vmin;
   width: 100%;
   height: fit-content;
   overflow: visible;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 0.5vmin;
 }
 
 .panel {

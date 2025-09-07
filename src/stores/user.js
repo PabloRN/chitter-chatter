@@ -201,15 +201,26 @@ const useUserStore = defineStore('user', {
               status: 'online',
               isAnonymous: true,
               favoriteRooms: [],
+              ownedRooms: [],
             };
             await set(userRef, initialUser);
           } else {
-            // For verified users, just update online status
-            await update(userRef, {
+            // For verified users, update online status and ensure ownedRooms exists
+            const userSnapshot = await get(userRef);
+            const existingUser = userSnapshot.val();
+
+            const updates = {
               onlineState: true,
               status: 'online',
               isAnonymous: false,
-            });
+            };
+
+            // Migration: Add ownedRooms array if it doesn't exist
+            if (!existingUser?.ownedRooms) {
+              updates.ownedRooms = [];
+            }
+
+            await update(userRef, updates);
           }
 
           onDisconnect(userRef).update({
@@ -315,6 +326,7 @@ const useUserStore = defineStore('user', {
           age,
           miniAvatar,
           favoriteRooms: [],
+          ownedRooms: [],
         });
         const mainStore = useMainStore();
         mainStore.setSnackbar({
@@ -371,7 +383,7 @@ const useUserStore = defineStore('user', {
 
         await set(ref(db, `users/${currentUser.userId}/avatar/`), url);
         const { roomId } = router.currentRoute.value.params;
-        const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}_head.png`);
+        const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}.png`);
         const miniavatarRefUrl = await getDownloadURL(miniAvatarRef);
         await set(ref(db, `users/${currentUser.userId}/miniAvatar/`), miniavatarRefUrl);
 

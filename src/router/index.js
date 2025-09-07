@@ -4,7 +4,7 @@ import Login from '@/views/Login';
 import Rooms from '@/views/Rooms';
 import Room from '@/views/Room';
 import Profile from '@/views/Profile';
-// import RoomEdit from '@/views/RoomEdit';
+import RoomForm from '@/components/RoomForm';
 
 const routes = [
   {
@@ -31,18 +31,24 @@ const routes = [
       requiresAuth: true,
     },
   },
-  // {
-  //   path: '/rooms/create',
-  //   name: 'room-create',
-  //   component: RoomEdit,
-  //   props: { isEdit: false }, // pass flag to indicate creation mode
-  // },
-  // {
-  //   path: '/rooms/:roomId/edit',
-  //   name: 'room-edit',
-  //   component: RoomEdit,
-  //   props: (route) => ({ roomId: route.params.roomId, isEdit: true }),
-  // },
+  {
+    path: '/profile/room/create',
+    name: 'room-create',
+    component: RoomForm,
+    props: { isEdit: false },
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/profile/room/:roomId/edit',
+    name: 'room-edit',
+    component: RoomForm,
+    props: (route) => ({ roomId: route.params.roomId, isEdit: true }),
+    meta: {
+      requiresAuth: true,
+    },
+  },
   {
     path: '/signup',
     name: 'Signup',

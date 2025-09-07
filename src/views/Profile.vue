@@ -123,6 +123,9 @@
           </v-card-text>
         </v-card>
 
+        <!-- My Rooms Section -->
+        <ProfileRooms />
+
         <!-- Actions Section -->
         <v-card v-if="!getCurrentUser?.isAnonymous" class="profile-section themed-card" elevation="2">
           <v-card-title class="section-title">
@@ -167,6 +170,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import useUserStore from '@/stores/user'
+import ProfileRooms from '@/components/ProfileRooms.vue'
 
 const router = useRouter()
 const userStore = useUserStore()

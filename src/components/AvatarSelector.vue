@@ -64,6 +64,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  roomId: {
+    type: String,
+    default: null,
+  },
 });
 
 // Emits
@@ -85,14 +89,37 @@ const avatars = ref([]);
 const isLoading = ref(false);
 
 // Computed
-const avatarsList = computed(() => roomsStore.avatarsList);
+const avatarsList = computed(() => {
+  if (props.roomId) {
+    // If we're in a specific room, try to get room-specific avatars first
+    const room = roomsStore.roomList[props.roomId] || roomsStore.currentRoom;
+    if (room?.allowedAvatars && room.allowedAvatars.length > 0) {
+      return room.allowedAvatars.map((avatar, index) => ({
+        avatarId: index,
+        url: avatar.url || avatar.avatarURL,
+        name: avatar.name
+      }));
+    }
+  }
+  // Fallback to default room avatars
+  return roomsStore.avatarsList;
+});
 const currentUser = computed(() => userStore.currentUser);
 const signingInUpgraded = computed(() => userStore.signingInUpgraded);
 const maxSlide = computed(() => Math.max(0, avatarsList.value.length - 1));
 const totalDots = computed(() => avatarsList.value.length);
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
+  // Load room-specific avatars if we have a roomId
+  if (props.roomId) {
+    try {
+      await loadRoomAvatars();
+    } catch (error) {
+      console.warn('Failed to load room avatars, using defaults:', error);
+    }
+  }
+  
   avatars.value = avatarsList.value;
   nextTick(() => {
     currentSlide.value = 0;
@@ -122,6 +149,23 @@ watch(signingInUpgraded, (newVal, oldVal) => {
 });
 
 // Methods
+async function loadRoomAvatars() {
+  if (!props.roomId) return;
+  
+  try {
+    const roomAvatars = await roomsStore.getRoomAvatars(props.roomId);
+    // Update the room data if we got custom avatars
+    if (roomAvatars && roomAvatars.length > 0) {
+      const room = roomsStore.roomList[props.roomId];
+      if (room) {
+        room.allowedAvatars = roomAvatars;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load room-specific avatars:', error);
+  }
+}
+
 function setIsLoading(val) {
   isLoading.value = val;
 }
