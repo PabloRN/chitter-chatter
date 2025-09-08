@@ -525,6 +525,11 @@ const useRoomsStore = defineStore('rooms', {
           updatedAt: new Date().toISOString(),
         };
 
+        // Preserve existing allowedAvatars if not provided in roomData
+        if (!roomData.allowedAvatars && existingRoom.allowedAvatars) {
+          updatedRoom.allowedAvatars = existingRoom.allowedAvatars;
+        }
+
         // For compatibility with existing components, also set picture field
         if (roomData.backgroundImage) {
           updatedRoom.picture = roomData.backgroundImage;

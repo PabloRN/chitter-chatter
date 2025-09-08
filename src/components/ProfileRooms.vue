@@ -223,17 +223,15 @@ const roomLimit = computed(() => {
 // Methods
 const loadOwnedRooms = async (forceRefresh = false) => {
   const currentUser = userStore.getCurrentUser
-  if (!currentUser || currentUser.isAnonymous) {
-    // Clear owned rooms if user is not eligible
+  if (!currentUser?.userId || currentUser.isAnonymous) {
+    // Clear owned rooms if user is not eligible or not loaded yet
     roomsStore.clearOwnedRooms()
     return
   }
 
   loading.value = true
   try {
-    console.log('Loading owned rooms, forceRefresh:', forceRefresh)
     await roomsStore.fetchOwnedRooms(currentUser.userId, forceRefresh)
-    console.log('Owned rooms loaded:', roomsStore.getOwnedRooms.length)
   } catch (error) {
     showError.value = true
     errorMessage.value = `Failed to load rooms: ${error.message}`

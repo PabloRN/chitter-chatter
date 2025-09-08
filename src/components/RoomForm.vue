@@ -92,7 +92,7 @@
 
           <!-- Background Image Upload -->
           <div class="upload-section mb-4">
-            <v-subheader class="px-0">Background Image</v-subheader>
+            <div class="text-subtitle-2 font-weight-medium mb-2">Background Image</div>
             <v-file-input
               v-model="backgroundFile"
               accept="image/*"
@@ -282,8 +282,22 @@ const loadRoomData = async () => {
   if (!props.isEdit || !props.roomId) return
 
   try {
-    const room = roomsStore.roomList[props.roomId] || 
-                 roomsStore.ownedRooms.find(r => r.id === props.roomId)
+    // Ensure user is loaded first
+    const currentUser = userStore.getCurrentUser
+    if (!currentUser?.userId) {
+      // User not loaded yet, wait a bit and try again
+      setTimeout(loadRoomData, 100)
+      return
+    }
+    
+    let room = roomsStore.roomList[props.roomId] || 
+               roomsStore.ownedRooms.find(r => r.id === props.roomId)
+    
+    // If room not found in local stores, try to fetch it
+    if (!room) {
+      await roomsStore.fetchOwnedRooms(currentUser.userId, true) // force refresh
+      room = roomsStore.ownedRooms.find(r => r.id === props.roomId)
+    }
     
     if (room) {
       Object.assign(formData, {
@@ -294,8 +308,14 @@ const loadRoomData = async () => {
         minAge: room.minAge,
         isPrivate: room.isPrivate,
         backgroundImage: room.backgroundImage || room.picture || room.thumbnail,
-        allowedAvatars: [...(room.allowedAvatars || [])]
+        allowedAvatars: (room.allowedAvatars || []).map(avatar => ({
+          ...avatar,
+          isPreview: false // Mark existing avatars as not preview
+        }))
       })
+    } else {
+      showError.value = true
+      errorMessage.value = 'Room not found or you do not have permission to edit it'
     }
   } catch (error) {
     showError.value = true
@@ -310,11 +330,11 @@ const handleSubmit = async () => {
     let roomData = { ...formData }
     let roomId = props.roomId
 
+
     // For new rooms, create room first to get roomId
     if (!props.isEdit) {
       const result = await roomsStore.createRoom(roomData)
       roomId = result.roomId
-      console.log('Room created with ID:', roomId)
     }
 
     // Upload background image if selected
@@ -326,19 +346,28 @@ const handleSubmit = async () => {
       roomData.thumbnail = backgroundURL
     }
 
-    // Upload avatars if any exist
+    // Handle avatar uploads for new rooms or new avatars in edit mode
     if (avatarManager.value && formData.allowedAvatars.length > 0) {
-      const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId)
-      roomData.allowedAvatars = uploadedAvatars
+      // Check if there are any new avatars (isPreview = true)
+      const hasNewAvatars = formData.allowedAvatars.some(avatar => avatar.isPreview)
+      
+      if (hasNewAvatars) {
+        const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId)
+        roomData.allowedAvatars = uploadedAvatars
+      }
     }
-
+    
+    // For edit mode, if no new avatars, remove allowedAvatars to preserve existing ones
+    if (props.isEdit && (!roomData.allowedAvatars || roomData.allowedAvatars.length === 0)) {
+      delete roomData.allowedAvatars
+    }
+    
     if (props.isEdit) {
       await roomsStore.updateRoom(roomId, roomData)
       successMessage.value = 'Room updated successfully!'
     } else {
       // For new rooms, update the room data directly instead of calling updateRoom
       if (roomData.backgroundImage || roomData.allowedAvatars.length > 0) {
-        console.log('Updating room assets for roomId:', roomId)
         await roomsStore.updateRoomAssets(roomId, roomData)
       }
       successMessage.value = 'Room created successfully!'
@@ -351,6 +380,7 @@ const handleSubmit = async () => {
 
     showSuccess.value = true
   } catch (error) {
+    console.error('Room operation failed:', error)
     showError.value = true
     errorMessage.value = `Failed to ${props.isEdit ? 'update' : 'create'} room: ${error.message}`
   }
@@ -369,6 +399,14 @@ onMounted(() => {
   }
 
   loadRoomData()
+})
+
+// Watch user changes  
+watch(() => userStore.getCurrentUser?.userId, (newUserId, oldUserId) => {
+  if (newUserId && newUserId !== oldUserId && props.isEdit) {
+    // User just loaded or changed, reload room data
+    loadRoomData()
+  }
 })
 
 // Watch route changes

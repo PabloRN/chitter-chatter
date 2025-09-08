@@ -1,6 +1,6 @@
 <template>
   <div class="avatar-manager">
-    <v-subheader class="px-0">Room Avatars</v-subheader>
+    <div class="text-subtitle-1 font-weight-medium mb-2">Room Avatars</div>
     <p class="text-caption mb-4">
       Upload avatars that users can choose from in this room. Mini versions will be auto-cropped from the head area.
     </p>
@@ -17,7 +17,7 @@
         <v-row v-if="currentPreview" class="mt-4">
           <!-- Main Avatar Preview -->
           <v-col cols="12" md="6">
-            <v-subheader class="px-0">Full Avatar Preview</v-subheader>
+            <div class="text-subtitle-2 font-weight-medium mb-2">Full Avatar Preview</div>
             <div class="preview-container">
               <v-img :src="currentPreview.mainUrl" max-height="120" max-width="120" class="avatar-preview mx-auto"
                 contain />
@@ -26,7 +26,7 @@
 
           <!-- Mini Avatar Preview -->
           <v-col cols="12" md="6">
-            <v-subheader class="px-0">Auto-Cropped Mini Avatar</v-subheader>
+            <div class="text-subtitle-2 font-weight-medium mb-2">Auto-Cropped Mini Avatar</div>
             <div class="preview-container">
               <v-avatar size="60" class="mx-auto d-block">
                 <v-img :src="currentPreview.miniUrl" />
