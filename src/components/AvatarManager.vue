@@ -5,53 +5,16 @@
       Upload avatars that users can choose from in this room. Mini versions will be auto-cropped from the head area.
     </p>
 
-    <!-- Upload Section -->
-    <v-card class="upload-section mb-4" outlined>
-      <v-card-title class="text-h6">Add New Avatar</v-card-title>
-      <v-card-text>
-        <v-file-input v-model="avatarFile" accept="image/*" label="Upload Avatar Image"
-          hint="Recommended: 220x80px. Mini avatar will be auto-cropped from top portion." persistent-hint outlined
-          dense show-size prepend-icon="mdi-account" @change="onAvatarFileChange" />
-
-        <!-- Preview Section -->
-        <v-row v-if="currentPreview" class="mt-4">
-          <!-- Main Avatar Preview -->
-          <v-col cols="12" md="6">
-            <div class="text-subtitle-2 font-weight-medium mb-2">Full Avatar Preview</div>
-            <div class="preview-container">
-              <v-img :src="currentPreview.mainUrl" max-height="120" max-width="120" class="avatar-preview mx-auto"
-                contain />
-            </div>
-          </v-col>
-
-          <!-- Mini Avatar Preview -->
-          <v-col cols="12" md="6">
-            <div class="text-subtitle-2 font-weight-medium mb-2">Auto-Cropped Mini Avatar</div>
-            <div class="preview-container">
-              <v-avatar size="60" class="mx-auto d-block">
-                <v-img :src="currentPreview.miniUrl" />
-              </v-avatar>
-            </div>
-          </v-col>
-        </v-row>
-
-        <!-- Add Button -->
-        <div class="text-center mt-4">
-          <v-btn v-if="canAdd" color="primary" @click="addAvatarToList">
-            <v-icon left>mdi-plus</v-icon>
-            Add to Room
-          </v-btn>
-        </div>
-      </v-card-text>
-    </v-card>
-
-    <!-- Current Avatars Grid -->
-    <v-card v-if="roomAvatars.length > 0" outlined>
-      <v-card-title class="text-h6">Current Room Avatars</v-card-title>
+    <!-- Avatars Grid with Add Button -->
+    <v-card outlined>
+      <v-card-title class="text-h6">
+        {{ roomAvatars.length > 0 ? 'Room Avatars' : 'Add Your First Avatar' }}
+      </v-card-title>
       <v-card-text>
         <div class="avatars-grid">
+          <!-- Existing Avatars -->
           <div v-for="(avatar, index) in roomAvatars" :key="avatar.name || index" class="avatar-item"
-            :class="{ 'default-avatar': avatar.isDefault }">
+            :class="{ 'default-avatar': avatar.isDefault, 'pending-avatar': avatar.isPreview }">
             <!-- Main Avatar Display -->
             <div class="avatar-display">
               <v-img :src="avatar.mainUrl || avatar.url || avatar.avatarURL" max-height="100" max-width="100"
@@ -63,14 +26,24 @@
                 Default
               </v-chip>
 
+              <!-- Pending Save Badge -->
+              <v-chip v-if="avatar.isPreview" small color="warning" class="pending-badge">
+                <v-icon small left>mdi-content-save-alert</v-icon>
+                Pending
+              </v-chip>
+
               <!-- Action Buttons Overlay -->
               <div class="avatar-actions">
                 <v-btn v-if="!avatar.isDefault" x-small color="success" fab class="action-btn"
                   @click="setAsDefault(index)">
                   <v-icon>mdi-star</v-icon>
                 </v-btn>
-                <v-btn x-small color="error" fab class="action-btn" @click="deleteAvatar(index)">
+                <v-btn x-small color="error" fab class="action-btn" :disabled="!canDeleteAvatar"
+                  @click="deleteAvatar(index)">
                   <v-icon>mdi-delete</v-icon>
+                  <v-tooltip v-if="!canDeleteAvatar" activator="parent" location="top">
+                    At least one avatar is required
+                  </v-tooltip>
                 </v-btn>
               </div>
             </div>
@@ -85,7 +58,19 @@
             <!-- Avatar Name -->
             <div class="avatar-name">
               {{ avatar.name || `Avatar ${index + 1}` }}
+              <small v-if="avatar.isPreview" class="pending-text">After room updated</small>
             </div>
+          </div>
+
+          <!-- Add Avatar Card -->
+          <div class="avatar-item add-avatar-card" @click="triggerFileUpload">
+            <div class="add-avatar-content">
+              <v-icon size="48" color="primary" class="mb-2">mdi-plus</v-icon>
+              <div class="add-avatar-text">Add Avatar</div>
+            </div>
+
+            <!-- Hidden file input -->
+            <input ref="fileInput" type="file" accept="image/*" style="display: none" @change="onAvatarFileChange" />
           </div>
         </div>
 
@@ -100,16 +85,19 @@
             </div>
           </div>
         </v-alert>
-      </v-card-text>
-    </v-card>
 
-    <!-- Empty State -->
-    <v-card v-else class="text-center py-8" outlined>
-      <v-icon size="64" color="grey">mdi-account-plus</v-icon>
-      <h3 class="mt-2">No Avatars Yet</h3>
-      <p class="text-body-2 mt-2">
-        Upload your first avatar to get started
-      </p>
+        <!-- Minimum Avatar Warning -->
+        <v-alert v-if="roomAvatars.length === 1" type="info" class="mt-4">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2">mdi-information</v-icon>
+            <div>
+              <strong>Minimum Avatar Required</strong>
+              <br>
+              <small>Rooms must have at least one avatar. Delete button is disabled for the last avatar.</small>
+            </div>
+          </div>
+        </v-alert>
+      </v-card-text>
     </v-card>
 
     <!-- Success/Error Snackbars -->
@@ -144,8 +132,7 @@ const emit = defineEmits(['update:modelValue'])
 const roomsStore = useRoomsStore()
 
 // State
-const avatarFile = ref(null)
-const currentPreview = ref(null)
+const fileInput = ref(null)
 const roomAvatars = ref([])
 const showSuccess = ref(false)
 const showError = ref(false)
@@ -154,23 +141,17 @@ const errorMessage = ref('')
 const previewUrls = ref([]) // Keep track of preview URLs for cleanup
 
 // Computed
-const canAdd = computed(() => {
-  return avatarFile.value && currentPreview.value
-})
 
 const hasDefaultAvatar = computed(() => {
   return roomAvatars.value.some(avatar => avatar.isDefault)
 })
 
+const canDeleteAvatar = computed(() => {
+  return roomAvatars.value.length > 1
+})
+
 // Methods
 const onAvatarFileChange = async (fileOrEvent) => {
-  // Clear previous preview
-  if (currentPreview.value) {
-    revokePreviewURL(currentPreview.value.mainUrl)
-    revokePreviewURL(currentPreview.value.miniUrl)
-    currentPreview.value = null
-  }
-
   // Handle different ways the file can be passed
   let file = fileOrEvent
   if (fileOrEvent && fileOrEvent.length) {
@@ -182,8 +163,6 @@ const onAvatarFileChange = async (fileOrEvent) => {
   }
 
   if (!file) return
-
-  console.log('File received:', file, 'Type:', typeof file, 'Constructor:', file.constructor.name)
 
   // Validate file type
   if (!file.type || !file.type.startsWith('image/')) {
@@ -200,35 +179,45 @@ const onAvatarFileChange = async (fileOrEvent) => {
   }
 
   try {
-    console.log('Processing image file:', file.name, file.type, file.size)
-    console.log('Original filename will be ignored, using generated names')
-
     // Resize main avatar (maintain aspect ratio)
-    console.log('Resizing main avatar...')
     const resizedMainBlob = await resizeImage(file, 256, 256, true)
-    console.log('Main blob created:', resizedMainBlob)
-
     const mainUrl = createPreviewURL(resizedMainBlob)
-    console.log('Main URL created:', mainUrl)
 
     // Auto-crop mini avatar from top portion
-    console.log('Cropping mini avatar...')
     const miniBlob = await cropToMiniAvatar(file, 0.35) // Top 35% of image
-    console.log('Mini blob created:', miniBlob)
-
     const miniUrl = createPreviewURL(miniBlob)
-    console.log('Mini URL created:', miniUrl)
 
-    currentPreview.value = {
+    // Add directly to the avatar list
+    const avatarIndex = roomAvatars.value.length
+    const avatarName = `avatar_${avatarIndex + 1}`
+
+    const willBeDefault = !hasDefaultAvatar.value
+
+    const newAvatar = {
+      name: avatarName,
       mainFile: new File([resizedMainBlob], `temp_main_${Date.now()}.png`, { type: 'image/png' }),
       miniFile: new File([miniBlob], `temp_mini_${Date.now()}.png`, { type: 'image/png' }),
       mainUrl,
-      miniUrl
+      miniUrl,
+      isDefault: willBeDefault, // Only default if no existing default
+      isPreview: true // Flag to indicate this is not yet uploaded
     }
+
+    roomAvatars.value.push(newAvatar)
 
     // Track URLs for cleanup
     previewUrls.value.push(mainUrl, miniUrl)
-    console.log('Preview created successfully')
+
+    // Emit update
+    emit('update:modelValue', roomAvatars.value)
+
+    // Clear file input
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+
+    showSuccess.value = true
+    successMessage.value = 'Avatar added! Will be uploaded when room is saved.'
 
   } catch (error) {
     console.error('Error processing image:', error)
@@ -237,47 +226,33 @@ const onAvatarFileChange = async (fileOrEvent) => {
   }
 }
 
-const addAvatarToList = () => {
-  if (!currentPreview.value) return
 
-  const avatarIndex = roomAvatars.value.length
-  const avatarName = `avatar_${avatarIndex + 1}`
-
-  // Add to avatars list (stored in memory until room save)
-  const newAvatar = {
-    name: avatarName,
-    mainFile: currentPreview.value.mainFile,
-    miniFile: currentPreview.value.miniFile,
-    mainUrl: currentPreview.value.mainUrl,
-    miniUrl: currentPreview.value.miniUrl,
-    isDefault: avatarIndex === 0, // First avatar becomes default
-    isPreview: true // Flag to indicate this is not yet uploaded
-  }
-
-  roomAvatars.value.push(newAvatar)
-
-  // Emit update
-  emit('update:modelValue', roomAvatars.value)
-
-  // Clear form (but don't revoke URLs since they're now used by the avatar list)
-  avatarFile.value = null
-  currentPreview.value = null
-
-  showSuccess.value = true
-  successMessage.value = 'Avatar added! Will be uploaded when room is saved.'
+const triggerFileUpload = () => {
+  fileInput.value?.click()
 }
+
 
 // Upload all avatars to storage (called from room save)
 const uploadAllAvatars = async (roomId) => {
   if (!roomAvatars.value.length) return []
 
   try {
-    const avatarFiles = roomAvatars.value.map(avatar => ({
+    // Only upload new avatars (those with isPreview: true)
+    const newAvatars = roomAvatars.value.filter(avatar => avatar.isPreview)
+    if (newAvatars.length === 0) return []
+
+    const avatarFiles = newAvatars.map(avatar => ({
       mainFile: avatar.mainFile,
       miniFile: avatar.miniFile
     }))
 
-    return await roomsStore.uploadRoomAvatars(roomId, avatarFiles)
+    // Get existing avatar names to avoid conflicts
+    const existingAvatarNames = roomAvatars.value
+      .filter(avatar => !avatar.isPreview)
+      .map(avatar => avatar.name)
+
+
+    return await roomsStore.uploadRoomAvatars(roomId, avatarFiles, existingAvatarNames)
   } catch (error) {
     throw error
   }
@@ -300,6 +275,13 @@ const setAsDefault = (index) => {
 }
 
 const deleteAvatar = (index) => {
+  // Prevent deletion if only one avatar remains
+  if (roomAvatars.value.length <= 1) {
+    showError.value = true
+    errorMessage.value = 'Cannot delete the last avatar. At least one avatar is required.'
+    return
+  }
+
   const avatar = roomAvatars.value[index]
 
   // Cleanup preview URLs if they exist
@@ -316,6 +298,7 @@ const deleteAvatar = (index) => {
 
   emit('update:modelValue', roomAvatars.value)
 
+
   showSuccess.value = true
   successMessage.value = 'Avatar removed!'
 }
@@ -327,11 +310,6 @@ const loadExistingAvatars = () => {
 const cleanupPreviewUrls = () => {
   previewUrls.value.forEach(url => revokePreviewURL(url))
   previewUrls.value = []
-
-  if (currentPreview.value) {
-    revokePreviewURL(currentPreview.value.mainUrl)
-    revokePreviewURL(currentPreview.value.miniUrl)
-  }
 }
 
 // Watchers
@@ -390,6 +368,11 @@ onUnmounted(() => {
   background: rgba(var(--success-rgb), 0.1);
 }
 
+.avatar-item.pending-avatar {
+  border-color: var(--warning);
+  background: rgba(var(--warning-rgb), 0.1);
+}
+
 .avatar-display {
   position: relative;
   margin-bottom: 8px;
@@ -404,6 +387,13 @@ onUnmounted(() => {
   position: absolute;
   top: -8px;
   right: -8px;
+  z-index: 1;
+}
+
+.pending-badge {
+  position: absolute;
+  top: -8px;
+  left: -8px;
   z-index: 1;
 }
 
@@ -423,7 +413,7 @@ onUnmounted(() => {
 }
 
 .action-btn {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-medium);
 }
 
 .mini-avatar-section {
@@ -439,6 +429,61 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--text-primary);
   word-break: break-word;
+}
+
+.pending-text {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--warning);
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/* Add Avatar Card */
+.add-avatar-card {
+  border: 2px dashed var(--card-border) !important;
+  background: var(--background-secondary) !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.add-avatar-card:hover {
+  border-color: var(--primary) !important;
+  background: rgba(var(--primary-rgb), 0.05) !important;
+  transform: translateY(-2px);
+}
+
+.add-avatar-content {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 20px;
+}
+
+.add-avatar-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.add-avatar-card:hover .add-avatar-content {
+  color: var(--primary);
+}
+
+.add-avatar-card:hover .add-avatar-text {
+  color: var(--primary);
+}
+
+/* Preview Section */
+.avatar-preview-section {
+  width: 100%;
+}
+
+.preview-card {
+  background: rgba(var(--primary-rgb), 0.02) !important;
+  border: 1px solid rgba(var(--primary-rgb), 0.1) !important;
 }
 
 /* Responsive Design */

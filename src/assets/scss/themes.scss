@@ -89,10 +89,10 @@
   --error-color: #ef5350;
   --info-color: #42a5f5;
 
-  /* Override shadow with orange glow for crunchyroll theme */
-  --shadow-light: 0 0 8px rgba(255, 102, 0, 0.3);
-  --shadow-medium: 0 4px 6px rgba(255, 102, 0, 0.4);
-  --shadow-heavy: 0 8px 24px rgba(255, 102, 0, 0.5);
+  /* Override shadow with subtle orange glow for crunchyroll theme */
+  --shadow-light: 0 1px 3px rgba(255, 102, 0, 0.15);
+  --shadow-medium: 0 2px 8px rgba(255, 102, 0, 0.12);
+  --shadow-heavy: 0 4px 16px rgba(255, 102, 0, 0.18);
 
   /* Card/Menu Colors */
   --card-background: #1a1a1a;
