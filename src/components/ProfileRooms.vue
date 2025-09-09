@@ -311,6 +311,11 @@ onMounted(() => {
 <style scoped>
 .profile-rooms {
   border-radius: 12px !important;
+
+  .section-title {
+    display: flex;
+    margin-bottom: 20px;
+  }
 }
 
 .section-title {

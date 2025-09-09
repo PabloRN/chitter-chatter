@@ -67,10 +67,57 @@
       </v-card>
     </v-dialog>
 
-    <div class="d-flex flex-nowrap flex-direction-row pa-2">
-      <div class="panel-container">
-        <div class="panel" v-for="(room, key) in getAllRooms" :key="key" :style="getRandomFlexBasis()">
-          <RoomThumbnail :room="room" :id="key" :key="key" />
+    <!-- Netflix-style Room Sections -->
+    <div class="rooms-sections-container pa-4">
+      <!-- My Rooms Section -->
+      <div v-if="isUserAuthenticated && myRoomIds.length > 0" class="room-section">
+        <h2 class="section-title">
+          <!-- <v-icon class="mr-2">mdi-home-group</v-icon> -->
+          My Rooms
+        </h2>
+        <div class="room-grid">
+          <div v-for="roomId in myRoomIds" :key="`my-${roomId}`" class="room-card-item">
+            <RoomThumbnail :room="getAllRooms[roomId]" :id="roomId" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Favorite Rooms Section -->
+      <div v-if="isUserAuthenticated && favoriteRoomIds.length > 0" class="room-section">
+        <h2 class="section-title">
+          <!-- <v-icon class="mr-2">mdi-heart</v-icon> -->
+          Favorites
+        </h2>
+        <div class="room-grid">
+          <div v-for="roomId in favoriteRoomIds" :key="`favorite-${roomId}`" class="room-card-item">
+            <RoomThumbnail :room="getAllRooms[roomId]" :id="roomId" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Popular Today Section -->
+      <div v-if="popularRoomIds.length > 0" class="room-section">
+        <h2 class="section-title">
+          <!-- <v-icon class="mr-2">mdi-trending-up</v-icon> -->
+          Popular Today
+        </h2>
+        <div class="room-grid">
+          <div v-for="roomId in popularRoomIds" :key="`popular-${roomId}`" class="room-card-item">
+            <RoomThumbnail :room="getAllRooms[roomId]" :id="roomId" />
+          </div>
+        </div>
+      </div>
+
+      <!-- All Rooms Section -->
+      <div v-if="allRoomIds.length > 0" class="room-section">
+        <h2 class="section-title">
+          <!-- <v-icon class="mr-2">mdi-home-city</v-icon> -->
+          All Rooms
+        </h2>
+        <div class="room-grid">
+          <div v-for="roomId in allRoomIds" :key="`all-${roomId}`" class="room-card-item">
+            <RoomThumbnail :room="getAllRooms[roomId]" :id="roomId" />
+          </div>
         </div>
       </div>
     </div>
@@ -160,6 +207,39 @@ const isUserAuthenticated = computed(
   () => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous
 );
 
+// Netflix-style room sections - simplified approach with just IDs
+const myRoomIds = computed(() => {
+  if (!isUserAuthenticated.value) return [];
+  return (roomsStore.getOwnedRooms || []).map(room => room.id);
+});
+
+const favoriteRoomIds = computed(() => {
+  if (!isUserAuthenticated.value) return [];
+  const userFavoriteIds = userStore.currentUser?.favoriteRooms || [];
+  const rooms = getAllRooms.value;
+  
+  // Filter to only include rooms that exist
+  return userFavoriteIds.filter(roomId => rooms && rooms[roomId]);
+});
+
+const popularRoomIds = computed(() => {
+  const rooms = getAllRooms.value;
+  if (!rooms) return [];
+
+  // Get sorted room IDs by popularity
+  return Object.entries(rooms)
+    .filter(([id, room]) => (room.usersOnline || 0) > 0) // Only show rooms with active users
+    .sort(([aId, aRoom], [bId, bRoom]) => (bRoom.usersOnline || 0) - (aRoom.usersOnline || 0))
+    .slice(0, 10)
+    .map(([id, room]) => id); // Return only the IDs
+});
+
+const allRoomIds = computed(() => {
+  const rooms = getAllRooms.value;
+  if (!rooms) return [];
+  return Object.keys(rooms);
+});
+
 // ✅ methods
 function getRandomFlexBasis() {
   const randomFlexBasis =
@@ -204,6 +284,11 @@ let authCheckInterval = null;
 
 onMounted(() => {
   roomsStore.getRooms();
+
+  // Fetch owned rooms if user is authenticated
+  if (isUserAuthenticated.value) {
+    roomsStore.fetchOwnedRooms(userStore.currentUser.userId);
+  }
 
   if (!localStorage.getItem('hasVisited')) {
     showWelcomeDialog.value = true;
@@ -256,10 +341,90 @@ watch(
     }
   }
 );
+
+// Fetch owned rooms when user authentication changes
+watch(isUserAuthenticated, (newVal) => {
+  if (newVal) {
+    roomsStore.fetchOwnedRooms(userStore.currentUser.userId);
+  } else {
+    roomsStore.clearOwnedRooms();
+  }
+});
 </script>
 
 
 <style>
+/* Netflix-style Room Sections */
+.rooms-sections-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.room-section {
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.room-card-item {
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+.room-card-item:hover {
+  /* transform: scale(1.05) translateY(-4px); */
+  /* z-index: 2; */
+}
+
+.room-card-item:hover::after {
+  content: '';
+  position: absolute;
+  /* inset: -2px; */
+  /* background: linear-gradient(135deg, rgba(57, 59, 69, 0.3), rgba(118, 114, 122, 0.3)); */
+  border-radius: 12px;
+  z-index: -1;
+  filter: blur(2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .rooms-sections-container {
+    padding: 0 16px !important;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+  }
+
+  .room-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .room-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+}
+
+/* Legacy styles for fallback */
 .panel-container {
   flex-wrap: wrap;
   gap: 0.5vmin;

@@ -4,6 +4,10 @@
       "Bash(rm:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "/Users/pabloreyesnaranjo/Development/chitter-chatter/src",
+      "/Users/pabloreyesnaranjo/Development/chitter-chatter"
+    ]
   }
 }

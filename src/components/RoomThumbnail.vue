@@ -70,7 +70,6 @@ const userStore = useUserStore();
 const router = useRouter();
 
 // ✅ Local state
-const usersOnline = ref(0);
 const showPreview = ref(false);
 
 // ✅ Computed
@@ -84,6 +83,10 @@ const isUserAuthenticated = computed(() => {
 const isFavorite = computed(() => {
   const favoriteRooms = userStore.currentUser?.favoriteRooms || [];
   return favoriteRooms.includes(props.id);
+});
+
+const usersOnline = computed(() => {
+  return props.room?.usersOnline || 0;
 });
 
 // ✅ Methods
@@ -100,10 +103,7 @@ const toggleFavorite = async () => {
   }
 };
 
-// ✅ Watchers
-watch(usersOnlineNow, () => {
-  usersOnline.value = roomList.value[props.id]?.usersOnline || 0;
-});
+// ✅ Watchers removed - now using computed property directly from props
 </script>
 
 
