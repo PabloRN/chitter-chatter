@@ -149,9 +149,7 @@ export default {
     border-radius: 12px 0 0 12px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    box-shadow:
-      0 8px 32px 0 rgba(31, 38, 135, 0.37),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-medium);
     pointer-events: auto !important;
   }
 
@@ -162,9 +160,7 @@ export default {
     border-radius: 0 12px 12px 0;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    box-shadow:
-      0 8px 32px 0 rgba(31, 38, 135, 0.37),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-medium);
   }
 }
 
@@ -220,16 +216,12 @@ export default {
   border-radius: 0 12px 12px 0 !important;
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
-  box-shadow:
-    0 8px 32px 0 rgba(31, 38, 135, 0.37),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  box-shadow: var(--shadow-medium) !important;
   transition: all 0.2s ease !important;
 
   &:hover {
     background: rgba(0, 0, 0, 0.6) !important;
-    box-shadow:
-      0 8px 32px 0 rgba(31, 38, 135, 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    box-shadow: var(--shadow-heavy) !important;
   }
 
   &:disabled {

@@ -256,7 +256,7 @@ const toggleFavorite = async () => {
   background: var(--card-background) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--card-border) !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16) !important;
   pointer-events: auto !important;
 }
 

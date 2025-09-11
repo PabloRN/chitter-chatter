@@ -394,11 +394,10 @@ watch(isUserAuthenticated, (newVal) => {
 .room-card-item:hover::after {
   content: '';
   position: absolute;
-  /* inset: -2px; */
-  /* background: linear-gradient(135deg, rgba(57, 59, 69, 0.3), rgba(118, 114, 122, 0.3)); */
-  border-radius: 12px;
+  inset: -4px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
   z-index: -1;
-  filter: blur(2px);
 }
 
 /* Responsive Design */

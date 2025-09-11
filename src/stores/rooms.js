@@ -44,8 +44,8 @@ const useRoomsStore = defineStore('rooms', {
       if (isPaid) return true;
 
       // Free users can create only 1 room
-      // Use the user's ownedRooms array from their profile, or fallback to local state
-      const ownedRoomsCount = user.ownedRooms ? user.ownedRooms.length : state.ownedRooms.length;
+      // Use the rooms store as the authoritative source for owned rooms count
+      const ownedRoomsCount = state.ownedRooms.length;
       return ownedRoomsCount < USER_ROOM_LIMITS.free;
     },
   },
@@ -525,9 +525,36 @@ const useRoomsStore = defineStore('rooms', {
           updatedAt: new Date().toISOString(),
         };
 
-        // Preserve existing allowedAvatars if not provided in roomData
+        // The avatars should already be merged in the RoomForm, so this logic may be redundant
+        // but keeping it as a safety net
         if (!roomData.allowedAvatars && existingRoom.allowedAvatars) {
           updatedRoom.allowedAvatars = existingRoom.allowedAvatars;
+        }
+
+        // Validate that room has at least one avatar (safety check)
+        if (!updatedRoom.allowedAvatars || updatedRoom.allowedAvatars.length === 0) {
+          updatedRoom.allowedAvatars = existingRoom.allowedAvatars || [];
+
+          if (updatedRoom.allowedAvatars.length === 0) {
+            throw new Error('Room must have at least one avatar. Please add an avatar before saving.');
+          }
+        }
+
+        // Check for removed avatars and delete their files from storage
+        if (roomData.allowedAvatars && existingRoom.allowedAvatars) {
+          const existingAvatarNames = existingRoom.allowedAvatars.map((a) => a.name);
+          const newAvatarNames = updatedRoom.allowedAvatars.map((a) => a.name);
+          const removedAvatarNames = existingAvatarNames.filter((name) => !newAvatarNames.includes(name));
+
+          if (removedAvatarNames.length > 0) {
+            console.log('🗑️ Deleting removed avatar files:', removedAvatarNames);
+            try {
+              await this.deleteRoomAvatarFiles(roomId, removedAvatarNames);
+            } catch (error) {
+              console.warn('Failed to delete some avatar files:', error);
+              // Don't fail the entire update if file deletion fails
+            }
+          }
         }
 
         // For compatibility with existing components, also set picture field
@@ -616,15 +643,26 @@ const useRoomsStore = defineStore('rooms', {
       }
     },
 
-    async uploadRoomAvatars(roomId, avatarFiles) {
+    async uploadRoomAvatars(roomId, avatarFiles, existingAvatarNames = []) {
       const storage = getStorage();
       this.roomUploadLoading = true;
 
       try {
+        // Use provided existing avatar names, or fallback to store data
+        let avatarNames = existingAvatarNames;
+        if (!avatarNames.length) {
+          const existingRoom = this.roomList[roomId] || this.ownedRooms.find((r) => r.id === roomId);
+          avatarNames = existingRoom?.allowedAvatars?.map((a) => a.name) || [];
+        }
+        // Find the next available avatar number
+        let nextAvatarNumber = 1;
+        while (avatarNames.includes(`avatar_${nextAvatarNumber}`)) {
+          nextAvatarNumber += 1;
+        }
+
         const uploadedAvatars = [];
         const uploadPromises = avatarFiles.map(async ({ mainFile, miniFile }, i) => {
-          const avatarName = `avatar_${i + 1}`;
-          console.log(`Uploading avatar ${i + 1} with name: ${avatarName}`);
+          const avatarName = `avatar_${nextAvatarNumber + i}`;
 
           const avatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/${avatarName}.png`);
           const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}.png`);
@@ -643,7 +681,7 @@ const useRoomsStore = defineStore('rooms', {
             miniUrl: miniAvatarURL,
             avatarURL, // for compatibility
             miniAvatarURL, // for compatibility
-            isDefault: i === 0, // First avatar is default
+            isDefault: false, // New avatars should not be default automatically
           });
         });
 
@@ -652,13 +690,42 @@ const useRoomsStore = defineStore('rooms', {
         // First avatar is automatically marked as default in the uploadedAvatars array
         // No need to duplicate files - we'll use the isDefault flag
 
-        console.log('Avatars uploaded:', uploadedAvatars);
         return uploadedAvatars;
       } catch (error) {
         console.error('Error uploading room avatars:', error);
         throw error;
       } finally {
         this.roomUploadLoading = false;
+      }
+    },
+
+    async deleteRoomAvatarFiles(roomId, avatarNames) {
+      const storage = getStorage();
+
+      try {
+        const deletePromises = avatarNames.map(async (avatarName) => {
+          // Delete main avatar file
+          const avatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/${avatarName}.png`);
+          const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}.png`);
+
+          try {
+            await deleteObject(avatarRef);
+          } catch (error) {
+            console.warn(`Could not delete main avatar ${avatarName}:`, error.message);
+          }
+
+          try {
+            await deleteObject(miniAvatarRef);
+          } catch (error) {
+            console.warn(`Could not delete mini avatar ${avatarName}:`, error.message);
+          }
+        });
+
+        await Promise.all(deletePromises);
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting avatar files:', error);
+        throw error;
       }
     },
 
@@ -736,64 +803,47 @@ const useRoomsStore = defineStore('rooms', {
       const storage = getStorage();
 
       try {
-        console.log('Deleting room storage for:', roomId);
+        console.log('🗑️ Deleting room storage for:', roomId);
 
-        // Delete room folder with correct path: rooms/{roomId}/
-        const roomStorageRef = storageRef(storage, `rooms/${roomId}`);
+        // Recursive function to delete all files and folders
+        const deleteRecursively = async (folderRef, depth = 0) => {
+          const indent = '  '.repeat(depth);
+          console.log(`${indent}📁 Processing folder:`, folderRef.fullPath);
 
-        // List all items in the room folder
-        const result = await listAll(roomStorageRef);
-
-        // Delete all files in the room folder
-        const fileDeletes = result.items.map((itemRef) => {
-          console.log('Deleting file:', itemRef.fullPath);
-          return deleteObject(itemRef).catch((error) => {
-            console.warn('Failed to delete file:', itemRef.fullPath, error);
-          });
-        });
-
-        // Delete all files in subfolders (avatars, places, etc.)
-        const folderDeletes = result.prefixes.map(async (folderRef) => {
           try {
-            const folderResult = await listAll(folderRef);
+            const result = await listAll(folderRef);
 
-            // Delete files in this subfolder
-            const subFileDeletes = folderResult.items.map((itemRef) => {
-              console.log('Deleting subfolder file:', itemRef.fullPath);
-              return deleteObject(itemRef).catch((error) => {
-                console.warn('Failed to delete subfolder file:', itemRef.fullPath, error);
-              });
-            });
-
-            // Delete files in sub-subfolders (like miniavatars)
-            const subFolderDeletes = folderResult.prefixes.map(async (subFolderRef) => {
+            // Delete all files in this folder
+            const filePromises = result.items.map(async (itemRef) => {
+              console.log(`${indent}🗂️ Deleting file:`, itemRef.fullPath);
               try {
-                const subFolderResult = await listAll(subFolderRef);
-                return Promise.all(subFolderResult.items.map((itemRef) => {
-                  console.log('Deleting sub-subfolder file:', itemRef.fullPath);
-                  return deleteObject(itemRef).catch((error) => {
-                    console.warn('Failed to delete sub-subfolder file:', itemRef.fullPath, error);
-                  });
-                }));
+                await deleteObject(itemRef);
               } catch (error) {
-                console.warn('Failed to list sub-subfolder:', subFolderRef.fullPath, error);
-                return []; // Ensure a value is always returned
+                console.warn(`${indent}❌ Failed to delete file:`, itemRef.fullPath, error);
               }
             });
 
-            await Promise.all([...subFileDeletes, ...subFolderDeletes]);
+            // Recursively delete all subfolders
+            const folderPromises = result.prefixes.map(async (subFolderRef) => {
+              await deleteRecursively(subFolderRef, depth + 1);
+            });
+
+            // Wait for all operations in this folder to complete
+            await Promise.all([...filePromises, ...folderPromises]);
+            console.log(`${indent}✅ Completed folder:`, folderRef.fullPath);
           } catch (error) {
-            console.warn('Failed to list subfolder:', folderRef.fullPath, error);
+            console.warn(`${indent}❌ Failed to process folder:`, folderRef.fullPath, error);
           }
-        });
+        };
 
-        // Wait for all deletions to complete
-        await Promise.all([...fileDeletes, ...folderDeletes]);
+        // Start recursive deletion from the room root
+        const roomStorageRef = storageRef(storage, `rooms/${roomId}`);
+        await deleteRecursively(roomStorageRef);
 
-        console.log('Room storage cleanup completed for:', roomId);
+        console.log('✅ Room storage cleanup completed for:', roomId);
         return true;
       } catch (error) {
-        console.error('Error deleting room storage:', error);
+        console.error('❌ Error deleting room storage:', error);
         return false; // Don't throw error, just log and continue with room deletion
       }
     },

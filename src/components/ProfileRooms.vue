@@ -66,10 +66,7 @@
                   <v-chip small :color="room.isPrivate ? 'orange' : 'green'" text-color="white">
                     {{ room.isPrivate ? 'Private' : 'Public' }}
                   </v-chip>
-                  <div class="room-users">
-                    <v-icon small>mdi-account-group</v-icon>
-                    {{ room.usersOnline || 0 }}/{{ room.maxUsers }}
-                  </div>
+
                 </div>
               </div>
 
@@ -80,7 +77,10 @@
                   <v-chip x-small outlined class="theme-chip">
                     {{ getThemeLabel(room.theme) }}
                   </v-chip>
-                  <span class="room-age">{{ formatDate(room.createdAt) }}</span>
+                  <div class="room-users">
+                    <v-icon small>mdi-account-group</v-icon>
+                    {{ room.maxUsers }}
+                  </div>
                 </div>
                 <p v-if="room.description" class="room-description">
                   {{ room.description }}
@@ -194,12 +194,13 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import useRoomsStore from '@/stores/rooms'
 import useUserStore from '@/stores/user'
 import { ROOM_THEMES, USER_ROOM_LIMITS } from '@/utils/roomTypes'
 
 const router = useRouter()
+const route = useRoute()
 const roomsStore = useRoomsStore()
 const userStore = useUserStore()
 
@@ -302,6 +303,15 @@ watch(() => userStore.getCurrentUser?.userId, (newUserId, oldUserId) => {
   }
 })
 
+// Watch for route changes and refresh when coming back to profile
+watch(() => route.path, (newPath, oldPath) => {
+  // If we're navigating to the profile page from a room edit page, refresh
+  if (newPath === '/profile' && oldPath?.includes('/profile/room/') && oldPath?.includes('/edit')) {
+    console.log('🏠 Returning from room edit - refreshing owned rooms...')
+    loadOwnedRooms(true) // force refresh
+  }
+})
+
 // Lifecycle
 onMounted(() => {
   loadOwnedRooms()
@@ -357,7 +367,7 @@ onMounted(() => {
 
 .room-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
 }
 
 .room-background {
@@ -373,7 +383,7 @@ onMounted(() => {
 .room-bg-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--card-background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,6 +397,11 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+
+  .v-chip {
+    background-color: white;
+    opacity: 0.9;
+  }
 }
 
 .room-users {
