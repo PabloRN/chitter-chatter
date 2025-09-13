@@ -18,7 +18,7 @@
             <!-- Main Avatar Display -->
             <div class="avatar-display">
               <v-img :src="avatar.mainUrl || avatar.url || avatar.avatarURL" max-height="100" max-width="100"
-                class="main-avatar" contain />
+                class="main-avatar" fill />
 
               <!-- Default Badge -->
               <v-chip v-if="avatar.isDefault" small color="success" class="default-badge">
@@ -180,7 +180,7 @@ const onAvatarFileChange = async (fileOrEvent) => {
 
   try {
     // Resize main avatar (maintain aspect ratio)
-    const resizedMainBlob = await resizeImage(file, 256, 256, true)
+    const resizedMainBlob = await resizeImage(file, 80, 220, true)
     const mainUrl = createPreviewURL(resizedMainBlob)
 
     // Auto-crop mini avatar from top portion
@@ -191,7 +191,7 @@ const onAvatarFileChange = async (fileOrEvent) => {
     const avatarIndex = roomAvatars.value.length
     const avatarName = `avatar_${avatarIndex + 1}`
 
-    const willBeDefault = !hasDefaultAvatar.value
+    const willBeDefault = roomAvatars.value.length === 0 || !roomAvatars.value.some(a => a.isDefault)
 
     const newAvatar = {
       name: avatarName,
@@ -243,14 +243,14 @@ const uploadAllAvatars = async (roomId) => {
 
     const avatarFiles = newAvatars.map(avatar => ({
       mainFile: avatar.mainFile,
-      miniFile: avatar.miniFile
+      miniFile: avatar.miniFile,
+      isDefault: avatar.isDefault
     }))
 
     // Get existing avatar names to avoid conflicts
     const existingAvatarNames = roomAvatars.value
       .filter(avatar => !avatar.isPreview)
       .map(avatar => avatar.name)
-
 
     return await roomsStore.uploadRoomAvatars(roomId, avatarFiles, existingAvatarNames)
   } catch (error) {

@@ -661,7 +661,7 @@ const useRoomsStore = defineStore('rooms', {
         }
 
         const uploadedAvatars = [];
-        const uploadPromises = avatarFiles.map(async ({ mainFile, miniFile }, i) => {
+        const uploadPromises = avatarFiles.map(async ({ mainFile, miniFile, isDefault = false }, i) => {
           const avatarName = `avatar_${nextAvatarNumber + i}`;
 
           const avatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/${avatarName}.png`);
@@ -681,14 +681,11 @@ const useRoomsStore = defineStore('rooms', {
             miniUrl: miniAvatarURL,
             avatarURL, // for compatibility
             miniAvatarURL, // for compatibility
-            isDefault: false, // New avatars should not be default automatically
+            isDefault, // Preserve isDefault status from avatar manager
           });
         });
 
         await Promise.all(uploadPromises);
-
-        // First avatar is automatically marked as default in the uploadedAvatars array
-        // No need to duplicate files - we'll use the isDefault flag
 
         return uploadedAvatars;
       } catch (error) {
