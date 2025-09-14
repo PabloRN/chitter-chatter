@@ -200,6 +200,12 @@ const tryPushUser = () => {
     return;
   }
 
+  // Double-check capacity before adding user
+  if (isRoomAtCapacity()) {
+    router.push({ name: 'rooms' });
+    return;
+  }
+
   userInitialized.value = true;
   roomsStore.pushUser({ roomId, userId: user.userId });
   roomsStore.getAvatars(roomId);
@@ -286,6 +292,14 @@ const toggleFavorite = async () => {
   }
 };
 
+const isRoomAtCapacity = () => {
+  if (currentRoom.value?.users && currentRoom.value?.maxUsers) {
+    const currentUserCount = Object.keys(currentRoom.value.users).length;
+    return currentUserCount >= currentRoom.value.maxUsers;
+  }
+  return false;
+};
+
 // Lifecycle hooks
 onMounted(async () => {
   innerHeight.value = window.innerHeight;
@@ -296,6 +310,12 @@ onMounted(async () => {
     background.value = currentRoom.value.picture;
   } else {
     background.value = currentRoom.value.picture; // TODO: Add a default background toonstalk image if no image
+  }
+
+  // Check room capacity BEFORE adding user
+  if (isRoomAtCapacity()) {
+    router.push({ name: 'rooms' });
+    return; // Exit early if room is full
   }
 
   // Wait for user to be available before trying to add them to room
@@ -312,6 +332,10 @@ onMounted(async () => {
 
       if (user && user.userId && !userInitialized.value) {
         clearInterval(checkUserInterval);
+        if (isRoomAtCapacity()) {
+          router.push({ name: 'rooms' });
+          return;
+        }
         tryPushUser();
         initUsers();
       } else if (attempts >= maxAttempts) {
@@ -322,7 +346,6 @@ onMounted(async () => {
 
   messagesStore.getDialogs(route.params.roomId);
 });
-
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateWindowSize);
 });
@@ -435,6 +458,10 @@ watch(privateUsers, async (newVal) => {
 // CRUCIAL: Watch for when currentUser becomes available and then add to room
 watch(currentUser, (newUser, oldUser) => {
   if (newUser && newUser.userId && !userInitialized.value) {
+    if (isRoomAtCapacity()) {
+      router.push({ name: 'rooms' });
+      return;
+    }
     tryPushUser();
     initUsers();
   }
@@ -445,6 +472,10 @@ watch(currentRoom, (newRoom) => {
   if (newRoom && Object.keys(newRoom).length > 0 && !userInitialized.value) {
     nextTick(() => {
       if (currentUser.value && currentUser.value.userId) {
+        if (isRoomAtCapacity()) {
+          router.push({ name: 'rooms' });
+          return;
+        }
         tryPushUser();
         initUsers();
       }

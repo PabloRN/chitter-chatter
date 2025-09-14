@@ -89,8 +89,16 @@ const usersOnline = computed(() => {
   return props.room?.usersOnline || 0;
 });
 
+const roomIsFull = computed(() => {
+  return usersOnline.value >= (props.room?.maxUsers || 20);
+})
+
 // ✅ Methods
 const enterRoom = (room, key) => {
+  if (roomIsFull.value) {
+    alert('This room is full. Please try again later.');
+    return;
+  }
   router.push({
     name: 'room',
     params: { roomId: key },
