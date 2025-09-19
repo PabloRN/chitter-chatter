@@ -14,7 +14,9 @@ import {
 import {
   getDatabase, ref, set, update, onValue, off, get, onDisconnect,
 } from 'firebase/database';
-import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
+import {
+  getStorage, ref as storageRef, getDownloadURL, uploadBytes,
+} from 'firebase/storage';
 import router from '@/router/index';
 import extractImageName from '@/utils/avatarName';
 import useMainStore from './main';
@@ -43,6 +45,24 @@ const useUserStore = defineStore('user', {
     otherUserUpgraded: null, // For tracking other users' upgrades
     showWelcomeForm: false, // For controlling welcome form visibility
     blockListeners: [], // cleanup functions
+    initialUser: {
+      nickname: '',
+      avatar: '',
+      personalAvatar: '',
+      age: 0,
+      miniAvatar: '',
+      level: 'L1',
+      userId: '',
+      onlineState: true,
+      status: 'online',
+      isAnonymous: true,
+      favoriteRooms: [],
+      ownedRooms: [],
+      blocked: {},
+      blockedBy: {},
+      isActive: true,
+      isCreator: false,
+    },
   }),
 
   getters: {
@@ -51,6 +71,10 @@ const useUserStore = defineStore('user', {
     blockedByUsers: (state) => state.currentUser?.blockedBy || {},
     isBlocked: (state) => (userId) => !!state.currentUser?.blocked?.[userId],
     isBlockedBy: (state) => (userId) => !!state.currentUser?.blockedBy?.[userId],
+    linkedProviders() {
+      const user = this.getCurrentUser;
+      return user?.providerData?.map((p) => p.providerId) || [];
+    },
   },
 
   actions: {
@@ -76,6 +100,25 @@ const useUserStore = defineStore('user', {
         userStore.currentUser.blockedBy = snap.val() || {};
       });
       this.blockListeners.push(() => off(blockedByRef, 'value', unsubscribeBlockedBy));
+    },
+    async uploadUserPersonalAvatar(file) {
+      const storage = getStorage();
+      const db = getDatabase();
+      const { currentUser } = this;
+
+      try {
+        const imageRef = storageRef(storage, `users/${currentUser.userId}/avatars/L1/useravatar.png`);
+        const snapshot = await uploadBytes(imageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        await set(ref(db, `users/${currentUser.userId}/personalAvatar/`), downloadURL);
+        console.log('User avatar uploaded:', downloadURL);
+        this.setCurrentUserPersonalAvatar({ personalAvatar: downloadURL });
+      } catch (error) {
+        console.error('Error uploading user avatar:', error);
+        throw error;
+      } finally {
+        this.roomUploadLoading = false;
+      }
     },
     async toggleFavorite(roomId) {
       const auth = getAuth();
@@ -182,7 +225,7 @@ const useUserStore = defineStore('user', {
       const db = getDatabase();
 
       onAuthStateChanged(auth, async (user) => {
-        // console.log('🔍 onAuthStateChanged triggered');
+        console.log('🔍 onAuthStateChanged triggered', user);
 
         if (user) {
           const userRef = ref(db, `users/${user.uid}`);
@@ -190,20 +233,8 @@ const useUserStore = defineStore('user', {
           if (user.isAnonymous) {
             const uidSnippet = user.uid.substring(0, 4);
             const nickname = `anon_${uidSnippet}`;
-            const initialUser = {
-              nickname,
-              avatar: '',
-              age: 0,
-              miniAvatar: '',
-              level: 'L1',
-              userId: user.uid,
-              onlineState: true,
-              status: 'online',
-              isAnonymous: true,
-              favoriteRooms: [],
-              ownedRooms: [],
-            };
-            await set(userRef, initialUser);
+            this.initialUser.nickname = nickname;
+            await set(userRef, this.initialUser);
           } else {
             // For verified users, update online status and ensure ownedRooms exists
             const userSnapshot = await get(userRef);
@@ -213,6 +244,7 @@ const useUserStore = defineStore('user', {
               onlineState: true,
               status: 'online',
               isAnonymous: false,
+              // personalAvatar: user.providerData[0].photoURL || '',
             };
 
             // Migration: Add ownedRooms array if it doesn't exist
@@ -450,10 +482,11 @@ const useUserStore = defineStore('user', {
           if (data.userId !== anonymousUser.uid) {
             throw new Error('Data does not belong to the anonymous user.');
           }
-
+          console.log('User Data', user);
           // Update the user data with the new user ID
           data.isAnonymous = false;
           data.userId = user.uid;
+          data.personalAvatar = user.providerData[0].photoURL || '';
 
           // Transfer the user data to the new user ID
           if (anonymousUser.uid !== user.uid) {
@@ -601,7 +634,7 @@ const useUserStore = defineStore('user', {
     },
 
     userUpgraded({ verifiedUser, unverifiedUser, isCurrent }) {
-      // console.log('🔄 userUpgraded called:', { verifiedUser, unverifiedUser, isCurrent });
+      console.log('🔄 userUpgraded called:', { verifiedUser, unverifiedUser, isCurrent });
 
       if (isCurrent) {
         this.currentUser.isAnonymous = false;
@@ -677,6 +710,13 @@ const useUserStore = defineStore('user', {
       if (this.userData[this.currentUser.userId]) {
         this.userData[this.currentUser.userId].avatar = avatar;
         this.userData[this.currentUser.userId].miniAvatar = miniAvatar;
+      }
+    },
+    setCurrentUserPersonalAvatar({ personalAvatar }) {
+      this.currentUser.personalAvatar = personalAvatar;
+      // Also update userData to ensure consistency
+      if (this.userData[this.currentUser.userId]) {
+        this.userData[this.currentUser.userId].personalAvatar = personalAvatar;
       }
     },
 

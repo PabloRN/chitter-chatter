@@ -8,22 +8,22 @@
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
-
+      <!-- TODO: create component -->
       <!-- Authentication buttons for non-authenticated users -->
-      <div v-if="!isUserAuthenticated" class="auth-buttons">
+      <div v-if="!isUserAuthenticated" class="auth-buttons mr-3">
         <v-btn text class="login-btn" @click="showAuthDialog = true">
           Login / Sign Up
         </v-btn>
       </div>
 
       <!-- Profile menu for authenticated users -->
-      <div v-else class="profile-section">
+      <div v-else class="profile-section mr-5">
         <v-menu offset-y z-index="99999">
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props" class="profile-menu-btn">
-              <v-avatar size="32" class="profile-avatar">
-                <v-img v-if="getCurrentUser?.avatar || getCurrentUser?.miniAvatar"
-                  :src="getCurrentUser?.miniAvatar || getCurrentUser?.avatar" />
+              <v-avatar size="42" class="profile-avatar">
+                <v-img v-if="getCurrentUser?.personalAvatar || getCurrentUser?.miniAvatar"
+                  :src="getCurrentUser?.personalAvatar || getCurrentUser?.miniAvatar" />
                 <v-icon v-else>mdi-account-circle</v-icon>
               </v-avatar>
             </v-btn>
@@ -217,7 +217,6 @@ const favoriteRoomIds = computed(() => {
   if (!isUserAuthenticated.value) return [];
   const userFavoriteIds = userStore.currentUser?.favoriteRooms || [];
   const rooms = getAllRooms.value;
-  
   // Filter to only include rooms that exist
   return userFavoriteIds.filter(roomId => rooms && rooms[roomId]);
 });

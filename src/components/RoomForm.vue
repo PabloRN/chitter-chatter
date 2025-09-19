@@ -1,7 +1,7 @@
 <template>
   <div class="room-form-container">
     <v-card class="room-form-card" elevation="4">
-      <v-card-title class="form-title">
+      <v-card-title class="form-title  mb-2">
         <v-icon class="mr-2">{{ isEdit ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
         {{ isEdit ? 'Edit Room' : 'Create Room' }}
       </v-card-title>

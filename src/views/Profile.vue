@@ -9,9 +9,15 @@
         Profile
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn icon @click="isEditing = !isEditing" class="edit-btn">
-        <v-icon>{{ isEditing ? 'mdi-check' : 'mdi-pencil' }}</v-icon>
+      <v-btn v-if="!isEditing" @click="isEditing = !isEditing" class="edit-btn">
+        <v-icon>mdi-pencil</v-icon>
+        Edit
       </v-btn>
+      <v-btn v-else @click="isEditing = !isEditing" class="edit-btn">
+        <v-icon>mdi-check</v-icon>
+        Save
+      </v-btn>
+
     </v-app-bar>
 
     <div class="profile-container">
@@ -21,12 +27,16 @@
           <!-- Avatar Section -->
           <div class="avatar-section">
             <v-avatar size="120" class="profile-avatar-large">
-              <v-img v-if="getCurrentUser?.avatar" :src="getCurrentUser?.avatar" />
+              <v-img v-if="mainAvatar || getCurrentUser?.personalAvatar || getCurrentUser?.miniAvatar"
+                :src="mainAvatar || getCurrentUser.personalAvatar || getCurrentUser.miniAvatar" />
               <v-icon v-else size="60">mdi-account-circle</v-icon>
             </v-avatar>
             <v-btn v-if="isEditing" fab small class="avatar-edit-btn" @click="changeAvatar">
               <v-icon>mdi-camera</v-icon>
             </v-btn>
+            <!-- Hidden file input -->
+            <input ref="fileInputAvatar" type="file" accept="image/*" style="display: none"
+              @change="onAvatarFileChange" />
           </div>
 
           <!-- User Info -->
@@ -133,6 +143,21 @@
             Account Actions
           </v-card-title>
           <v-card-text>
+            <!-- <div class="linked-accounts">
+              <template v-for="provider in availableProviders" :key="provider.id">
+                <v-btn small outlined :color="linkedProviders.includes(provider.id) ? 'success' : 'primary'"
+                  class="mr-2 mb-2" :disabled="linkedProviders.includes(provider.id) && linkedProviders.length === 1"
+                  @click="linkedProviders.includes(provider.id) ? unlinkAccount(provider.id) : linkAccount(provider.id)">
+                  <v-icon class="mr-2">{{ provider.icon }}</v-icon>
+                  {{ provider.name }}
+                  <v-icon v-if="linkedProviders.includes(provider.id)" class="ml-1">mdi-check</v-icon>
+                </v-btn>
+              </template>
+</div> -->
+            <!-- <small v-if="linkedProviders.length === 1 && getCurrentUser?.providerData?.length === 1"
+              class="text-caption">
+              You must keep at least one linked account
+            </small> -->
             <v-btn outlined color="primary" class="action-btn" @click="exportData">
               <v-icon class="mr-2">mdi-download</v-icon>
               Export My Data
@@ -163,6 +188,13 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-snackbar v-model="showSuccess" color="success" timeout="3000">
+      {{ successMessage }}
+    </v-snackbar>
+
+    <v-snackbar v-model="showError" color="error" timeout="5000">
+      {{ errorMessage }}
+    </v-snackbar>
   </div>
 </template>
 
@@ -171,6 +203,14 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import useUserStore from '@/stores/user'
 import ProfileRooms from '@/components/ProfileRooms.vue'
+import { GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink } from 'firebase/auth'
+import { resizeImage, createPreviewURL } from '@/utils/imageUtils'
+
+const availableProviders = [
+  { id: 'google.com', name: 'Google', icon: 'mdi-google', provider: new GoogleAuthProvider() },
+  { id: 'yahoo.com', name: 'Yahoo', icon: 'mdi-yahoo', provider: null }, // placeholder, implement OAuth if you have it
+  { id: 'github.com', name: 'GitHub', icon: 'mdi-github', provider: null }, // same
+]
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -186,11 +226,20 @@ const preferences = ref({
   notifications: true,
   autoJoinFavorites: false,
 })
+const mainAvatar = ref(null)
+const pendingAvatar = ref(null)
+const fileInputAvatar = ref(null)
+const showSuccess = ref(false)
+const showError = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
 
 // computed
 const getCurrentUser = computed(() => userStore.getCurrentUser)
 const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0)
 const joinedDate = computed(() => 'Dec 2024') // TODO: fetch from user data
+const linkedProviders = computed(() => userStore.linkedProviders)
+
 
 // redirect if not authenticated
 onMounted(() => {
@@ -201,7 +250,7 @@ onMounted(() => {
 
 // watchers
 watch(isEditing, async (newVal) => {
-  if (newVal) {
+  if (newVal === false) {
     editedUser.value.nickname = getCurrentUser.value?.nickname || ''
     editedUser.value.age = getCurrentUser.value?.age || null
   } else {
@@ -210,12 +259,47 @@ watch(isEditing, async (newVal) => {
 })
 
 // methods
+
+const linkAccount = async (providerId) => {
+  try {
+    const auth = userStore.getAuthInstance()
+    const providerObj = availableProviders.find(p => p.id === providerId)?.provider
+    if (!providerObj) throw new Error('Provider not configured')
+
+    const result = await linkWithPopup(auth.currentUser, providerObj)
+    console.log('Linked successfully:', result)
+    userStore.refreshCurrentUser()
+  } catch (error) {
+    console.error('Failed to link provider:', error)
+  }
+}
+
+// Unlink provider
+const unlinkAccount = async (providerId) => {
+  try {
+    const auth = userStore.getAuthInstance()
+    if (linkedProviders.value.length <= 1) {
+      console.warn('Cannot unlink the last provider')
+      return
+    }
+    await unlink(auth.currentUser, providerId)
+    console.log('Unlinked provider:', providerId)
+    userStore.refreshCurrentUser()
+  } catch (error) {
+    console.error('Failed to unlink provider:', error)
+  }
+}
 const goBack = () => router.go(-1)
 
 const saveProfile = async () => {
   try {
     if (editedUser.value.nickname !== getCurrentUser.value?.nickname) {
       await userStore.updateUserNickName(editedUser.value.nickname)
+    }
+    // upload avatar if pending
+    if (pendingAvatar.value) {
+      userStore.uploadUserPersonalAvatar(pendingAvatar.value.file)
+      pendingAvatar.value = null
     }
     // TODO: update other fields like age
     console.log('Profile updated successfully')
@@ -225,7 +309,43 @@ const saveProfile = async () => {
 }
 
 const changeAvatar = () => {
-  console.log('Change avatar clicked')
+  fileInputAvatar.value?.click()
+}
+
+const onAvatarFileChange = async (fileOrEvent) => {
+  let file = fileOrEvent?.target?.files?.[0] || fileOrEvent[0] || fileOrEvent
+  if (!file) return
+
+  if (!file.type.startsWith('image/')) {
+    showError.value = true
+    errorMessage.value = 'Please select a valid image file'
+    return
+  }
+  if (file.size > 0.2 * 1024 * 1024) {
+    showError.value = true
+    errorMessage.value = 'Image file is too large'
+    return
+  }
+
+  try {
+    const resizedBlob = await resizeImage(file, 50, 50, true)
+    const previewUrl = createPreviewURL(resizedBlob)
+
+    pendingAvatar.value = {
+      file: new File([resizedBlob], `avatar_${Date.now()}.png`, { type: 'image/png' }),
+      previewUrl
+    }
+    mainAvatar.value = previewUrl
+
+    if (fileInputAvatar.value) fileInputAvatar.value.value = ''
+
+    showSuccess.value = true
+    successMessage.value = 'Avatar ready. Will upload on save.'
+  } catch (err) {
+    console.error('Error processing image:', err)
+    showError.value = true
+    errorMessage.value = 'Failed to process image'
+  }
 }
 
 const exportData = () => {
@@ -292,10 +412,19 @@ const deleteAccount = async () => {
 
 .avatar-edit-btn {
   position: absolute;
-  bottom: -5px;
-  right: -5px;
+  bottom: 0;
+  right: 0px;
   background: var(--primary) !important;
   color: white !important;
+  height: 100%;
+  width: 100%;
+  border-radius: 50%;
+
+  .mdi-camera::before {
+    content: "\F0100";
+    font-size: 34px;
+    text-shadow: 3px 3px 6px black;
+  }
 }
 
 .user-info {
@@ -454,5 +583,55 @@ const deleteAccount = async () => {
   background-color: var(--card-background) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--card-border) !important;
+}
+
+.linked-accounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Buttons for providers */
+.linked-accounts .v-btn {
+  border-radius: 9999px;
+  /* pill shape */
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  justify-content: flex-start;
+  /* keep icon + text aligned */
+  padding: 0.4rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Hover effect */
+.linked-accounts .v-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Active (already linked) */
+.linked-accounts .v-btn.success {
+  background: linear-gradient(135deg, #4caf50, #43a047);
+  color: white !important;
+  border: none;
+}
+
+/* Unlinked (available to connect) */
+.linked-accounts .v-btn.primary {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: white !important;
+  border: none;
+}
+
+/* Disabled state */
+.linked-accounts .v-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 </style>
