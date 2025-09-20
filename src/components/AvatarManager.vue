@@ -112,86 +112,86 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import useRoomsStore from '@/stores/rooms'
-import { cropToMiniAvatar, resizeImage, createPreviewURL, revokePreviewURL } from '@/utils/imageUtils'
+import {
+  ref, computed, watch, onMounted, onUnmounted,
+} from 'vue';
+import useRoomsStore from '@/stores/rooms';
+import {
+  cropToMiniAvatar, resizeImage, createPreviewURL, revokePreviewURL,
+} from '@/utils/imageUtils';
 
 const props = defineProps({
   roomId: {
     type: String,
-    default: null
+    default: null,
   },
   modelValue: {
     type: Array,
-    default: () => []
-  }
-})
+    default: () => [],
+  },
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
-const roomsStore = useRoomsStore()
+const roomsStore = useRoomsStore();
 
 // State
-const fileInput = ref(null)
-const roomAvatars = ref([])
-const showSuccess = ref(false)
-const showError = ref(false)
-const successMessage = ref('')
-const errorMessage = ref('')
-const previewUrls = ref([]) // Keep track of preview URLs for cleanup
+const fileInput = ref(null);
+const roomAvatars = ref([]);
+const showSuccess = ref(false);
+const showError = ref(false);
+const successMessage = ref('');
+const errorMessage = ref('');
+const previewUrls = ref([]); // Keep track of preview URLs for cleanup
 
 // Computed
 
-const hasDefaultAvatar = computed(() => {
-  return roomAvatars.value.some(avatar => avatar.isDefault)
-})
+const hasDefaultAvatar = computed(() => roomAvatars.value.some((avatar) => avatar.isDefault));
 
-const canDeleteAvatar = computed(() => {
-  return roomAvatars.value.length > 1
-})
+const canDeleteAvatar = computed(() => roomAvatars.value.length > 1);
 
 // Methods
 const onAvatarFileChange = async (fileOrEvent) => {
   // Handle different ways the file can be passed
-  let file = fileOrEvent
+  let file = fileOrEvent;
   if (fileOrEvent && fileOrEvent.length) {
     // If it's a FileList, get the first file
-    file = fileOrEvent[0]
+    file = fileOrEvent[0];
   } else if (fileOrEvent && fileOrEvent.target && fileOrEvent.target.files) {
     // If it's an event object
-    file = fileOrEvent.target.files[0]
+    file = fileOrEvent.target.files[0];
   }
 
-  if (!file) return
+  if (!file) return;
 
   // Validate file type
   if (!file.type || !file.type.startsWith('image/')) {
-    showError.value = true
-    errorMessage.value = 'Please select a valid image file'
-    return
+    showError.value = true;
+    errorMessage.value = 'Please select a valid image file';
+    return;
   }
 
   // Validate file size (max 1MB)
   if (file.size > 1 * 1024 * 1024) {
-    showError.value = true
-    errorMessage.value = 'Image file is too large. Please select a file smaller than 1MB'
-    return
+    showError.value = true;
+    errorMessage.value = 'Image file is too large. Please select a file smaller than 1MB';
+    return;
   }
 
   try {
     // Resize main avatar (maintain aspect ratio)
-    const resizedMainBlob = await resizeImage(file, 80, 220, true)
-    const mainUrl = createPreviewURL(resizedMainBlob)
+    const resizedMainBlob = await resizeImage(file, 80, 220, true);
+    const mainUrl = createPreviewURL(resizedMainBlob);
 
     // Auto-crop mini avatar from top portion
-    const miniBlob = await cropToMiniAvatar(file, 0.35) // Top 35% of image
-    const miniUrl = createPreviewURL(miniBlob)
+    const miniBlob = await cropToMiniAvatar(file, 0.35); // Top 35% of image
+    const miniUrl = createPreviewURL(miniBlob);
 
     // Add directly to the avatar list
-    const avatarIndex = roomAvatars.value.length
-    const avatarName = `avatar_${avatarIndex + 1}`
+    const avatarIndex = roomAvatars.value.length;
+    const avatarName = `avatar_${avatarIndex + 1}`;
 
-    const willBeDefault = roomAvatars.value.length === 0 || !roomAvatars.value.some(a => a.isDefault)
+    const willBeDefault = roomAvatars.value.length === 0 || !roomAvatars.value.some((a) => a.isDefault);
 
     const newAvatar = {
       name: avatarName,
@@ -200,131 +200,127 @@ const onAvatarFileChange = async (fileOrEvent) => {
       mainUrl,
       miniUrl,
       isDefault: willBeDefault, // Only default if no existing default
-      isPreview: true // Flag to indicate this is not yet uploaded
-    }
+      isPreview: true, // Flag to indicate this is not yet uploaded
+    };
 
-    roomAvatars.value.push(newAvatar)
+    roomAvatars.value.push(newAvatar);
 
     // Track URLs for cleanup
-    previewUrls.value.push(mainUrl, miniUrl)
+    previewUrls.value.push(mainUrl, miniUrl);
 
     // Emit update
-    emit('update:modelValue', roomAvatars.value)
+    emit('update:modelValue', roomAvatars.value);
 
     // Clear file input
     if (fileInput.value) {
-      fileInput.value.value = ''
+      fileInput.value.value = '';
     }
 
-    showSuccess.value = true
-    successMessage.value = 'Avatar added! Will be uploaded when room is saved.'
-
+    showSuccess.value = true;
+    successMessage.value = 'Avatar added! Will be uploaded when room is saved.';
   } catch (error) {
-    console.error('Error processing image:', error)
-    showError.value = true
-    errorMessage.value = `Failed to process image: ${error.message}`
+    console.error('Error processing image:', error);
+    showError.value = true;
+    errorMessage.value = `Failed to process image: ${error.message}`;
   }
-}
-
+};
 
 const triggerFileUpload = () => {
-  fileInput.value?.click()
-}
-
+  fileInput.value?.click();
+};
 
 // Upload all avatars to storage (called from room save)
 const uploadAllAvatars = async (roomId) => {
-  if (!roomAvatars.value.length) return []
+  if (!roomAvatars.value.length) return [];
 
   try {
     // Only upload new avatars (those with isPreview: true)
-    const newAvatars = roomAvatars.value.filter(avatar => avatar.isPreview)
-    if (newAvatars.length === 0) return []
+    const newAvatars = roomAvatars.value.filter((avatar) => avatar.isPreview);
+    if (newAvatars.length === 0) return [];
 
-    const avatarFiles = newAvatars.map(avatar => ({
+    const avatarFiles = newAvatars.map((avatar) => ({
       mainFile: avatar.mainFile,
       miniFile: avatar.miniFile,
-      isDefault: avatar.isDefault
-    }))
+      isDefault: avatar.isDefault,
+    }));
 
     // Get existing avatar names to avoid conflicts
     const existingAvatarNames = roomAvatars.value
-      .filter(avatar => !avatar.isPreview)
-      .map(avatar => avatar.name)
+      .filter((avatar) => !avatar.isPreview)
+      .map((avatar) => avatar.name);
 
-    return await roomsStore.uploadRoomAvatars(roomId, avatarFiles, existingAvatarNames)
+    return await roomsStore.uploadRoomAvatars(roomId, avatarFiles, existingAvatarNames);
   } catch (error) {
-    throw error
+    throw error;
   }
-}
+};
 
 // Expose method for parent component to call
 defineExpose({
-  uploadAllAvatars
-})
+  uploadAllAvatars,
+});
 
 const setAsDefault = (index) => {
   // Update local state
-  roomAvatars.value.forEach(a => a.isDefault = false)
-  roomAvatars.value[index].isDefault = true
+  roomAvatars.value.forEach((a) => a.isDefault = false);
+  roomAvatars.value[index].isDefault = true;
 
-  emit('update:modelValue', roomAvatars.value)
+  emit('update:modelValue', roomAvatars.value);
 
-  showSuccess.value = true
-  successMessage.value = `Avatar ${index + 1} is now the default`
-}
+  showSuccess.value = true;
+  successMessage.value = `Avatar ${index + 1} is now the default`;
+};
 
 const deleteAvatar = (index) => {
   // Prevent deletion if only one avatar remains
   if (roomAvatars.value.length <= 1) {
-    showError.value = true
-    errorMessage.value = 'Cannot delete the last avatar. At least one avatar is required.'
-    return
+    showError.value = true;
+    errorMessage.value = 'Cannot delete the last avatar. At least one avatar is required.';
+    return;
   }
 
-  const avatar = roomAvatars.value[index]
+  const avatar = roomAvatars.value[index];
 
   // Cleanup preview URLs if they exist
-  if (avatar.mainUrl) revokePreviewURL(avatar.mainUrl)
-  if (avatar.miniUrl) revokePreviewURL(avatar.miniUrl)
+  if (avatar.mainUrl) revokePreviewURL(avatar.mainUrl);
+  if (avatar.miniUrl) revokePreviewURL(avatar.miniUrl);
 
-  const wasDefault = avatar.isDefault
-  roomAvatars.value.splice(index, 1)
+  const wasDefault = avatar.isDefault;
+  roomAvatars.value.splice(index, 1);
 
   // If we deleted the default avatar and there are others, make first one default
   if (wasDefault && roomAvatars.value.length > 0) {
-    roomAvatars.value[0].isDefault = true
+    roomAvatars.value[0].isDefault = true;
   }
 
-  emit('update:modelValue', roomAvatars.value)
+  emit('update:modelValue', roomAvatars.value);
 
-
-  showSuccess.value = true
-  successMessage.value = 'Avatar removed!'
-}
+  showSuccess.value = true;
+  successMessage.value = 'Avatar removed!';
+};
 
 const loadExistingAvatars = () => {
-  roomAvatars.value = [...(props.modelValue || [])]
-}
+  roomAvatars.value = [...(props.modelValue || [])];
+};
 
 const cleanupPreviewUrls = () => {
-  previewUrls.value.forEach(url => revokePreviewURL(url))
-  previewUrls.value = []
-}
+  previewUrls.value.forEach((url) => revokePreviewURL(url));
+  previewUrls.value = [];
+};
 
 // Watchers
 watch(() => props.modelValue, () => {
-  loadExistingAvatars()
-}, { immediate: true })
+  loadExistingAvatars();
+}, { immediate: true });
 
 // Lifecycle
 onMounted(() => {
-  loadExistingAvatars()
-})
+  loadExistingAvatars();
+});
 
 onUnmounted(() => {
-  cleanupPreviewUrls()
-})
+  cleanupPreviewUrls();
+});
 </script>
 
 <style scoped>

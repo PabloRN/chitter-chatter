@@ -54,7 +54,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { getDatabase, ref as dbRef, update, get } from 'firebase/database';
+import {
+  getDatabase, ref as dbRef, update, get,
+} from 'firebase/database';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 
@@ -76,22 +78,16 @@ const showPreview = ref(false);
 const roomList = computed(() => roomsStore.roomList);
 const usersOnlineNow = computed(() => roomsStore.usersOnlineNow);
 
-const isUserAuthenticated = computed(() => {
-  return userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous;
-});
+const isUserAuthenticated = computed(() => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous);
 
 const isFavorite = computed(() => {
   const favoriteRooms = userStore.currentUser?.favoriteRooms || [];
   return favoriteRooms.includes(props.id);
 });
 
-const usersOnline = computed(() => {
-  return props.room?.usersOnline || 0;
-});
+const usersOnline = computed(() => props.room?.usersOnline || 0);
 
-const roomIsFull = computed(() => {
-  return usersOnline.value >= (props.room?.maxUsers || 20);
-})
+const roomIsFull = computed(() => usersOnline.value >= (props.room?.maxUsers || 20));
 
 // ✅ Methods
 const enterRoom = (room, key) => {
@@ -114,7 +110,6 @@ const toggleFavorite = async () => {
 // ✅ Watchers removed - now using computed property directly from props
 </script>
 
-
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -135,7 +130,6 @@ const toggleFavorite = async () => {
   /* transition: transform 0.2s ease; */
 }
 
-
 .room-image {
   position: relative;
 }
@@ -150,7 +144,6 @@ const toggleFavorite = async () => {
   pointer-events: none;
   transition: top 0.3s ease, background 0.3s ease;
 }
-
 
 .room-card:hover .gradient-overlay {
   top: -50px;

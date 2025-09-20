@@ -78,7 +78,9 @@
 
 <script setup>
 import useUserStore from '@/stores/user';
-import { ref, computed, nextTick, onMounted } from 'vue';
+import {
+  ref, computed, nextTick, onMounted,
+} from 'vue';
 
 const props = defineProps({
   userId: String,

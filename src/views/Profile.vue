@@ -199,167 +199,176 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import useUserStore from '@/stores/user'
-import ProfileRooms from '@/components/ProfileRooms.vue'
-import { GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink } from 'firebase/auth'
-import { resizeImage, createPreviewURL } from '@/utils/imageUtils'
+import {
+  ref, computed, watch, onMounted,
+} from 'vue';
+import { useRouter } from 'vue-router';
+import useUserStore from '@/stores/user';
+import ProfileRooms from '@/components/ProfileRooms.vue';
+import {
+  GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
+} from 'firebase/auth';
+import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
 
 const availableProviders = [
-  { id: 'google.com', name: 'Google', icon: 'mdi-google', provider: new GoogleAuthProvider() },
-  { id: 'yahoo.com', name: 'Yahoo', icon: 'mdi-yahoo', provider: null }, // placeholder, implement OAuth if you have it
-  { id: 'github.com', name: 'GitHub', icon: 'mdi-github', provider: null }, // same
-]
+  {
+    id: 'google.com', name: 'Google', icon: 'mdi-google', provider: new GoogleAuthProvider(),
+  },
+  {
+    id: 'yahoo.com', name: 'Yahoo', icon: 'mdi-yahoo', provider: null,
+  }, // placeholder, implement OAuth if you have it
+  {
+    id: 'github.com', name: 'GitHub', icon: 'mdi-github', provider: null,
+  }, // same
+];
 
-const router = useRouter()
-const userStore = useUserStore()
+const router = useRouter();
+const userStore = useUserStore();
 
 // state
-const isEditing = ref(false)
-const showDeleteDialog = ref(false)
+const isEditing = ref(false);
+const showDeleteDialog = ref(false);
 const editedUser = ref({
   nickname: '',
   age: null,
-})
+});
 const preferences = ref({
   notifications: true,
   autoJoinFavorites: false,
-})
-const mainAvatar = ref(null)
-const pendingAvatar = ref(null)
-const fileInputAvatar = ref(null)
-const showSuccess = ref(false)
-const showError = ref(false)
-const successMessage = ref('')
-const errorMessage = ref('')
+});
+const mainAvatar = ref(null);
+const pendingAvatar = ref(null);
+const fileInputAvatar = ref(null);
+const showSuccess = ref(false);
+const showError = ref(false);
+const successMessage = ref('');
+const errorMessage = ref('');
 
 // computed
-const getCurrentUser = computed(() => userStore.getCurrentUser)
-const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0)
-const joinedDate = computed(() => 'Dec 2024') // TODO: fetch from user data
-const linkedProviders = computed(() => userStore.linkedProviders)
-
+const getCurrentUser = computed(() => userStore.getCurrentUser);
+const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0);
+const joinedDate = computed(() => 'Dec 2024'); // TODO: fetch from user data
+const linkedProviders = computed(() => userStore.linkedProviders);
 
 // redirect if not authenticated
 onMounted(() => {
   if (getCurrentUser.value?.isAnonymous) {
-    router.push({ name: 'rooms' })
+    router.push({ name: 'rooms' });
   }
-})
+});
 
 // watchers
 watch(isEditing, async (newVal) => {
-  if (newVal === false) {
-    editedUser.value.nickname = getCurrentUser.value?.nickname || ''
-    editedUser.value.age = getCurrentUser.value?.age || null
+  if (newVal === true) {
+    editedUser.value.nickname = getCurrentUser.value?.nickname || '';
+    editedUser.value.age = getCurrentUser.value?.age || null;
   } else {
-    await saveProfile()
+    await saveProfile();
   }
-})
+});
 
 // methods
 
 const linkAccount = async (providerId) => {
   try {
-    const auth = userStore.getAuthInstance()
-    const providerObj = availableProviders.find(p => p.id === providerId)?.provider
-    if (!providerObj) throw new Error('Provider not configured')
+    const auth = userStore.getAuthInstance();
+    const providerObj = availableProviders.find((p) => p.id === providerId)?.provider;
+    if (!providerObj) throw new Error('Provider not configured');
 
-    const result = await linkWithPopup(auth.currentUser, providerObj)
-    console.log('Linked successfully:', result)
-    userStore.refreshCurrentUser()
+    const result = await linkWithPopup(auth.currentUser, providerObj);
+    console.log('Linked successfully:', result);
+    userStore.refreshCurrentUser();
   } catch (error) {
-    console.error('Failed to link provider:', error)
+    console.error('Failed to link provider:', error);
   }
-}
+};
 
 // Unlink provider
 const unlinkAccount = async (providerId) => {
   try {
-    const auth = userStore.getAuthInstance()
+    const auth = userStore.getAuthInstance();
     if (linkedProviders.value.length <= 1) {
-      console.warn('Cannot unlink the last provider')
-      return
+      console.warn('Cannot unlink the last provider');
+      return;
     }
-    await unlink(auth.currentUser, providerId)
-    console.log('Unlinked provider:', providerId)
-    userStore.refreshCurrentUser()
+    await unlink(auth.currentUser, providerId);
+    console.log('Unlinked provider:', providerId);
+    userStore.refreshCurrentUser();
   } catch (error) {
-    console.error('Failed to unlink provider:', error)
+    console.error('Failed to unlink provider:', error);
   }
-}
-const goBack = () => router.go(-1)
+};
+const goBack = () => router.go(-1);
 
 const saveProfile = async () => {
   try {
     if (editedUser.value.nickname !== getCurrentUser.value?.nickname) {
-      await userStore.updateUserNickName(editedUser.value.nickname)
+      await userStore.updateUserNickName(editedUser.value.nickname);
     }
     // upload avatar if pending
     if (pendingAvatar.value) {
-      userStore.uploadUserPersonalAvatar(pendingAvatar.value.file)
-      pendingAvatar.value = null
+      userStore.uploadUserPersonalAvatar(pendingAvatar.value.file);
+      pendingAvatar.value = null;
     }
     // TODO: update other fields like age
-    console.log('Profile updated successfully')
+    console.log('Profile updated successfully');
   } catch (error) {
-    console.error('Error updating profile:', error)
+    console.error('Error updating profile:', error);
   }
-}
+};
 
 const changeAvatar = () => {
-  fileInputAvatar.value?.click()
-}
+  fileInputAvatar.value?.click();
+};
 
 const onAvatarFileChange = async (fileOrEvent) => {
-  let file = fileOrEvent?.target?.files?.[0] || fileOrEvent[0] || fileOrEvent
-  if (!file) return
+  const file = fileOrEvent?.target?.files?.[0] || fileOrEvent[0] || fileOrEvent;
+  if (!file) return;
 
   if (!file.type.startsWith('image/')) {
-    showError.value = true
-    errorMessage.value = 'Please select a valid image file'
-    return
+    showError.value = true;
+    errorMessage.value = 'Please select a valid image file';
+    return;
   }
   if (file.size > 0.2 * 1024 * 1024) {
-    showError.value = true
-    errorMessage.value = 'Image file is too large'
-    return
+    showError.value = true;
+    errorMessage.value = 'Image file is too large';
+    return;
   }
 
   try {
-    const resizedBlob = await resizeImage(file, 50, 50, true)
-    const previewUrl = createPreviewURL(resizedBlob)
+    const resizedBlob = await resizeImage(file, 50, 50, true);
+    const previewUrl = createPreviewURL(resizedBlob);
 
     pendingAvatar.value = {
       file: new File([resizedBlob], `avatar_${Date.now()}.png`, { type: 'image/png' }),
-      previewUrl
-    }
-    mainAvatar.value = previewUrl
+      previewUrl,
+    };
+    mainAvatar.value = previewUrl;
 
-    if (fileInputAvatar.value) fileInputAvatar.value.value = ''
+    if (fileInputAvatar.value) fileInputAvatar.value.value = '';
 
-    showSuccess.value = true
-    successMessage.value = 'Avatar ready. Will upload on save.'
+    showSuccess.value = true;
+    successMessage.value = 'Avatar ready. Will upload on save.';
   } catch (err) {
-    console.error('Error processing image:', err)
-    showError.value = true
-    errorMessage.value = 'Failed to process image'
+    console.error('Error processing image:', err);
+    showError.value = true;
+    errorMessage.value = 'Failed to process image';
   }
-}
+};
 
 const exportData = () => {
-  console.log('Export data clicked')
-}
+  console.log('Export data clicked');
+};
 
 const deleteAccount = async () => {
   try {
-    console.log('Delete account clicked')
-    showDeleteDialog.value = false
+    console.log('Delete account clicked');
+    showDeleteDialog.value = false;
   } catch (error) {
-    console.error('Error deleting account:', error)
+    console.error('Error deleting account:', error);
   }
-}
+};
 </script>
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');

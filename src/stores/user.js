@@ -585,10 +585,17 @@ const useUserStore = defineStore('user', {
           signInFlow: 'popup',
           signInOptions: [
             window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            // {
+            //   provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
+            //   requireDisplayName: false,
+            //   signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD,
+            // },
+            new window.firebase.auth.OAuthProvider('yahoo.com').providerId,
+            window.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
             {
               provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
-              requireDisplayName: false,
-              signInMethod: 'password',
+              signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD,
+              forceSameDevice: false, // true = must click the link on the same device
             },
           ],
           credentialHelper: window.firebaseui.auth.CredentialHelper.GOOGLE_YOLO,

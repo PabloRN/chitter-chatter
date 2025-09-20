@@ -5,6 +5,7 @@ import Rooms from '@/views/Rooms';
 import Room from '@/views/Room';
 import Profile from '@/views/Profile';
 import RoomForm from '@/components/RoomForm';
+import AuthAction from '@/views/AuthAction';
 
 const routes = [
   {
@@ -16,6 +17,11 @@ const routes = [
     path: '/rooms',
     name: 'rooms',
     component: Rooms,
+  },
+  {
+    path: '/__/auth/action',
+    name: 'auth-action',
+    component: AuthAction,
   },
   {
     path: '/rooms/:roomId',

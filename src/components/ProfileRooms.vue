@@ -193,129 +193,130 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import useRoomsStore from '@/stores/rooms'
-import useUserStore from '@/stores/user'
-import { ROOM_THEMES, USER_ROOM_LIMITS } from '@/utils/roomTypes'
+import {
+  ref, computed, onMounted, watch,
+} from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import useRoomsStore from '@/stores/rooms';
+import useUserStore from '@/stores/user';
+import { ROOM_THEMES, USER_ROOM_LIMITS } from '@/utils/roomTypes';
 
-const router = useRouter()
-const route = useRoute()
-const roomsStore = useRoomsStore()
-const userStore = useUserStore()
+const router = useRouter();
+const route = useRoute();
+const roomsStore = useRoomsStore();
+const userStore = useUserStore();
 
 // State
-const loading = ref(false)
-const deleteDialog = ref(false)
-const roomToDelete = ref(null)
-const showSuccess = ref(false)
-const showError = ref(false)
-const successMessage = ref('')
-const errorMessage = ref('')
+const loading = ref(false);
+const deleteDialog = ref(false);
+const roomToDelete = ref(null);
+const showSuccess = ref(false);
+const showError = ref(false);
+const successMessage = ref('');
+const errorMessage = ref('');
 
 // Computed
-const ownedRooms = computed(() => roomsStore.getOwnedRooms)
-const canCreateRoom = computed(() => roomsStore.canCreateRoom)
-const roomLimit = computed(() => {
+const ownedRooms = computed(() => roomsStore.getOwnedRooms);
+const canCreateRoom = computed(() => roomsStore.canCreateRoom);
+const roomLimit = computed(() =>
   // TODO: Check if user is paid when payment system is implemented
-  return USER_ROOM_LIMITS.free
-})
+  USER_ROOM_LIMITS.free);
 
 // Methods
 const loadOwnedRooms = async (forceRefresh = false) => {
-  const currentUser = userStore.getCurrentUser
+  const currentUser = userStore.getCurrentUser;
   if (!currentUser?.userId || currentUser.isAnonymous) {
     // Clear owned rooms if user is not eligible or not loaded yet
-    roomsStore.clearOwnedRooms()
-    return
+    roomsStore.clearOwnedRooms();
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
   try {
-    await roomsStore.fetchOwnedRooms(currentUser.userId, forceRefresh)
+    await roomsStore.fetchOwnedRooms(currentUser.userId, forceRefresh);
   } catch (error) {
-    showError.value = true
-    errorMessage.value = `Failed to load rooms: ${error.message}`
+    showError.value = true;
+    errorMessage.value = `Failed to load rooms: ${error.message}`;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const goToRoom = (roomId) => {
-  router.push(`/rooms/${roomId}`)
-}
+  router.push(`/rooms/${roomId}`);
+};
 
 const editRoom = (roomId) => {
-  router.push(`/profile/room/${roomId}/edit`)
-}
+  router.push(`/profile/room/${roomId}/edit`);
+};
 
 const getThemeLabel = (themeValue) => {
-  const theme = ROOM_THEMES.find(t => t.value === themeValue)
-  return theme ? theme.label : themeValue
-}
+  const theme = ROOM_THEMES.find((t) => t.value === themeValue);
+  return theme ? theme.label : themeValue;
+};
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
+  if (!dateString) return 'Unknown';
+  const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
-  })
-}
+    day: 'numeric',
+  });
+};
 
 const copyRoomLink = async (roomId) => {
   try {
-    const url = `${window.location.origin}/rooms/${roomId}`
-    await navigator.clipboard.writeText(url)
-    showSuccess.value = true
-    successMessage.value = 'Room link copied to clipboard!'
+    const url = `${window.location.origin}/rooms/${roomId}`;
+    await navigator.clipboard.writeText(url);
+    showSuccess.value = true;
+    successMessage.value = 'Room link copied to clipboard!';
   } catch (error) {
-    showError.value = true
-    errorMessage.value = 'Failed to copy link'
+    showError.value = true;
+    errorMessage.value = 'Failed to copy link';
   }
-}
+};
 
 const showDeleteDialog = (room) => {
-  roomToDelete.value = room
-  deleteDialog.value = true
-}
+  roomToDelete.value = room;
+  deleteDialog.value = true;
+};
 
 const confirmDelete = async () => {
-  if (!roomToDelete.value) return
+  if (!roomToDelete.value) return;
 
   try {
-    await roomsStore.deleteRoom(roomToDelete.value.id)
-    showSuccess.value = true
-    successMessage.value = 'Room deleted successfully'
-    deleteDialog.value = false
-    roomToDelete.value = null
+    await roomsStore.deleteRoom(roomToDelete.value.id);
+    showSuccess.value = true;
+    successMessage.value = 'Room deleted successfully';
+    deleteDialog.value = false;
+    roomToDelete.value = null;
   } catch (error) {
-    showError.value = true
-    errorMessage.value = `Failed to delete room: ${error.message}`
+    showError.value = true;
+    errorMessage.value = `Failed to delete room: ${error.message}`;
   }
-}
+};
 
 // Watchers
 watch(() => userStore.getCurrentUser?.userId, (newUserId, oldUserId) => {
   if (newUserId !== oldUserId) {
-    loadOwnedRooms()
+    loadOwnedRooms();
   }
-})
+});
 
 // Watch for route changes and refresh when coming back to profile
 watch(() => route.path, (newPath, oldPath) => {
   // If we're navigating to the profile page from a room edit page, refresh
   if (newPath === '/profile' && oldPath?.includes('/profile/room/') && oldPath?.includes('/edit')) {
-    console.log('🏠 Returning from room edit - refreshing owned rooms...')
-    loadOwnedRooms(true) // force refresh
+    console.log('🏠 Returning from room edit - refreshing owned rooms...');
+    loadOwnedRooms(true); // force refresh
   }
-})
+});
 
 // Lifecycle
 onMounted(() => {
-  loadOwnedRooms()
-})
+  loadOwnedRooms();
+});
 </script>
 
 <style scoped>

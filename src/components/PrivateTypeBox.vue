@@ -24,54 +24,54 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import useUserStore from '@/stores/user'
-import useMessagesStore from '@/stores/messages'
+import { ref, nextTick } from 'vue';
+import useUserStore from '@/stores/user';
+import useMessagesStore from '@/stores/messages';
 
-const userStore = useUserStore()
-const messagesStore = useMessagesStore()
+const userStore = useUserStore();
+const messagesStore = useMessagesStore();
 
 // State
-const message = ref('')
-const hideKeyboard = ref(true)
-const refDialog = ref(null)
+const message = ref('');
+const hideKeyboard = ref(true);
+const refDialog = ref(null);
 
-const getCurrentUser = userStore.getCurrentUser
+const { getCurrentUser } = userStore;
 
 // Methods
 function enterPress(e) {
   if (e.type === 'keypress' && e.key === 'Enter') {
-    talk()
+    talk();
   }
 }
 
 function talk() {
-  if (!message.value.trim()) return
+  if (!message.value.trim()) return;
   messagesStore.sendPrivateMessage({
     message: message.value,
     userId: getCurrentUser.userId,
-  })
-  message.value = ''
+  });
+  message.value = '';
 }
 
 function toggleKeyBoard(e) {
-  e.preventDefault()
-  e.stopPropagation()
-  hideKeyboard.value = !hideKeyboard.value
+  e.preventDefault();
+  e.stopPropagation();
+  hideKeyboard.value = !hideKeyboard.value;
 
   nextTick(() => {
     if (refDialog.value) {
-      refDialog.value.focus()
+      refDialog.value.focus();
     }
-  })
+  });
 }
 
 function checkValue(value) {
   if (value) {
-    console.log('value:', value)
-    message.value = value.substring(0, 500)
+    console.log('value:', value);
+    message.value = value.substring(0, 500);
   } else {
-    message.value = ''
+    message.value = '';
   }
 }
 </script>

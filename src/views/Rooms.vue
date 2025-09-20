@@ -175,7 +175,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import {
+  ref, computed, watch, onMounted, onBeforeUnmount, nextTick,
+} from 'vue';
 import { useRouter } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
@@ -195,7 +197,7 @@ const variant = ref('absolute');
 const nickname = ref('ttalker');
 const userId = ref('default_avatar_character_12345');
 const avatar = ref(
-  'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fkimetsu_1%2Favatars%2FL1%2Ftanjiro.png?alt=media&token=ebf9e68d-c0e2-4019-a201-24e6553aad0a'
+  'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fkimetsu_1%2Favatars%2FL1%2Ftanjiro.png?alt=media&token=ebf9e68d-c0e2-4019-a201-24e6553aad0a',
 );
 
 // ✅ computed
@@ -204,13 +206,13 @@ const roomList = computed(() => roomsStore.roomList);
 const usersOnlineNow = computed(() => roomsStore.usersOnlineNow);
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const isUserAuthenticated = computed(
-  () => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous
+  () => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous,
 );
 
 // Netflix-style room sections - simplified approach with just IDs
 const myRoomIds = computed(() => {
   if (!isUserAuthenticated.value) return [];
-  return (roomsStore.getOwnedRooms || []).map(room => room.id);
+  return (roomsStore.getOwnedRooms || []).map((room) => room.id);
 });
 
 const favoriteRoomIds = computed(() => {
@@ -218,7 +220,7 @@ const favoriteRoomIds = computed(() => {
   const userFavoriteIds = userStore.currentUser?.favoriteRooms || [];
   const rooms = getAllRooms.value;
   // Filter to only include rooms that exist
-  return userFavoriteIds.filter(roomId => rooms && rooms[roomId]);
+  return userFavoriteIds.filter((roomId) => rooms && rooms[roomId]);
 });
 
 const popularRoomIds = computed(() => {
@@ -241,10 +243,9 @@ const allRoomIds = computed(() => {
 
 // ✅ methods
 function getRandomFlexBasis() {
-  const randomFlexBasis =
-    flexBasisValues.value[
+  const randomFlexBasis = flexBasisValues.value[
     Math.floor(Math.random() * flexBasisValues.value.length)
-    ];
+  ];
   return { flexBasis: randomFlexBasis };
 }
 
@@ -320,7 +321,7 @@ watch(
     if (oldVal === true && newVal === false) {
       showAuthDialog.value = false;
     }
-  }
+  },
 );
 
 watch(
@@ -329,7 +330,7 @@ watch(
     if (!oldVal && newVal && !userStore.currentUser?.isAnonymous) {
       showAuthDialog.value = false;
     }
-  }
+  },
 );
 
 watch(
@@ -338,7 +339,7 @@ watch(
     if (newVal) {
       showAuthDialog.value = false;
     }
-  }
+  },
 );
 
 // Fetch owned rooms when user authentication changes
@@ -350,7 +351,6 @@ watch(isUserAuthenticated, (newVal) => {
   }
 });
 </script>
-
 
 <style>
 /* Netflix-style Room Sections */

@@ -87,7 +87,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import {
+  ref, computed, watch, onMounted,
+} from 'vue';
 import useMessagesStore from '@/stores/messages';
 import formatDate from '@/utils/timeTools';
 import isMobile from '@/utils/mobileDetection';
@@ -122,9 +124,7 @@ const hideRoomMessages = () => {
   messagesStore.showMessages(false);
 };
 
-const formattedDateTime = (timestamp) => {
-  return formatDate(timestamp);
-};
+const formattedDateTime = (timestamp) => formatDate(timestamp);
 
 // watch
 watch(showMessagesStatus, (value) => {

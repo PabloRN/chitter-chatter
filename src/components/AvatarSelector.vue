@@ -97,7 +97,7 @@ const avatarsList = computed(() => {
       return room.allowedAvatars.map((avatar, index) => ({
         avatarId: index,
         url: avatar.url || avatar.avatarURL,
-        name: avatar.name
+        name: avatar.name,
       }));
     }
   }
@@ -119,7 +119,7 @@ onMounted(async () => {
       console.warn('Failed to load room avatars, using defaults:', error);
     }
   }
-  
+
   avatars.value = avatarsList.value;
   nextTick(() => {
     currentSlide.value = 0;
@@ -151,7 +151,7 @@ watch(signingInUpgraded, (newVal, oldVal) => {
 // Methods
 async function loadRoomAvatars() {
   if (!props.roomId) return;
-  
+
   try {
     const roomAvatars = await roomsStore.getRoomAvatars(props.roomId);
     // Update the room data if we got custom avatars

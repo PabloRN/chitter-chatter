@@ -8,7 +8,7 @@
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
       <div class="nickname">{{ nickname }}</div>
     </div>
-    <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
+    <v-img fill :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
     <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" v-on="{
       ['privateMessage']: () => invitePrivate(),
       ['showUserMessages']: () => toggleUserMessages(),
@@ -35,7 +35,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import {
+  ref, reactive, computed, onMounted, onUnmounted, watch, nextTick,
+} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import TypeBox from '@/components/TypeBox';
 import DialogBubble from '@/components/DialogBubble';
@@ -482,7 +484,7 @@ watch(userPositionModified, () => {
 .avatar-image {
   filter: drop-shadow(1px 2px 1px #424242);
   position: relative;
-  object-fit: contain;
+  object-fit: fill !important;
   z-index: 10;
   width: 80px;
   height: 220px;
@@ -504,7 +506,7 @@ watch(userPositionModified, () => {
 }
 
 .chatter {
-  background-size: contain;
+  object-fit: fill !important;
 }
 
 .private-dialog {

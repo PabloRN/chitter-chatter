@@ -89,41 +89,45 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import useRoomsStore from '@/stores/rooms'
-import useUserStore from '@/stores/user'
-import { ROOM_THEMES, ROOM_CONSTRAINTS, DEFAULT_ROOM_VALUES, validateRoom } from '@/utils/roomTypes'
-import AvatarManager from '@/components/AvatarManager.vue'
+import {
+  ref, reactive, computed, onMounted, watch,
+} from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import useRoomsStore from '@/stores/rooms';
+import useUserStore from '@/stores/user';
+import {
+  ROOM_THEMES, ROOM_CONSTRAINTS, DEFAULT_ROOM_VALUES, validateRoom,
+} from '@/utils/roomTypes';
+import AvatarManager from '@/components/AvatarManager.vue';
 
 const props = defineProps({
   roomId: {
     type: String,
-    default: null
+    default: null,
   },
   isEdit: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 
-const router = useRouter()
-const route = useRoute()
-const roomsStore = useRoomsStore()
-const userStore = useUserStore()
+const router = useRouter();
+const route = useRoute();
+const roomsStore = useRoomsStore();
+const userStore = useUserStore();
 
 // Form state
-const formValid = ref(false)
-const form = ref(null)
-const avatarManager = ref(null)
-const backgroundFile = ref(null)
-const backgroundPreview = ref('')
+const formValid = ref(false);
+const form = ref(null);
+const avatarManager = ref(null);
+const backgroundFile = ref(null);
+const backgroundPreview = ref('');
 
 // UI state
-const showSuccess = ref(false)
-const showError = ref(false)
-const successMessage = ref('')
-const errorMessage = ref('')
+const showSuccess = ref(false);
+const showError = ref(false);
+const successMessage = ref('');
+const errorMessage = ref('');
 
 // Form data
 const formData = reactive({
@@ -134,122 +138,120 @@ const formData = reactive({
   minAge: DEFAULT_ROOM_VALUES.minAge,
   isPrivate: DEFAULT_ROOM_VALUES.isPrivate,
   backgroundImage: DEFAULT_ROOM_VALUES.backgroundImage,
-  allowedAvatars: [...DEFAULT_ROOM_VALUES.allowedAvatars]
-})
+  allowedAvatars: [...DEFAULT_ROOM_VALUES.allowedAvatars],
+});
 
 // Original data for change detection (only for edit mode)
-const originalData = ref({})
+const originalData = ref({});
 
 // Computed
-const themeOptions = computed(() => ROOM_THEMES.map(theme => ({
+const themeOptions = computed(() => ROOM_THEMES.map((theme) => ({
   text: theme.label,
-  value: theme.value
-})))
+  value: theme.value,
+})));
 
 const hasChanges = computed(() => {
-  console.log('Checking for changes...', formData.theme)
-  if (!props.isEdit) return true // For new rooms, always allow creation
+  console.log('Checking for changes...', formData.theme);
+  if (!props.isEdit) return true; // For new rooms, always allow creation
 
   // Check for basic form field changes
   const basicFieldsChanged = (
-    formData.name !== originalData.value.name ||
-    formData.theme !== originalData.value.theme ||
-    formData.description !== originalData.value.description ||
-    formData.maxUsers !== originalData.value.maxUsers ||
-    formData.minAge !== originalData.value.minAge ||
-    formData.isPrivate !== originalData.value.isPrivate
-  )
+    formData.name !== originalData.value.name
+    || formData.theme !== originalData.value.theme
+    || formData.description !== originalData.value.description
+    || formData.maxUsers !== originalData.value.maxUsers
+    || formData.minAge !== originalData.value.minAge
+    || formData.isPrivate !== originalData.value.isPrivate
+  );
 
   // Check for background image changes
-  const backgroundChanged = !!backgroundFile.value
+  const backgroundChanged = !!backgroundFile.value;
 
   // Check for new avatars (avatars with isPreview: true)
-  const hasNewAvatars = formData.allowedAvatars.some(avatar => avatar.isPreview)
+  const hasNewAvatars = formData.allowedAvatars.some((avatar) => avatar.isPreview);
 
   // Check if avatars were removed (comparing lengths)
-  const avatarsRemoved = formData.allowedAvatars.filter(a => !a.isPreview).length !==
-    originalData.value.allowedAvatars?.length
+  const avatarsRemoved = formData.allowedAvatars.filter((a) => !a.isPreview).length
+    !== originalData.value.allowedAvatars?.length;
 
   // Check if default avatar changed
-  const currentDefaultAvatar = formData.allowedAvatars.find(a => a.isDefault)
-  const originalDefaultAvatar = originalData.value.allowedAvatars?.find(a => a.isDefault)
-  const defaultAvatarChanged = currentDefaultAvatar?.name !== originalDefaultAvatar?.name
+  const currentDefaultAvatar = formData.allowedAvatars.find((a) => a.isDefault);
+  const originalDefaultAvatar = originalData.value.allowedAvatars?.find((a) => a.isDefault);
+  const defaultAvatarChanged = currentDefaultAvatar?.name !== originalDefaultAvatar?.name;
 
-  const result = basicFieldsChanged || backgroundChanged || hasNewAvatars || avatarsRemoved || defaultAvatarChanged
+  const result = basicFieldsChanged || backgroundChanged || hasNewAvatars || avatarsRemoved || defaultAvatarChanged;
 
-
-  return result
-})
+  return result;
+});
 
 // Validation rules
 const nameRules = [
-  v => !!v || 'Room name is required',
-  v => (v && v.length >= ROOM_CONSTRAINTS.name.minLength) || `Name must be at least ${ROOM_CONSTRAINTS.name.minLength} characters`,
-  v => (v && v.length <= ROOM_CONSTRAINTS.name.maxLength) || `Name must be less than ${ROOM_CONSTRAINTS.name.maxLength} characters`
-]
+  (v) => !!v || 'Room name is required',
+  (v) => (v && v.length >= ROOM_CONSTRAINTS.name.minLength) || `Name must be at least ${ROOM_CONSTRAINTS.name.minLength} characters`,
+  (v) => (v && v.length <= ROOM_CONSTRAINTS.name.maxLength) || `Name must be less than ${ROOM_CONSTRAINTS.name.maxLength} characters`,
+];
 
 const descriptionRules = [
-  v => !v || v.length <= ROOM_CONSTRAINTS.description.maxLength || `Description must be less than ${ROOM_CONSTRAINTS.description.maxLength} characters`
-]
+  (v) => !v || v.length <= ROOM_CONSTRAINTS.description.maxLength || `Description must be less than ${ROOM_CONSTRAINTS.description.maxLength} characters`,
+];
 
 const maxUsersRules = [
-  v => v >= ROOM_CONSTRAINTS.maxUsers.min || `Must be at least ${ROOM_CONSTRAINTS.maxUsers.min}`,
-  v => v <= ROOM_CONSTRAINTS.maxUsers.max || `Must be no more than ${ROOM_CONSTRAINTS.maxUsers.max}`
-]
+  (v) => v >= ROOM_CONSTRAINTS.maxUsers.min || `Must be at least ${ROOM_CONSTRAINTS.maxUsers.min}`,
+  (v) => v <= ROOM_CONSTRAINTS.maxUsers.max || `Must be no more than ${ROOM_CONSTRAINTS.maxUsers.max}`,
+];
 
 const minAgeRules = [
-  v => v >= ROOM_CONSTRAINTS.minAge.min || `Must be at least ${ROOM_CONSTRAINTS.minAge.min}`,
-  v => v <= ROOM_CONSTRAINTS.minAge.max || `Must be no more than ${ROOM_CONSTRAINTS.minAge.max}`
-]
+  (v) => v >= ROOM_CONSTRAINTS.minAge.min || `Must be at least ${ROOM_CONSTRAINTS.minAge.min}`,
+  (v) => v <= ROOM_CONSTRAINTS.minAge.max || `Must be no more than ${ROOM_CONSTRAINTS.minAge.max}`,
+];
 
 // Methods
 const onBackgroundFileChange = (fileOrEvent) => {
   // Handle different ways the file can be passed (similar to AvatarManager)
-  let file = fileOrEvent
+  let file = fileOrEvent;
   if (fileOrEvent && fileOrEvent.length) {
     // If it's a FileList, get the first file
-    file = fileOrEvent[0]
+    file = fileOrEvent[0];
   } else if (fileOrEvent && fileOrEvent.target && fileOrEvent.target.files) {
     // If it's an event object
-    file = fileOrEvent.target.files[0]
+    file = fileOrEvent.target.files[0];
   }
 
   if (file && file instanceof File) {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
-      backgroundPreview.value = e.target.result
-    }
-    reader.readAsDataURL(file)
+      backgroundPreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
   } else {
-    backgroundPreview.value = ''
+    backgroundPreview.value = '';
   }
-}
+};
 
 const removeBackgroundImage = () => {
-  backgroundFile.value = null
-  backgroundPreview.value = ''
-}
-
+  backgroundFile.value = null;
+  backgroundPreview.value = '';
+};
 
 const loadRoomData = async () => {
-  if (!props.isEdit || !props.roomId) return
+  if (!props.isEdit || !props.roomId) return;
 
   try {
     // Ensure user is loaded first
-    const currentUser = userStore.getCurrentUser
+    const currentUser = userStore.getCurrentUser;
     if (!currentUser?.userId) {
       // User not loaded yet, wait a bit and try again
-      setTimeout(loadRoomData, 100)
-      return
+      setTimeout(loadRoomData, 100);
+      return;
     }
 
-    let room = roomsStore.roomList[props.roomId] ||
-      roomsStore.ownedRooms.find(r => r.id === props.roomId)
+    let room = roomsStore.roomList[props.roomId]
+      || roomsStore.ownedRooms.find((r) => r.id === props.roomId);
 
     // If room not found in local stores, try to fetch it
     if (!room) {
-      await roomsStore.fetchOwnedRooms(currentUser.userId, true) // force refresh
-      room = roomsStore.ownedRooms.find(r => r.id === props.roomId)
+      await roomsStore.fetchOwnedRooms(currentUser.userId, true); // force refresh
+      room = roomsStore.ownedRooms.find((r) => r.id === props.roomId);
     }
 
     if (room) {
@@ -262,8 +264,8 @@ const loadRoomData = async () => {
         minAge: room.minAge,
         isPrivate: room.isPrivate,
         backgroundImage: room.backgroundImage || room.picture || room.thumbnail,
-        allowedAvatars: room.allowedAvatars || []
-      }
+        allowedAvatars: room.allowedAvatars || [],
+      };
 
       // Update form data
       Object.assign(formData, {
@@ -274,147 +276,144 @@ const loadRoomData = async () => {
         minAge: room.minAge,
         isPrivate: room.isPrivate,
         backgroundImage: room.backgroundImage || room.picture || room.thumbnail,
-        allowedAvatars: (room.allowedAvatars || []).map(avatar => ({
+        allowedAvatars: (room.allowedAvatars || []).map((avatar) => ({
           ...avatar,
-          isPreview: false // Mark existing avatars as not preview
-        }))
-      })
-
+          isPreview: false, // Mark existing avatars as not preview
+        })),
+      });
     } else {
-      showError.value = true
-      errorMessage.value = 'Room not found or you do not have permission to edit it'
+      showError.value = true;
+      errorMessage.value = 'Room not found or you do not have permission to edit it';
     }
   } catch (error) {
-    showError.value = true
-    errorMessage.value = `Failed to load room data: ${error.message}`
+    showError.value = true;
+    errorMessage.value = `Failed to load room data: ${error.message}`;
   }
-}
+};
 
 const handleSubmit = async () => {
-  if (!form.value.validate()) return
+  if (!form.value.validate()) return;
 
   try {
-    let roomData = { ...formData }
-    let roomId = props.roomId
-
+    const roomData = { ...formData };
+    let { roomId } = props;
 
     // For new rooms, create room first to get roomId
     if (!props.isEdit) {
-      const result = await roomsStore.createRoom(roomData)
-      roomId = result.roomId
+      const result = await roomsStore.createRoom(roomData);
+      roomId = result.roomId;
     }
 
     // Upload background image if selected
     if (backgroundFile.value) {
-      const backgroundURL = await roomsStore.uploadBackgroundImage(roomId, backgroundFile.value)
-      roomData.backgroundImage = backgroundURL
+      const backgroundURL = await roomsStore.uploadBackgroundImage(roomId, backgroundFile.value);
+      roomData.backgroundImage = backgroundURL;
       // Also set picture and thumbnail for compatibility
-      roomData.picture = backgroundURL
-      roomData.thumbnail = backgroundURL
+      roomData.picture = backgroundURL;
+      roomData.thumbnail = backgroundURL;
     }
 
     // Handle avatar management for rooms
     if (avatarManager.value && formData.allowedAvatars.length > 0) {
       // Check if there are any new avatars (isPreview = true)
-      const hasNewAvatars = formData.allowedAvatars.some(avatar => avatar.isPreview)
+      const hasNewAvatars = formData.allowedAvatars.some((avatar) => avatar.isPreview);
 
       if (hasNewAvatars) {
-        const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId)
+        const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId);
 
         // For edit mode, combine existing avatars with new ones
         if (props.isEdit) {
-          const existingAvatars = formData.allowedAvatars.filter(avatar => !avatar.isPreview)
-          roomData.allowedAvatars = [...existingAvatars, ...uploadedAvatars]
+          const existingAvatars = formData.allowedAvatars.filter((avatar) => !avatar.isPreview);
+          roomData.allowedAvatars = [...existingAvatars, ...uploadedAvatars];
         } else {
           // For new rooms, just use the uploaded avatars
-          roomData.allowedAvatars = uploadedAvatars
+          roomData.allowedAvatars = uploadedAvatars;
         }
       } else {
         // No new avatars, but check if avatars were removed or modified
         if (props.isEdit) {
           // Always send the current avatar list for edit mode to handle removals
-          roomData.allowedAvatars = formData.allowedAvatars.filter(avatar => !avatar.isPreview)
+          roomData.allowedAvatars = formData.allowedAvatars.filter((avatar) => !avatar.isPreview);
         } else {
-          roomData.allowedAvatars = formData.allowedAvatars
+          roomData.allowedAvatars = formData.allowedAvatars;
         }
       }
     } else if (props.isEdit) {
       // Handle case where all avatars might have been removed (though this should be prevented by UI)
-      roomData.allowedAvatars = []
+      roomData.allowedAvatars = [];
     }
 
     // Safety check: ensure we don't accidentally remove all avatars
     if (props.isEdit && (!roomData.allowedAvatars || roomData.allowedAvatars.length === 0)) {
       // This should not happen due to UI prevention, but if it does, preserve existing avatars
-      delete roomData.allowedAvatars
+      delete roomData.allowedAvatars;
     }
 
-
     if (props.isEdit) {
-      await roomsStore.updateRoom(roomId, roomData)
+      await roomsStore.updateRoom(roomId, roomData);
 
       // Force refresh owned rooms to ensure UI is up to date
-      const currentUser = userStore.getCurrentUser
+      const currentUser = userStore.getCurrentUser;
       if (currentUser?.userId) {
-        await roomsStore.fetchOwnedRooms(currentUser.userId, true) // force refresh
+        await roomsStore.fetchOwnedRooms(currentUser.userId, true); // force refresh
       }
 
-      successMessage.value = 'Room updated successfully!'
+      successMessage.value = 'Room updated successfully!';
 
       // Redirect back to profile after showing success message briefly
       setTimeout(() => {
-        router.push('/profile')
-      }, 1500)
+        router.push('/profile');
+      }, 1500);
     } else {
       // For new rooms, update the room data directly instead of calling updateRoom
       if (roomData.backgroundImage || roomData.allowedAvatars.length > 0) {
-        await roomsStore.updateRoomAssets(roomId, roomData)
+        await roomsStore.updateRoomAssets(roomId, roomData);
       }
-      successMessage.value = 'Room created successfully!'
+      successMessage.value = 'Room created successfully!';
 
       // Redirect to the new room or back to profile
       setTimeout(() => {
-        router.push('/profile')
-      }, 1500)
+        router.push('/profile');
+      }, 1500);
     }
 
-    showSuccess.value = true
+    showSuccess.value = true;
   } catch (error) {
-    console.error('Room operation failed:', error)
-    showError.value = true
-    errorMessage.value = `Failed to ${props.isEdit ? 'update' : 'create'} room: ${error.message}`
+    console.error('Room operation failed:', error);
+    showError.value = true;
+    errorMessage.value = `Failed to ${props.isEdit ? 'update' : 'create'} room: ${error.message}`;
   }
-}
+};
 
 // Lifecycle
 onMounted(() => {
   // Check if user can create room (for create mode)
   if (!props.isEdit && !roomsStore.canCreateRoom) {
-    showError.value = true
-    errorMessage.value = 'You have reached your room creation limit'
+    showError.value = true;
+    errorMessage.value = 'You have reached your room creation limit';
     setTimeout(() => {
-      router.push('/profile')
-    }, 2000)
-    return
+      router.push('/profile');
+    }, 2000);
+    return;
   }
 
-  loadRoomData()
-})
+  loadRoomData();
+});
 
-// Watch user changes  
+// Watch user changes
 watch(() => userStore.getCurrentUser?.userId, (newUserId, oldUserId) => {
   if (newUserId && newUserId !== oldUserId && props.isEdit) {
     // User just loaded or changed, reload room data
-    loadRoomData()
+    loadRoomData();
   }
-})
+});
 
 // Watch route changes
 watch(() => route.params.roomId, () => {
   if (props.isEdit && route.params.roomId) {
-    loadRoomData()
+    loadRoomData();
   }
-})
+});
 </script>
 
 <style scoped>
@@ -449,7 +448,6 @@ watch(() => route.params.roomId, () => {
   border-radius: 8px;
   border: 1px solid var(--card-border);
 }
-
 
 /* Responsive Design */
 @media (max-width: 768px) {

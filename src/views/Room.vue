@@ -137,13 +137,11 @@ const pMessage = ref([]);
 const chattersCounter = ref(0);
 const showThemeSelector = ref(false);
 const userInitialized = ref(false);
-const isOpen = ref(false)
+const isOpen = ref(false);
 
 // Computed properties
 const userAdded = computed(() => roomsStore.userAdded);
-const isUserAuthenticated = computed(() => {
-  return userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous;
-});
+const isUserAuthenticated = computed(() => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous);
 const userExit = computed(() => roomsStore.userExit);
 const roomList = computed(() => roomsStore.roomList);
 const avatarList = computed(() => roomsStore.avatarsList);
@@ -165,7 +163,7 @@ const chattersArray = computed(() => {
   // Use the variables to avoid unused expression warnings
   return (avatarTrigger || dataTrigger || chattersCounter.value > 0) ? Array.from(chatters.value) : [];
 });
-const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms.some(room => room === props.roomId));
+const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms.some((room) => room === props.roomId));
 // Methods
 
 const toggleMessages = () => {
@@ -230,7 +228,6 @@ const rejectPrivateAndBlockUserRequest = () => {
   );
 };
 
-
 const privateMessageClosed = () => {
   showDialog.value = false;
   messagesStore.closePrivate();
@@ -255,12 +252,12 @@ const handleEmit = (item) => {
       emit('privateMessage');
       break;
     case 'exitRoom':
-      leaveRoom()
+      leaveRoom();
       break;
     case 'toggleFavorite':
 
       toggleFavorite();
-      isOpen.value = false
+      isOpen.value = false;
       break;
     case 'reportRoom':
       console.log('Report room');
@@ -268,7 +265,7 @@ const handleEmit = (item) => {
     case 'showMessages':
 
       toggleMessages();
-      isOpen.value = false
+      isOpen.value = false;
       break;
   }
 };
@@ -370,7 +367,6 @@ onBeforeRouteLeave((from, to, next) => {
   }
   next();
 });
-
 
 // Watchers
 watch(userAdded, async (newUser) => {

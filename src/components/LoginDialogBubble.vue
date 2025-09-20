@@ -42,7 +42,7 @@ import {
   ref, onMounted, onBeforeUnmount, computed, watch, defineProps, defineEmits, nextTick,
 } from 'vue';
 import useUserStore from '@/stores/user';
-import nani from '@/assets/naniii.jpg'
+import nani from '@/assets/naniii.jpg';
 
 defineProps({
   message: Array,
