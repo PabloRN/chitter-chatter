@@ -1,72 +1,46 @@
 <template>
-  <transition name="fade">
-    <ValidationObserver ref="obs" v-slot="{ invalid }">
-      <v-col cols="4" class="mx-auto">
-        <v-card class="elevation-0 login_card mb-1" transition="scale-transition">
-          <v-card-text>
-            <v-form>
-              <Email class="pa-sm-1 pb-0" rules="required|email" label="Email" />
-              <Password label="Password" />
-            </v-form>
-          </v-card-text>
-          <v-card-actions>
-            <v-btn :loading="isLoading" :disabled="invalid" class="ma-0" color="primary" tile depressed block ripple
-              @click="submit">{{ $t("LOGIN_FORM_BUTTON_TEXT") }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
+  <v-form @submit.prevent="submitForm" ref="formRef">
+    <v-text-field v-model="userStore.email" :error-messages="errors.email ? [errors.email] : []" label="Email"
+      type="email" required />
 
-      <div class="" align="center" justify="center">
-        <v-btn @click="$router.push({ name: 'forgotpassword' })" class="text-capitalize" text small color="primary">
-          {{ $t('LOGIN_FORM_FORGOT_PASSWORD_LINK_TEXT') }}
-        </v-btn>
-      </div>
-    </ValidationObserver>
-  </transition>
+    <v-text-field v-model="userStore.password" :error-messages="errors.password ? [errors.password] : []"
+      label="Password" type="password" required />
+
+    <v-btn :loading="isSubmitting" type="submit" color="primary" block>
+      {{ $t("LOGIN_FORM_BUTTON_TEXT") }}
+    </v-btn>
+  </v-form>
 </template>
-<script>
 
-// import { ValidationObserver } from 'vee-validate';
-import Password from '@/components/inputs/Password';
-import Email from '@/components/inputs/Email';
+<script setup>
+import { ref } from 'vue';
+import { useForm } from 'vee-validate';
+import * as yup from 'yup';
 import useUserStore from '@/stores/user';
 
-export default {
+const formRef = ref(null);
+const userStore = useUserStore();
 
-  components: {
-    Password,
-    Email,
-    // ValidationObserver,
-  },
-  setup() {
-    const userStore = useUserStore();
-
-    return {
-      userStore,
-    };
-  },
-  data: () => ({
-    isLoading: false,
+const { handleSubmit, isSubmitting, errors } = useForm({
+  validationSchema: yup.object({
+    email: yup.string().required('Email is required').email('Invalid email'),
+    password: yup.string().required('Password is required').min(6, 'Minimum 6 characters'),
   }),
-  computed: {
+});
 
-  },
-  mounted() {
-    // this.setDrawer(false);
-  },
-  methods: {
-    setIsLoading(val) {
-      this.isLoading = val;
-    },
-    submit() {
-      this.userStore.signUserIn();
-    },
-  },
-};
+const submitForm = handleSubmit(async () => {
+  try {
+    await userStore.signUserIn();
+  } catch (err) {
+    console.error('Login failed:', err);
+  }
+});
 </script>
+
 <style scoped>
-.login_card {
-  background-color: transparent !important;
+v-form {
+  max-width: 400px;
+  margin: auto;
+  padding: 1rem;
 }
 </style>

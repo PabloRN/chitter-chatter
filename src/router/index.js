@@ -1,8 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import LoadingPage from '@/views/LoadingPage';
 import Login from '@/views/Login';
 import Rooms from '@/views/Rooms';
 import Room from '@/views/Room';
-import LoadingPage from '@/views/LoadingPage';
+import Profile from '@/views/Profile';
+import RoomForm from '@/components/RoomForm';
+import AuthAction from '@/views/AuthAction';
 
 const routes = [
   {
@@ -16,10 +19,41 @@ const routes = [
     component: Rooms,
   },
   {
+    path: '/__/auth/action',
+    name: 'auth-action',
+    component: AuthAction,
+  },
+  {
     path: '/rooms/:roomId',
     name: 'room',
     component: Room,
     props: true,
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: Profile,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/profile/room/create',
+    name: 'room-create',
+    component: RoomForm,
+    props: { isEdit: false },
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/profile/room/:roomId/edit',
+    name: 'room-edit',
+    component: RoomForm,
+    props: (route) => ({ roomId: route.params.roomId, isEdit: true }),
+    meta: {
+      requiresAuth: true,
+    },
   },
   {
     path: '/signup',
@@ -50,6 +84,9 @@ const routes = [
         },
         component: () => import('@/components/SignupForm'),
       },
+      // {
+      //   path: 'profile', name: 'profile', component: Profile, meta: { auth: ['USER'] },
+      // },
     ],
   },
 ];
@@ -59,9 +96,15 @@ const router = createRouter({
   routes,
 });
 
-// router.beforeEach((to, from, next) => {
-//   console.log({ to, from, next });
-//   next();
-// });
+// Navigation guards
+router.beforeEach((to, from, next) => {
+  // Check if route requires authentication
+  if (to.meta.requiresAuth) {
+    // In a real app, you'd check the user's authentication status here
+    // For now, we'll allow access and handle it in the component
+    console.log('Accessing protected route:', to.name);
+  }
+  next();
+});
 
 export default router;

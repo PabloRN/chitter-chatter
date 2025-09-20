@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import {
-  getDatabase, ref, push, update, onChildAdded, onChildRemoved, off, set, get,
+  getDatabase, ref, push, update, onChildAdded, onChildRemoved, off, set,
 } from 'firebase/database';
 import useMainStore from './main';
 
@@ -15,6 +15,7 @@ const useMessagesStore = defineStore('messages', {
 
   getters: {
     getText: (state) => state.roomMessagesToShow,
+    getPrivateChannelName: () => (user1, user2) => (user1 < user2 ? `${user1}_${user2}` : `${user2}_${user1}`),
   },
 
   actions: {
@@ -31,8 +32,8 @@ const useMessagesStore = defineStore('messages', {
       this.setShowMessages(payload);
     },
 
-    showUserMessages(payload) {
-      this.setShowUserMessages(payload);
+    showUserMessages(userId) {
+      this.setShowUserMessages(userId);
     },
 
     async sendMessage({
@@ -75,30 +76,66 @@ const useMessagesStore = defineStore('messages', {
 
     async confirmPrivate({ requestedBy, currentUser }) {
       const db = getDatabase();
-
       try {
-        const privateMessagesKey = push(ref(db, `privateMessages/${requestedBy}_${currentUser}`)).key;
+        const channelName = this.getPrivateChannelName(requestedBy, currentUser);
+        // User B (accepter) also needs to listen to the channel
+        onChildAdded(ref(db, `privateMessages/${channelName}`), (messageSnap) => {
+          this.setPrivateUsers({ users: channelName });
+          this.setSendPrivateMessage(messageSnap.val());
+        });
+
+        onChildRemoved(ref(db, `privateMessages/${channelName}`), () => {
+          this.closePrivateMessageDialog();
+          off(ref(db, `privateMessages/${channelName}`));
+        });
+
+        const privateMessagesKey = push(ref(db, `privateMessages/${channelName}`)).key;
         const updates = {};
-        updates[`privateMessages/${requestedBy}_${currentUser}/${privateMessagesKey}`] = {
+        updates[`privateMessages/${channelName}/${privateMessagesKey}`] = {
           userId: currentUser,
           message: 'Hey let`s talk',
         };
 
         await update(ref(db), updates);
+
+        // Clean up both requestedBy and requestedTo
         await set(ref(db, `users/${currentUser}/privateMessage/`), {
           requestedBy: null,
         });
-
-        onChildAdded(ref(db, `privateMessages/${requestedBy}_${currentUser}`), (messageSnap) => {
-          this.setPrivateUsers({ users: `${requestedBy}_${currentUser}` });
-          this.setSendPrivateMessage(messageSnap.val());
-        });
-
-        onChildRemoved(ref(db, `privateMessages/${requestedBy}_${currentUser}`), () => {
-          this.closePrivateMessageDialog();
+        await set(ref(db, `users/${requestedBy}/privateMessage/`), {
+          requestedTo: null,
         });
       } catch (error) {
-        console.error(error);
+        console.error('❌ Error in confirmPrivate:', error);
+      }
+    },
+    async rejectPrivate({ requestedBy, currentUser }) {
+      const mainStore = useMainStore();
+      const db = getDatabase();
+      try {
+        const channelName = this.getPrivateChannelName(requestedBy, currentUser);
+
+        const privateMessagesKey = push(ref(db, `privateMessages/${channelName}`)).key;
+        const updates = {};
+        updates[`privateMessages/${channelName}/${privateMessagesKey}`] = {
+          userId: currentUser,
+          message: 'NOT_INTERESTED',
+        };
+        await update(ref(db), updates);
+
+        // Clean up both requestedBy and requestedTo
+        await set(ref(db, `users/${currentUser}/privateMessage/`), {
+          requestedBy: null,
+        });
+        await set(ref(db, `users/${requestedBy}/privateMessage/`), {
+          requestedTo: null,
+        });
+        mainStore.setSnackbar({
+          type: 'warning',
+          msg: 'You had rejected the private request',
+        });
+      } catch (error) {
+        console.error('❌ Error in confirmPrivate:', error);
       }
     },
 
@@ -106,38 +143,48 @@ const useMessagesStore = defineStore('messages', {
       const db = getDatabase();
       const mainStore = useMainStore();
       const currentId = currentUser;
-
       try {
-        await set(ref(db, `users/${userId}/privateMessage/`), {
-          requestedBy: currentId,
-        });
-        await set(ref(db, `users/${currentId}/privateMessage/`), {
-          requestedTo: userId,
-        });
-
-        this.setPrivateUsers({ users: `${currentId}_${userId}` });
-        mainStore.setSnackbar({
-          type: 'success',
-          msg: 'Private message request successfully sent',
-        });
-
-        onChildAdded(ref(db, `privateMessages/${currentId}_${userId}`), (messageSnap) => {
-          this.setSendPrivateMessage(messageSnap.val());
-        });
-
-        const privateRef = ref(db, `privateMessages/${currentId}_${userId}`);
-        const snapshot = await get(privateRef);
-        if (snapshot.exists()) {
+        if (userId && currentId) {
+          await set(ref(db, `users/${userId}/privateMessage/`), {
+            requestedBy: currentId,
+          });
           await set(ref(db, `users/${currentId}/privateMessage/`), {
-            requestedTo: null,
+            requestedTo: userId,
+          });
+          mainStore.setSnackbar({
+            type: 'success',
+            msg: 'Private message request successfully sent',
+          });
+          const channelName = this.getPrivateChannelName(currentId, userId);
+          // Start listening immediately when request is sent
+          onChildAdded(ref(db, `privateMessages/${channelName}`), (messageSnap) => {
+            if (messageSnap.val().message === 'NOT_INTERESTED' && messageSnap.val().userId === userId) {
+              off(ref(db, `privateMessages/${channelName}`));
+              const updates = {};
+              updates[`privateMessages/${this.privateUsers}/`] = null;
+              update(ref(db), updates);
+              mainStore.setSnackbar({
+                type: 'warning',
+                msg: 'The other user has rejected your request',
+              });
+              this.closePrivateMessageDialog();
+            } else {
+              this.setPrivateUsers({ users: channelName });
+              this.setSendPrivateMessage(messageSnap.val());
+            }
+          });
+
+          onChildRemoved(ref(db, `privateMessages/${channelName}`), () => {
+            this.closePrivateMessageDialog();
+            off(ref(db, `privateMessages/${channelName}`));
           });
         }
-
-        onChildRemoved(privateRef, () => {
-          this.closePrivateMessageDialog();
-        });
       } catch (error) {
-        console.error(error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: 'Upss, something went wrong. Please try again after a few seconds',
+        });
+        console.error('❌ Error in sendPrivateMessageRequest:', error);
       }
     },
 
@@ -216,7 +263,7 @@ const useMessagesStore = defineStore('messages', {
 
     // Mutations converted to actions
     setSendPrivateMessage(message) {
-      this.privateMessage.push(message);
+      this.privateMessage = [...this.privateMessage, message];
     },
 
     setShowMessages(payload) {

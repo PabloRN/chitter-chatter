@@ -8,14 +8,15 @@ import {
   signInWithEmailAndPassword,
   signOut,
   signInWithCredential,
-  linkWithCredential,
   // GoogleAuthProvider,
   // EmailAuthProvider,
 } from 'firebase/auth';
 import {
   getDatabase, ref, set, update, onValue, off, get, onDisconnect,
 } from 'firebase/database';
-import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
+import {
+  getStorage, ref as storageRef, getDownloadURL, uploadBytes,
+} from 'firebase/storage';
 import router from '@/router/index';
 import extractImageName from '@/utils/avatarName';
 import useMainStore from './main';
@@ -38,16 +39,158 @@ const useUserStore = defineStore('user', {
     avatarUpdated: {},
     roomIn: {},
     signingInUpgraded: false,
-    userUpgraded: false,
+    isUserUpgraded: false,
     updatedUser: false,
     usersSwitched: {},
+    otherUserUpgraded: null, // For tracking other users' upgrades
+    showWelcomeForm: false, // For controlling welcome form visibility
+    blockListeners: [], // cleanup functions
+    initialUser: {
+      nickname: '',
+      avatar: '',
+      personalAvatar: '',
+      age: 0,
+      miniAvatar: '',
+      level: 'L1',
+      userId: '',
+      onlineState: true,
+      status: 'online',
+      isAnonymous: true,
+      favoriteRooms: [],
+      ownedRooms: [],
+      blocked: {},
+      blockedBy: {},
+      isActive: true,
+      isCreator: false,
+    },
   }),
 
   getters: {
     getCurrentUser: (state) => state.currentUser,
+    blockedUsers: (state) => state.currentUser?.blocked || {},
+    blockedByUsers: (state) => state.currentUser?.blockedBy || {},
+    isBlocked: (state) => (userId) => !!state.currentUser?.blocked?.[userId],
+    isBlockedBy: (state) => (userId) => !!state.currentUser?.blockedBy?.[userId],
+    linkedProviders() {
+      const user = this.getCurrentUser;
+      return user?.providerData?.map((p) => p.providerId) || [];
+    },
   },
 
   actions: {
+
+    initBlockListeners(userId) {
+      const db = getDatabase();
+      const userStore = useUserStore();
+
+      // Clean up old listeners (in case user switches account)
+      this.blockListeners.forEach((unsubscribe) => unsubscribe());
+      this.blockListeners = [];
+
+      // 🔔 Listen to "blocked" (who I blocked)
+      const blockedRef = ref(db, `users/${userId}/blocked`);
+      const unsubscribeBlocked = onValue(blockedRef, (snap) => {
+        userStore.currentUser.blocked = snap.val() || {};
+      });
+      this.blockListeners.push(() => off(blockedRef, 'value', unsubscribeBlocked));
+
+      // 🔔 Listen to "blockedBy" (who blocked me)
+      const blockedByRef = ref(db, `users/${userId}/blockedBy`);
+      const unsubscribeBlockedBy = onValue(blockedByRef, (snap) => {
+        userStore.currentUser.blockedBy = snap.val() || {};
+      });
+      this.blockListeners.push(() => off(blockedByRef, 'value', unsubscribeBlockedBy));
+    },
+    async uploadUserPersonalAvatar(file) {
+      const storage = getStorage();
+      const db = getDatabase();
+      const { currentUser } = this;
+
+      try {
+        const imageRef = storageRef(storage, `users/${currentUser.userId}/avatars/L1/useravatar.png`);
+        const snapshot = await uploadBytes(imageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        await set(ref(db, `users/${currentUser.userId}/personalAvatar/`), downloadURL);
+        console.log('User avatar uploaded:', downloadURL);
+        this.setCurrentUserPersonalAvatar({ personalAvatar: downloadURL });
+      } catch (error) {
+        console.error('Error uploading user avatar:', error);
+        throw error;
+      } finally {
+        this.roomUploadLoading = false;
+      }
+    },
+    async toggleFavorite(roomId) {
+      const auth = getAuth();
+      const db = getDatabase();
+      const { currentUser } = auth;
+      const userRef = ref(db, `users/${currentUser.uid}`);
+
+      try {
+        const mainStore = useMainStore();
+        const snapshot = await get(userRef);
+        const userData = snapshot.val();
+        const currentFavorites = userData?.favoriteRooms || [];
+
+        let newFavorites;
+        if (currentFavorites.includes(roomId)) {
+          newFavorites = currentFavorites.filter((currentRoomId) => roomId !== currentRoomId);
+          mainStore.setSnackbar({
+            type: 'success',
+            msg: 'Removed from favorites successfully',
+          });
+        } else {
+          mainStore.setSnackbar({
+            type: 'success',
+            msg: 'Added to favorites successfully',
+          });
+          newFavorites = [...currentFavorites, roomId];
+        }
+
+        await update(userRef, { favoriteRooms: newFavorites });
+
+        // Update local state
+        this.currentUser.favoriteRooms = newFavorites;
+      } catch (error) {
+        console.error('Error updating favorites:', error);
+      }
+    },
+    async toggleBlockUser(targetUserId) {
+      const db = getDatabase();
+      const mainStore = useMainStore();
+
+      try {
+        if (this.currentUser.blocked?.[targetUserId]) {
+          // UNBLOCK: remove entries
+          await update(ref(db), {
+            [`users/${this.currentUser.userId}/blocked/${targetUserId}`]: null,
+            [`users/${targetUserId}/blockedBy/${this.currentUser.userId}`]: null,
+          });
+
+          mainStore.setSnackbar({
+            type: 'success',
+            msg: 'User unblocked successfully',
+          });
+        } else {
+          // BLOCK: add entries
+          await update(ref(db), {
+            [`users/${this.currentUser.userId}/blocked/${targetUserId}`]: true,
+            [`users/${targetUserId}/blockedBy/${this.currentUser.userId}`]: true,
+          });
+
+          mainStore.setSnackbar({
+            type: 'warning',
+            msg: 'User has been blocked',
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error in toggleBlockUser:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: 'Something went wrong. Please try again',
+        });
+      }
+    },
     async userSignOut() {
       const auth = getAuth();
       const db = getDatabase();
@@ -55,7 +198,8 @@ const useUserStore = defineStore('user', {
 
       if (currentUser) {
         const userRef = ref(db, `users/${currentUser.uid}`);
-        await update(userRef, { onlineState: false, status: 'offline' });
+
+        // await update(userRef, { onlineState: false, status: 'offline' });
 
         if (this.currentUser.unverified) {
           await update(ref(db, `users/${this.currentUser.unverified}`), { [this.currentUser.unverified]: null });
@@ -64,7 +208,12 @@ const useUserStore = defineStore('user', {
           off(ref(db, `users/${this.usersSwitched.verifiedUser}`));
         }
 
-        await update(userRef, { unverified: null });
+        await update(userRef, {
+          unverified: null,
+          position: null,
+          onlineState: false,
+          status: 'offline',
+        });
         await signOut(auth);
         router.push({ name: 'rooms' });
         this.setUserSignedOut();
@@ -76,14 +225,7 @@ const useUserStore = defineStore('user', {
       const db = getDatabase();
 
       onAuthStateChanged(auth, async (user) => {
-        console.log('🔍 onAuthStateChanged triggered:', {
-          user,
-          uid: user?.uid,
-          isAnonymous: user?.isAnonymous,
-          email: user?.email,
-          displayName: user?.displayName,
-          photoURL: user?.photoURL,
-        });
+        console.log('🔍 onAuthStateChanged triggered', user);
 
         if (user) {
           const userRef = ref(db, `users/${user.uid}`);
@@ -91,25 +233,26 @@ const useUserStore = defineStore('user', {
           if (user.isAnonymous) {
             const uidSnippet = user.uid.substring(0, 4);
             const nickname = `anon_${uidSnippet}`;
-            const initialUser = {
-              nickname,
-              avatar: '',
-              age: 0,
-              miniAvatar: '',
-              level: 'L1',
-              userId: user.uid,
-              onlineState: true,
-              status: 'online',
-              isAnonymous: true,
-            };
-            await set(userRef, initialUser);
+            this.initialUser.nickname = nickname;
+            await set(userRef, this.initialUser);
           } else {
-            // For verified users, just update online status
-            await update(userRef, {
+            // For verified users, update online status and ensure ownedRooms exists
+            const userSnapshot = await get(userRef);
+            const existingUser = userSnapshot.val();
+
+            const updates = {
               onlineState: true,
               status: 'online',
               isAnonymous: false,
-            });
+              // personalAvatar: user.providerData[0].photoURL || '',
+            };
+
+            // Migration: Add ownedRooms array if it doesn't exist
+            if (!existingUser?.ownedRooms) {
+              updates.ownedRooms = [];
+            }
+
+            await update(userRef, updates);
           }
 
           onDisconnect(userRef).update({
@@ -120,6 +263,8 @@ const useUserStore = defineStore('user', {
           onValue(userRef, (snapshot) => {
             const userData = snapshot.val();
             this.setCurrentUser({ data: userData, userId: user.uid });
+            this.setupPrivateMessageListener();
+            this.initBlockListeners(user.uid);
           });
         } else {
           this.loginAnonymously();
@@ -152,7 +297,6 @@ const useUserStore = defineStore('user', {
       this.setUserData({ ...userDataTemp, userId });
 
       const userPosition = ref(db, `users/${userId}/position/`);
-      const privateMessage = ref(db, `users/${this.currentUser.userId}/privateMessage/requestedBy`);
       const userAvatar = ref(db, `users/${userId}/avatar`);
       const userMiniAvatar = ref(db, `users/${userId}/miniAvatar`);
       const userSwitched = ref(db, `users/${userId}/unverified`);
@@ -170,10 +314,6 @@ const useUserStore = defineStore('user', {
         this.setUserPosition({ position: snapPosition.val(), userId });
       });
 
-      onValue(privateMessage, (snapPrivate) => {
-        this.privateRequested({ requestedBy: this.userData[snapPrivate.val()], userId: snapPrivate.val() });
-      });
-
       onValue(userSwitched, (snapUnverified) => {
         if (snapUnverified.val()) this.setUserUpgradeSuccess({ userId: snapUnverified.val() });
       });
@@ -183,6 +323,16 @@ const useUserStore = defineStore('user', {
       });
 
       return { ...userDataTemp, userId };
+    },
+
+    setupPrivateMessageListener() {
+      const db = getDatabase();
+      const privateMessage = ref(db, `users/${this.currentUser.userId}/privateMessage/requestedBy`);
+      onValue(privateMessage, (snapPrivate) => {
+        if (snapPrivate.val()) {
+          this.privateRequested({ requestedBy: this.userData[snapPrivate.val()], userId: snapPrivate.val() });
+        }
+      });
     },
 
     setEmailAction(payload) {
@@ -199,7 +349,6 @@ const useUserStore = defineStore('user', {
       } = data;
       const auth = getAuth();
       const db = getDatabase();
-      const mainStore = useMainStore();
 
       try {
         const credentials = await createUserWithEmailAndPassword(auth, this.email, this.password);
@@ -208,8 +357,10 @@ const useUserStore = defineStore('user', {
           avatar,
           age,
           miniAvatar,
+          favoriteRooms: [],
+          ownedRooms: [],
         });
-
+        const mainStore = useMainStore();
         mainStore.setSnackbar({
           type: 'success',
           msg: `Created user ${nickname} successfully`,
@@ -219,6 +370,7 @@ const useUserStore = defineStore('user', {
           nickname, avatar, age, userId: credentials.user.uid,
         });
       } catch (error) {
+        const mainStore = useMainStore();
         mainStore.setSnackbar({
           type: 'error',
           msg: `${error}`,
@@ -230,7 +382,6 @@ const useUserStore = defineStore('user', {
       const auth = getAuth();
       const db = getDatabase();
       const mainStore = useMainStore();
-
       try {
         const credentials = await signInWithEmailAndPassword(auth, this.email, this.password);
 
@@ -264,7 +415,7 @@ const useUserStore = defineStore('user', {
 
         await set(ref(db, `users/${currentUser.userId}/avatar/`), url);
         const { roomId } = router.currentRoute.value.params;
-        const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}_head.png`);
+        const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}.png`);
         const miniavatarRefUrl = await getDownloadURL(miniAvatarRef);
         await set(ref(db, `users/${currentUser.userId}/miniAvatar/`), miniavatarRefUrl);
 
@@ -298,11 +449,18 @@ const useUserStore = defineStore('user', {
     async updateUserNickName(nickName) {
       const db = getDatabase();
       await update(ref(db, `users/${this.currentUser.userId}`), { nickname: nickName });
+      // Reset flags after nickname update - this will allow dialog to close properly
+      this.signingInUpgraded = false;
+      this.showWelcomeForm = false;
     },
 
     async setFirebaseUiInstance(roomId) {
       const auth = getAuth();
       const anonymousUser = auth.currentUser;
+
+      // Reset the signingInUpgraded state to ensure watchers can detect the change
+      console.log('🔄 Resetting signingInUpgraded to false before authentication');
+      this.signingInUpgraded = false;
 
       const ui = window.firebaseui.auth.AuthUI.getInstance()
         || new window.firebaseui.auth.AuthUI(window.firebase.auth());
@@ -324,10 +482,11 @@ const useUserStore = defineStore('user', {
           if (data.userId !== anonymousUser.uid) {
             throw new Error('Data does not belong to the anonymous user.');
           }
-
+          console.log('User Data', user);
           // Update the user data with the new user ID
           data.isAnonymous = false;
           data.userId = user.uid;
+          data.personalAvatar = user.providerData[0].photoURL || '';
 
           // Transfer the user data to the new user ID
           if (anonymousUser.uid !== user.uid) {
@@ -344,7 +503,6 @@ const useUserStore = defineStore('user', {
                 });
               }
             } catch (roomError) {
-              console.warn('⚠️ Room data transfer failed (continuing anyway):', roomError.message);
               // Continue with the upgrade even if room transfer fails
             }
 
@@ -356,7 +514,7 @@ const useUserStore = defineStore('user', {
             try {
               await set(ref(db, `users/${anonymousUser.uid}`), null);
             } catch (cleanupError) {
-              console.warn('⚠️ Anonymous database cleanup failed (continuing anyway):', cleanupError.message);
+              // Continue even if cleanup fails
             }
           } else {
             // Same UID, just update the data
@@ -372,10 +530,11 @@ const useUserStore = defineStore('user', {
         const uiConfig = {
           callbacks: {
             signInSuccessWithAuthResult: (authResult) => {
+              console.log('🚀 signInSuccessWithAuthResult called:', { authResult, anonymousUser });
               const { user } = authResult;
-              console.log('✅ Successfully upgraded anonymous user:', user);
               // Call handleUpgrade without awaiting to ensure we return false immediately
               handleUpgrade(user).then(() => {
+                console.log('🎯 handleUpgrade completed, calling userUpgraded');
                 if (authResult && !authResult.user.isAnonymous) {
                   this.userUpgraded({
                     verifiedUser: authResult.user.uid,
@@ -394,13 +553,14 @@ const useUserStore = defineStore('user', {
               if (loader) loader.style.display = 'none';
             },
             signInFailure: async (error) => {
-              console.error('Error during sign-in failure handling:', error);
+              console.log('⚠️ signInFailure called:', error);
               if (
                 error.code !== 'firebaseui/anonymous-upgrade-merge-conflict'
               ) {
                 return Promise.resolve();
               }
 
+              console.log('🔄 Handling anonymous upgrade merge conflict');
               const cred = error.credential;
               try {
                 const userCredential = await signInWithCredential(auth, cred);
@@ -408,6 +568,7 @@ const useUserStore = defineStore('user', {
 
                 // Call handleUpgrade with the user
                 await handleUpgrade(user);
+                console.log('🎯 Calling userUpgraded from signInFailure');
                 this.userUpgraded({
                   verifiedUser: user.uid,
                   unverifiedUser: anonymousUser.uid,
@@ -416,7 +577,7 @@ const useUserStore = defineStore('user', {
 
                 return Promise.resolve();
               } catch (err) {
-                console.error('Error during sign-in failure handling:', err);
+                console.error('Error in signInFailure:', err);
                 return Promise.reject(err);
               }
             },
@@ -424,10 +585,17 @@ const useUserStore = defineStore('user', {
           signInFlow: 'popup',
           signInOptions: [
             window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            // {
+            //   provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
+            //   requireDisplayName: false,
+            //   signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD,
+            // },
+            new window.firebase.auth.OAuthProvider('yahoo.com').providerId,
+            window.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
             {
               provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
-              requireDisplayName: false,
-              signInMethod: 'password',
+              signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD,
+              forceSameDevice: false, // true = must click the link on the same device
             },
           ],
           credentialHelper: window.firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
@@ -439,242 +607,6 @@ const useUserStore = defineStore('user', {
         ui.start('#firebaseui-auth-container', uiConfig);
       } catch (error) {
         console.error('Error starting Firebase UI:', error);
-      }
-    },
-
-    async handleUserUpgrade(user, anonymousUser, roomId) {
-      const db = getDatabase();
-      let data = null;
-
-      try {
-        // load anonymous data
-        const snapshot = await get(ref(db, `users/${anonymousUser.uid}`));
-        data = snapshot.val();
-
-        if (!data) {
-          console.warn('No anonymous user data found, creating basic profile');
-          data = {
-            nickname: `user_${user.uid.substring(0, 4)}`,
-            avatar: '',
-            age: 0,
-            miniAvatar: '',
-            level: 'L1',
-            onlineState: true,
-            status: 'online',
-          };
-        }
-
-        // Preserve all anonymous user data and update for verified user
-        const upgradeData = {
-          ...data,
-          isAnonymous: false,
-          userId: user.uid,
-          email: user.email || '',
-          displayName: user.displayName || data.nickname,
-          onlineState: true,
-          status: 'online',
-        };
-
-        if (anonymousUser.uid !== user.uid) {
-          upgradeData.unverified = anonymousUser.uid;
-
-          // Save upgraded user data BEFORE deleting anonymous data
-          await set(ref(db, `users/${user.uid}`), upgradeData);
-
-          // transfer room data if exists
-          if (this.currentUser?.rooms?.[roomId]) {
-            const { roomUsersKey } = this.currentUser.rooms[roomId];
-
-            await set(
-              ref(db, `rooms/${roomId}/users/${roomUsersKey}/userId`),
-              user.uid,
-            );
-
-            await update(
-              ref(db, `rooms/${roomId}/usersUpgraded`),
-              { verifiedUser: user.uid, unverifiedUser: anonymousUser.uid },
-            );
-          }
-
-          // delete anon data AFTER copying
-          await set(ref(db, `users/${anonymousUser.uid}`), null);
-
-          // delete anon account
-          try {
-            await anonymousUser.delete();
-          } catch (deleteError) {
-            console.warn('Could not delete anonymous account:', deleteError);
-          }
-        } else {
-          // Same user, just update the existing data
-          await set(ref(db, `users/${user.uid}`), upgradeData);
-        }
-
-        data = upgradeData;
-      } catch (error) {
-        console.error('Error during user upgrade:', error);
-        throw error;
-      }
-
-      return data;
-    },
-
-    async handlePotentialRedirectUpgrade(verifiedUser) {
-      const db = getDatabase();
-
-      // Try to find anonymous user data that might need upgrading
-      // This is a simplified approach - in a real app you might store this info differently
-      try {
-        const redirectResult = await window.firebase.auth().getRedirectResult();
-        if (redirectResult.user && redirectResult.additionalUserInfo?.isNewUser === false) {
-          console.log('🔄 User has existing data, processing upgrade...');
-
-          // Check for any anonymous users that might belong to this session
-          // For now, create a basic profile if none exists
-          const userRef = ref(db, `users/${verifiedUser.uid}`);
-          const existingData = await get(userRef);
-
-          if (!existingData.val()) {
-            // Create verified user profile
-            const verifiedProfile = {
-              nickname: verifiedUser.displayName || `user_${verifiedUser.uid.substring(0, 4)}`,
-              avatar: verifiedUser.photoURL || '',
-              age: 0,
-              miniAvatar: '',
-              level: 'L1',
-              userId: verifiedUser.uid,
-              email: verifiedUser.email || '',
-              displayName: verifiedUser.displayName || '',
-              onlineState: true,
-              status: 'online',
-              isAnonymous: false,
-            };
-
-            await set(userRef, verifiedProfile);
-
-            // Trigger the upgrade flow
-            this.setCurrentUser({
-              data: verifiedProfile,
-              userId: verifiedUser.uid,
-            });
-
-            this.userUpgraded({
-              verifiedUser: verifiedUser.uid,
-              unverifiedUser: null, // No anonymous user to transfer from
-              isCurrent: true,
-            });
-
-            console.log('✅ Created new verified user profile');
-          }
-        }
-      } catch (error) {
-        console.log('❌ Error in handlePotentialRedirectUpgrade:', error);
-      }
-    },
-
-    async handleManualUpgrade(anonymousUser, upgradeInfo) {
-      const auth = getAuth();
-      const db = getDatabase();
-
-      console.log('🔗 Starting manual anonymous user upgrade');
-
-      try {
-        // Get the anonymous user data before linking
-        const anonymousUserRef = ref(db, `users/${anonymousUser.uid}`);
-        const anonymousDataSnapshot = await get(anonymousUserRef);
-        const anonymousData = anonymousDataSnapshot.val();
-
-        console.log('📦 Anonymous user data to preserve:', anonymousData);
-
-        // Link the anonymous account with the Google credential
-        const linkedUser = await linkWithCredential(anonymousUser, upgradeInfo.credential);
-
-        console.log('✅ Successfully linked anonymous user with Google:', linkedUser.user);
-
-        // Update the user data with verified information
-        const upgradeData = {
-          ...anonymousData,
-          isAnonymous: false,
-          userId: linkedUser.user.uid,
-          email: linkedUser.user.email || '',
-          displayName: linkedUser.user.displayName || anonymousData.nickname,
-          photoURL: linkedUser.user.photoURL || '',
-          onlineState: true,
-          status: 'online',
-        };
-
-        // Update the database
-        await set(anonymousUserRef, upgradeData);
-
-        // Update the store state
-        this.setCurrentUser({
-          data: upgradeData,
-          userId: linkedUser.user.uid,
-        });
-
-        // Trigger the upgrade notification
-        this.userUpgraded({
-          verifiedUser: linkedUser.user.uid,
-          unverifiedUser: anonymousUser.uid, // Same UID since we linked
-          isCurrent: true,
-        });
-
-        console.log('🎉 Manual upgrade completed successfully');
-      } catch (error) {
-        console.error('❌ Error during manual upgrade:', error);
-
-        // If linking fails, we might need to handle account exists error
-        if (error.code === 'auth/credential-already-in-use') {
-          console.log('🔄 Account exists, trying to sign in and merge data');
-
-          try {
-            // Get the existing user data first
-            const anonymousUserRef = ref(db, `users/${anonymousUser.uid}`);
-            const anonymousDataSnapshot = await get(anonymousUserRef);
-            const anonymousData = anonymousDataSnapshot.val();
-
-            // Sign in with the credential
-            const existingUser = await signInWithCredential(auth, error.credential);
-
-            // Merge the anonymous data into the existing account
-            const existingUserRef = ref(db, `users/${existingUser.user.uid}`);
-            const existingDataSnapshot = await get(existingUserRef);
-            const existingData = existingDataSnapshot.val() || {};
-
-            const mergedData = {
-              ...existingData,
-              ...anonymousData, // Anonymous data takes precedence for avatar, etc.
-              isAnonymous: false,
-              userId: existingUser.user.uid,
-              email: existingUser.user.email || '',
-              displayName: existingUser.user.displayName || anonymousData.nickname,
-              photoURL: existingUser.user.photoURL || '',
-              onlineState: true,
-              status: 'online',
-            };
-
-            await set(existingUserRef, mergedData);
-
-            // Delete the anonymous user data
-            await set(anonymousUserRef, null);
-
-            // Update store state
-            this.setCurrentUser({
-              data: mergedData,
-              userId: existingUser.user.uid,
-            });
-
-            this.userUpgraded({
-              verifiedUser: existingUser.user.uid,
-              unverifiedUser: anonymousUser.uid,
-              isCurrent: true,
-            });
-
-            console.log('🎉 Account merge completed successfully');
-          } catch (mergeError) {
-            console.error('❌ Error during account merge:', mergeError);
-          }
-        }
       }
     },
 
@@ -709,6 +641,8 @@ const useUserStore = defineStore('user', {
     },
 
     userUpgraded({ verifiedUser, unverifiedUser, isCurrent }) {
+      console.log('🔄 userUpgraded called:', { verifiedUser, unverifiedUser, isCurrent });
+
       if (isCurrent) {
         this.currentUser.isAnonymous = false;
         this.currentUser.userId = verifiedUser;
@@ -737,7 +671,16 @@ const useUserStore = defineStore('user', {
       }
 
       this.usersSwitched = { verifiedUser, unverifiedUser };
-      this.signingInUpgraded = true;
+      // Handle different upgrade types
+      if (isCurrent) {
+        this.signingInUpgraded = true;
+        // Add small delay to ensure everything is ready before showing welcome form
+        setTimeout(() => {
+          this.showWelcomeForm = true;
+        }, 100);
+      } else {
+        this.otherUserUpgraded = { verifiedUser, unverifiedUser, timestamp: Date.now() };
+      }
     },
 
     setUserNickname({ nickname, userId }) {
@@ -747,9 +690,14 @@ const useUserStore = defineStore('user', {
 
     setUserSignedOut() {
       this.signingInUpgraded = false;
-      this.userUpgraded = false;
+      this.isUserUpgraded = false;
       this.currentUser.unverified = null;
       this.usersSwitched = null;
+      this.otherUserUpgraded = null;
+      this.showWelcomeForm = false;
+      this.avatarUpdated = {};
+      this.currentUser.rooms = {};
+      this.currentUser.position = {};
     },
 
     setUserMiniAvatarSuccess({ userId, miniAvatarUrl }) {
@@ -769,6 +717,13 @@ const useUserStore = defineStore('user', {
       if (this.userData[this.currentUser.userId]) {
         this.userData[this.currentUser.userId].avatar = avatar;
         this.userData[this.currentUser.userId].miniAvatar = miniAvatar;
+      }
+    },
+    setCurrentUserPersonalAvatar({ personalAvatar }) {
+      this.currentUser.personalAvatar = personalAvatar;
+      // Also update userData to ensure consistency
+      if (this.userData[this.currentUser.userId]) {
+        this.userData[this.currentUser.userId].personalAvatar = personalAvatar;
       }
     },
 

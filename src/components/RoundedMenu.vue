@@ -1,5 +1,5 @@
 <template>
-  <div style="text-align: center; height: 200; z-index: 1000;">
+  <div class="rounded-menu" style="text-align: center; height: 200; z-index: 1000; position: relative;">
     <v-btn height="200" class="mx-2 menu-activator" dark @click.prevent.stop="toggleMenu"
       v-touch="{ end: () => toggleMenuTouch }">
     </v-btn>
@@ -11,20 +11,20 @@
       </div>
       <div class="icon-caption" style="opacity: 0.3;">Buffer</div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+    <v-btn :disabled="isBlockedBy" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
       <div>
-        <v-icon class="manga-icon"> mdi-account-plus </v-icon>
+        <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-account-plus </v-icon>
       </div>
-      <div class="icon-caption">Add friend</div>
+      <div :disabled="isBlockedBy" class="icon-caption">Add friend</div>
     </v-btn>
-    <v-btn class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
-      @click.prevent.stop="emit('privateMessage')" @touchstart.native.prevent.stop="emit('privateMessage')">
+    <v-btn :disabled="isBlockedBy" class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
+      @click.prevent.stop="handleEmit('privateMessage')" @touchstart.native.prevent.stop="handleEmit('privateMessage')">
 
       <div>
-        <v-icon class="manga-icon"> mdi-forum-outline </v-icon>
+        <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-forum-outline </v-icon>
       </div>
-      <div class="icon-caption">Talk privately</div>
+      <div :disabled="isBlockedBy" class="icon-caption">Talk privately</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
       @touchstart.native.prevent="toggleMenu">
@@ -34,23 +34,25 @@
       </div>
       <div class="icon-caption">Info</div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="handleEmit('blockUser')" @touchstart.native.prevent="handleEmit('blockUser')">
 
       <div>
-        <v-icon class="manga-icon"> mdi-volume-off </v-icon>
+
+        <v-icon v-if="isBlocked" class="manga-icon"> mdi-account-lock-open </v-icon>
+        <v-icon v-else class="manga-icon"> mdi-account-lock </v-icon>
       </div>
-      <div class="icon-caption"> Mute</div>
+      <div class="icon-caption"> {{ isBlocked ? 'Unblock' : 'Block' }} </div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
+    <v-btn disabled :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
       <div>
-        <v-icon class="manga-icon"> mdi-car-emergency </v-icon>
+        <v-icon disabled class="manga-icon"> mdi-car-emergency </v-icon>
       </div>
-      <div class="icon-caption">Report</div>
+      <div disabled class="icon-caption">Report</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="emit('showUserMessages')" @touchstart.native.prevent="emit('showUserMessages')">
+      @click.prevent.stop="handleEmit('showUserMessages')" @touchstart.native.prevent="handleEmit('showUserMessages')">
 
       <div>
         <v-icon class="manga-icon"> mdi-timeline-text-outline </v-icon>
@@ -74,231 +76,77 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import useUserStore from '@/stores/user';
-import useMessagesStore from '@/stores/messages';
+import {
+  ref, computed, nextTick, onMounted,
+} from 'vue';
 
-export default {
-  name: 'RoundedMenu',
-  setup() {
-    const userStore = useUserStore();
-    const messagesStore = useMessagesStore();
+const props = defineProps({
+  userId: String,
+});
+const userStore = useUserStore();
+// emits
+const emit = defineEmits(['showUserMessages', 'privateMessage']);
+const hideMenu = ref(true);
+const movingTouch = ref(false);
 
-    return {
-      userStore,
-      messagesStore,
-    };
-  },
-  props: {},
-  data: () => ({
-    message: '',
-    hideMenu: true,
-    movingTouch: false,
-  }),
-  mounted() { },
-  computed: {
-    getCurrentUser() {
-      return this.userStore.getCurrentUser;
-    },
-  },
-  methods: {
-    toggleMenu() {
-      this.$nextTick(() => {
-        this.hideMenu = !this.hideMenu;
-      });
-    },
-    toggleMenuTouch() {
-      this.$nextTick(() => {
-        if (this.movingTouch === false) {
-          this.hideMenu = !this.hideMenu;
-        }
-      });
-    },
-    emit(item) {
-      switch (item) {
-        case 'privateMessage':
-          if (this.movingTouch === false) {
-            this.toggleMenu();
-            this.$emit('privateMessage');
-          }
-          break;
-        case 'showUserMessages':
-          if (this.movingTouch === false) {
-            this.toggleMenu();
-            this.$emit('showUserMessages');
-          }
-          break;
+const getCurrentUser = computed(() => userStore.getCurrentUser);
+const isBlocked = computed(() => userStore.isBlocked(props.userId));
+const isBlockedBy = computed(() => userStore.isBlockedBy(props.userId));
 
-        default:
-          break;
+onMounted(() => {
+  console.log('RoundedMenu mounted props', props);
+});
+
+const toggleMenu = () => {
+  nextTick(() => {
+    hideMenu.value = !hideMenu.value;
+  });
+};
+
+const toggleMenuTouch = () => {
+  nextTick(() => {
+    if (movingTouch.value === false) {
+      hideMenu.value = !hideMenu.value;
+    }
+  });
+};
+
+const handleEmit = (item) => {
+  switch (item) {
+    case 'privateMessage':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        // emit event to parent
+        emit('privateMessage');
       }
-    },
-  },
+      break;
+    case 'showUserMessages':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        // emit event to parent
+        emit('showUserMessages');
+      }
+      break;
+    case 'blockUser':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        // emit event to parent
+        emit('blockUser');
+      }
+      break;
+
+    default:
+      break;
+  }
 };
 </script>
-<style lang="scss">
-.menu-item {
-  top: 65px;
-  left: 15px;
-  margin-left: -40px;
-  position: absolute;
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
-  -webkit-transition: -webkit-transform ease-out 200ms;
-  transition: -webkit-transform ease-out 200ms;
-  transition: opacity transform ease-out 200ms;
-  transition: opacity transform ease-out 200ms, -webkit-transform ease-out 200ms;
-}
+<style lang="scss" scoped>
+@import '@/styles/rounded-menu.scss';
 
-.menu-item:nth-child(2) {
-  -webkit-transition-duration: 180ms;
-  transition-duration: 180ms;
-  opacity: 0;
-}
-
-.menu-item:nth-child(3) {
-  -webkit-transition-duration: 180ms;
-  transition-duration: 180ms;
-  opacity: 0;
-}
-
-.menu-item:nth-child(4) {
-  -webkit-transition-duration: 180ms;
-  transition-duration: 180ms;
-  opacity: 0;
-}
-
-.menu-item:nth-child(5) {
-  -webkit-transition-duration: 180ms;
-  transition-duration: 180ms;
-  opacity: 0;
-}
-
-.menu-item:nth-child(6) {
-  -webkit-transition-duration: 180ms;
-  transition-duration: 180ms;
-  opacity: 0;
-}
-
-.menu-item:nth-child(7) {
-  -webkit-transition-duration: 180ms;
-  transition-duration: 180ms;
-  opacity: 0;
-}
-
-// .menu-item {
-//   -webkit-transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-//   transition-timing-function: cubic-bezier(0.935, 0, 0.34, 1.33);
-//   position: absolute;
-//   top: 50px;
-//   left: -5px;
-//   z-index: 1000;
-//   border: 2px solid white;
-// }
+// RoundedMenu specific override for buffer item
 .nothidden:nth-child(2) {
-  /* Buffer item positioned away from main menu area */
-  transition-duration: 180ms;
-  -webkit-transition-duration: 180ms;
-  -webkit-transform: translate3d(0.08361px, -140px, 0);
-  transform: translate3d(0.08361px, -140px, 0);
-  opacity: 0.3;
-}
-
-.nothidden:nth-child(3) {
-  transition-duration: 180ms;
-  -webkit-transition-duration: 180ms;
-  -webkit-transform: translate3d(0.08361px, -104.99997px, 0);
-  transform: translate3d(0.08361px, -104.99997px, 0);
-  opacity: 1;
-}
-
-.nothidden:nth-child(4) {
-  transition-duration: 280ms;
-  -webkit-transition-duration: 280ms;
-  -webkit-transform: translate3d(90.9466px, -52.47586px, 0);
-  transform: translate3d(90.9466px, -52.47586px, 0);
-  opacity: 1;
-}
-
-.nothidden:nth-child(5) {
-  transition-duration: 380ms;
-  -webkit-transition-duration: 380ms;
-  -webkit-transform: translate3d(90.9466px, 52.47586px, 0);
-  transform: translate3d(90.9466px, 52.47586px, 0);
-  opacity: 1;
-}
-
-.nothidden:nth-child(6) {
-  transition-duration: 480ms;
-  -webkit-transition-duration: 480ms;
-  -webkit-transform: translate3d(0.08361px, 104.99997px, 0);
-  transform: translate3d(0.08361px, 104.99997px, 0);
-  opacity: 1;
-}
-
-.nothidden:nth-child(7) {
-  transition-duration: 580ms;
-  -webkit-transition-duration: 580ms;
-  -webkit-transform: translate3d(-90.86291px, 52.62064px, 0);
-  transform: translate3d(-90.86291px, 52.62064px, 0);
-  opacity: 1;
-}
-
-.nothidden:nth-child(8) {
-  transition-duration: 680ms;
-  -webkit-transition-duration: 680ms;
-  -webkit-transform: translate3d(-91.03006px, -52.33095px, 0);
-  transform: translate3d(-91.03006px, -52.33095px, 0);
-  opacity: 1;
-}
-
-.menu-activator {
-  opacity: 0;
-  position: absolute;
-  top: 0;
-  height: 200px;
-  left: 0;
-  z-index: 1000;
-  -webkit-transform: translate3d(0, 0, 0);
-}
-
-.icon-caption {
-  position: absolute;
-  text-shadow: 1px 1px 2px black;
-  top: 35px;
-  font-weight: bold;
-  font-size: 0.8rem;
-  color: #ffffff;
-}
-
-.oculted {
-  opacity: 0;
-  height: 200px !important;
-  z-index: 1000;
-  top: 0;
-}
-
-/* Circular Icon Button Styling */
-.v-btn.menu-item {
-  background: var(--button-background) !important;
-  border: var(--border-width) solid var(--button-border) !important;
-  border-radius: 50% !important;
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px !important;
-
-  .manga-icon {
-    color: var(--button-text) !important;
-    font-size: 18px !important;
-  }
-
-  &:hover {
-    background: var(--button-background-hover) !important;
-    border: var(--border-width-hover) solid var(--button-border) !important;
-
-    .manga-icon {
-      color: var(--button-text) !important;
-    }
-  }
+  opacity: 0.3; // Different from RoundedMenuCurrent
 }
 </style>

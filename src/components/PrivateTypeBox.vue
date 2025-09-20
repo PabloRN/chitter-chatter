@@ -1,92 +1,81 @@
 <template>
   <v-expand-transition>
     <v-row no-gutters class="pa-1 typebox mt-3">
-      <v-col class="" cols="9"
-        style="background: rgba(255,255,255, 1);border-radius: 3px 0px 0px 3px;line-height: 1.3;">
-        <v-textarea @keypress.enter.prevent="enterPress" @input="checkValue" class="text-area-input text-body-2"
-          no-resize hide-details rows="1" row-height="2" max="10" :maxlength="61" counter ref="refDialog"
-          :value="message" v-model="message" outlined>
-        </v-textarea>
+      <v-col cols="9" style="background: rgba(255,255,255, 1);border-radius: 3px 0px 0px 3px;line-height: 1.3;">
+
+        <v-textarea ref="refDialog" v-model="message" @keypress.enter.prevent="enterPress"
+          @input="checkValue($event.target.value)" class="text-area-input text-body-2" no-resize hide-details rows="1"
+          row-height="2" max="10" :maxlength="500" counter outlined />
       </v-col>
+
       <v-spacer></v-spacer>
+
       <v-col cols="3" class="pl-1" style="background: rgba(255,255,255,1);border-radius: 0px 3px 3px 0px;">
-        <v-btn class="grey lighten-5" :disabled="message.length === 0" @click="talk" @touchstart.native.prevent="talk"
-          block elevation="2" large x-small style="border-radius: 0px 3px 3px 0px;height: 98.5%;">
-          <span class="text-caption font-weight-medium" style="color: #616161;
-text-shadow: 1px 1px 1px rgba(255,255,255,1);">Talk</span></v-btn>
+        <v-btn class="grey lighten-5" :disabled="message.length === 0" @click="talk" @touchstart.prevent="talk" block
+          elevation="2" large x-small style="border-radius: 0px 3px 3px 0px;height: 98.5%;">
+          <span class="text-caption font-weight-medium"
+            style="color: #616161; text-shadow: 1px 1px 1px rgba(255,255,255,1);">
+            Talk
+          </span>
+        </v-btn>
       </v-col>
     </v-row>
   </v-expand-transition>
 </template>
 
-<script>
+<script setup>
+import { ref, nextTick } from 'vue';
 import useUserStore from '@/stores/user';
 import useMessagesStore from '@/stores/messages';
 
-export default {
-  name: 'PrivateTypeBox',
-  setup() {
-    const userStore = useUserStore();
-    const messagesStore = useMessagesStore();
+const userStore = useUserStore();
+const messagesStore = useMessagesStore();
 
-    return {
-      userStore,
-      messagesStore,
-    };
-  },
-  props: {
+// State
+const message = ref('');
+const hideKeyboard = ref(true);
+const refDialog = ref(null);
 
-  },
-  data: () => ({
-    message: '',
-    hideKeyboard: true,
-  }),
-  mounted() {
+const { getCurrentUser } = userStore;
 
-  },
-  computed: {
-    getCurrentUser() {
-      return this.userStore.getCurrentUser;
-    },
-  },
-  methods: {
-    enterPress(e) {
-      if (e.type === 'keypress' && e.key === 'Enter') {
-        this.talk();
-      }
-    },
-    talk() {
-      this.messagesStore.sendPrivateMessage(
-        {
-          message: this.message,
-          userId: this.getCurrentUser.userId,
-        },
-      );
-      this.message = '';
-    },
-    toggleKeyBoard(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      this.$emit('keyboard-clicked');
-      this.hideKeyboard = !this.hideKeyboard;
-      this.$nextTick(() => {
-        if (this.$refs.refDialog) {
-          this.$refs.refDialog.focus();
-        }
-      });
-    },
-    checkValue(value) {
-      if (value) {
-        this.dialog = value.substring(0, 61);
-      }
+// Methods
+function enterPress(e) {
+  if (e.type === 'keypress' && e.key === 'Enter') {
+    talk();
+  }
+}
 
-      // value = value.substring(0, value.length - 1);
-    },
-    // typing(e) {
-    // },
-  },
-};
+function talk() {
+  if (!message.value.trim()) return;
+  messagesStore.sendPrivateMessage({
+    message: message.value,
+    userId: getCurrentUser.userId,
+  });
+  message.value = '';
+}
+
+function toggleKeyBoard(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  hideKeyboard.value = !hideKeyboard.value;
+
+  nextTick(() => {
+    if (refDialog.value) {
+      refDialog.value.focus();
+    }
+  });
+}
+
+function checkValue(value) {
+  if (value) {
+    console.log('value:', value);
+    message.value = value.substring(0, 500);
+  } else {
+    message.value = '';
+  }
+}
 </script>
+
 <style scoped lang="scss">
 .typebox {
   left: 0;

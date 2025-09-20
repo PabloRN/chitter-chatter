@@ -41,10 +41,10 @@
 import useUserStore from '@/stores/user';
 import useRoomsStore from '@/stores/rooms';
 import useMainStore from '@/stores/main';
-// import {
-//   ValidationObserver,
-//   ValidationProvider,
-// } from 'vee-validate';
+import {
+  ValidationObserver,
+  ValidationProvider,
+} from 'vee-validate';
 import PasswordConfirmed from '@/components/inputs/PasswordConfirmed';
 import Email from '@/components/inputs/Email';
 
@@ -52,9 +52,9 @@ export default {
 
   components: {
     Email,
-    // ValidationObserver,
+    ValidationObserver,
     PasswordConfirmed,
-    // ValidationProvider,
+    ValidationProvider,
   },
   setup() {
     const userStore = useUserStore();
