@@ -19,7 +19,7 @@ const routes = [
     component: Rooms,
   },
   {
-    path: '/__/auth/action',
+    path: '/acctmgmt/__/auth/action',
     name: 'auth-action',
     component: AuthAction,
   },
