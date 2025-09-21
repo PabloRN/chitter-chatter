@@ -35,7 +35,7 @@
           </v-row>
 
           <!-- Private Room Toggle -->
-          <v-switch v-model="formData.isPrivate" label="Private Room"
+          <v-switch v-model="formData.isPrivate" label="Private Room" color="primary"
             hint="Private rooms are only visible to invited users" persistent-hint class="mb-4" />
 
           <!-- Background Image Upload -->

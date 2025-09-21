@@ -15,38 +15,20 @@
       <div v-else-if="showPasswordReset" class="password-reset-form">
         <h2>Reset Your Password</h2>
         <p>Enter your new password below:</p>
-        
         <form @submit.prevent="completePasswordReset">
           <div class="form-group">
             <label for="newPassword">New Password:</label>
-            <input
-              id="newPassword"
-              v-model="newPassword"
-              type="password"
-              class="form-input"
-              placeholder="Enter new password"
-              required
-              minlength="6"
-            />
+            <input id="newPassword" v-model="newPassword" type="password" class="form-input"
+              placeholder="Enter new password" required minlength="6" />
           </div>
-          
           <div class="form-group">
             <label for="confirmPassword">Confirm Password:</label>
-            <input
-              id="confirmPassword"
-              v-model="confirmPassword"
-              type="password"
-              class="form-input"
-              placeholder="Confirm new password"
-              required
-              minlength="6"
-            />
+            <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-input"
+              placeholder="Confirm new password" required minlength="6" />
           </div>
-          
           <div v-if="error" class="error-text">
             {{ error }}
           </div>
-          
           <div class="form-actions">
             <button type="submit" class="btn btn-primary" :disabled="loading">
               {{ loading ? 'Updating...' : 'Update Password' }}
@@ -121,14 +103,11 @@ export default {
       try {
         // First verify the reset code is valid
         await verifyPasswordResetCode(auth, actionCode);
-        
         // Store the action code for later use
         resetActionCode.value = actionCode;
-        
         // Show password reset form instead of success message
         showPasswordReset.value = true;
         loading.value = false;
-        
         mainStore.setSnackbar({
           type: 'info',
           msg: 'Please enter your new password below.',
@@ -158,15 +137,12 @@ export default {
 
       const auth = getAuth();
       loading.value = true;
-      
       try {
         await confirmPasswordReset(auth, resetActionCode.value, newPassword.value);
-        
         success.value = true;
         showPasswordReset.value = false;
         successTitle.value = 'Password Reset Complete!';
         successMessage.value = 'Your password has been successfully updated. You can now sign in with your new password.';
-        
         mainStore.setSnackbar({
           type: 'success',
           msg: 'Password reset successfully! You can now sign in.',
@@ -188,9 +164,9 @@ export default {
     const handleEmailSignIn = async () => {
       const auth = getAuth();
       const url = window.location.href;
-
       try {
-        if (isSignInWithEmailLink(auth, url)) {
+        const isValidLink = isSignInWithEmailLink(auth, url);
+        if (isValidLink) {
           let email = window.localStorage.getItem('emailForSignIn');
 
           if (!email) {
@@ -315,8 +291,13 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error {
@@ -327,12 +308,16 @@ export default {
   color: #27ae60;
 }
 
-.error h2, .success h2 {
+.error h2,
+.success h2 {
   margin-bottom: 20px;
   font-size: 24px;
 }
 
-.error p, .success p, .loading p, .default p {
+.error p,
+.success p,
+.loading p,
+.default p {
   margin-bottom: 30px;
   font-size: 16px;
   line-height: 1.5;
@@ -371,7 +356,7 @@ export default {
   color: #333;
 }
 
-.password-reset-form > p {
+.password-reset-form>p {
   text-align: center;
   margin-bottom: 30px;
   color: #666;

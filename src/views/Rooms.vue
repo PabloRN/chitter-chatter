@@ -226,10 +226,9 @@ const favoriteRoomIds = computed(() => {
 const popularRoomIds = computed(() => {
   const rooms = getAllRooms.value;
   if (!rooms) return [];
-
   // Get sorted room IDs by popularity
   return Object.entries(rooms)
-    .filter(([id, room]) => (room.usersOnline || 0) > 0) // Only show rooms with active users
+    .filter(([id, room]) => (room.usersOnline || 0) > 0 && !room.isPrivate) // Only show rooms with active users
     .sort(([aId, aRoom], [bId, bRoom]) => (bRoom.usersOnline || 0) - (aRoom.usersOnline || 0))
     .slice(0, 10)
     .map(([id, room]) => id); // Return only the IDs
@@ -238,7 +237,8 @@ const popularRoomIds = computed(() => {
 const allRoomIds = computed(() => {
   const rooms = getAllRooms.value;
   if (!rooms) return [];
-  return Object.keys(rooms);
+  console.log('rooms', rooms);
+  return Object.entries(rooms).filter(([id, room]) => !room.isPrivate).map(([id, room]) => id);
 });
 
 // ✅ methods
