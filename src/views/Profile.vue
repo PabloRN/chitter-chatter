@@ -45,8 +45,10 @@
               <h1 v-if="!isEditing" class="user-name">
                 {{ getCurrentUser?.nickname || 'Anonymous User' }}
               </h1>
-              <v-text-field v-else v-model="editedUser.nickname" label="Display Name" class="edit-name-field" outlined
-                dense />
+              <v-text-field :disabled="nicknameCooldownMessage !== ''" v-else v-model="editedUser.nickname"
+                label="Display Name" class="edit-name-field" outlined dense
+                :hint="nicknameCooldownMessage || 'Choose wisely! Nickname can only be changed once a week'"
+                persistent-hint />
             </div>
 
             <div class="user-stats">
@@ -94,7 +96,7 @@
             <div class="info-row">
               <span class="info-label">Account Type:</span>
               <span class="info-value">
-                {{ getCurrentUser?.isAnonymous ? 'Guest' : 'Registered' }}
+                {{ getCurrentUser?.client ? 'Client' : 'Registered' }}
               </span>
             </div>
             <div class="info-row">
@@ -102,8 +104,8 @@
               <div v-if="!isEditing" class="info-value">
                 {{ getCurrentUser?.age || 'Not specified' }}
               </div>
-              <v-text-field v-else v-model="editedUser.age" label="Age" type="number" class="edit-field" outlined
-                dense />
+              <v-text-field :disabled="getCurrentUser?.age" v-else v-model="editedUser.age" label="Age" type="number"
+                class="edit-field" outlined dense hint="Age can only be set one time" persistent-hint />
             </div>
           </v-card-text>
         </v-card>
@@ -249,7 +251,29 @@ const getCurrentUser = computed(() => userStore.getCurrentUser);
 const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0);
 const joinedDate = computed(() => 'Dec 2024'); // TODO: fetch from user data
 const linkedProviders = computed(() => userStore.linkedProviders);
+const nicknameCooldownMessage = computed(() => {
+  console.log(getCurrentUser.value);
+  const updatedAt = getCurrentUser.value?.nickNameUpdatedAt;
+  if (!updatedAt) return ''; // never updated, no cooldown
 
+  const now = Date.now();
+  const cooldown = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+  const nextAllowed = updatedAt + cooldown;
+
+  if (now >= nextAllowed) return ''; // already allowed
+
+  const msRemaining = nextAllowed - now;
+  const days = Math.floor(msRemaining / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((msRemaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+
+  if (days > 0) {
+    return `You can change your nickname again in ${days} day${days > 1 ? 's' : ''}`;
+  } else if (hours > 0) {
+    return `You can change your nickname again in ${hours} hour${hours > 1 ? 's' : ''}`;
+  } else {
+    return 'You can change your nickname again very soon';
+  }
+});
 // redirect if not authenticated
 onMounted(() => {
   if (getCurrentUser.value?.isAnonymous) {
@@ -304,6 +328,9 @@ const saveProfile = async () => {
   try {
     if (editedUser.value.nickname !== getCurrentUser.value?.nickname) {
       await userStore.updateUserNickName(editedUser.value.nickname);
+    }
+    if (editedUser.value.age) {
+      await userStore.updateUserAge(editedUser.value.age);
     }
     // upload avatar if pending
     if (pendingAvatar.value) {

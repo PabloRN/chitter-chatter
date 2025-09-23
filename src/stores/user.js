@@ -448,7 +448,20 @@ const useUserStore = defineStore('user', {
 
     async updateUserNickName(nickName) {
       const db = getDatabase();
-      await update(ref(db, `users/${this.currentUser.userId}`), { nickname: nickName });
+      await update(
+        ref(db, `users/${this.currentUser.userId}`),
+        { nickname: nickName, nickNameUpdatedAt: Date.now() },
+      );
+      // Reset flags after nickname update - this will allow dialog to close properly
+      this.signingInUpgraded = false;
+      this.showWelcomeForm = false;
+    },
+    async updateUserAge(age) {
+      const db = getDatabase();
+      await update(
+        ref(db, `users/${this.currentUser.userId}`),
+        { age },
+      );
       // Reset flags after nickname update - this will allow dialog to close properly
       this.signingInUpgraded = false;
       this.showWelcomeForm = false;

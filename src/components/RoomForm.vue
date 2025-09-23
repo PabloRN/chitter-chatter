@@ -9,9 +9,10 @@
       <v-card-text>
         <v-form ref="form" v-model="formValid" @submit.prevent="handleSubmit">
           <!-- Room Name -->
-          <v-text-field v-model="formData.name" :rules="nameRules" label="Room Name"
-            hint="Enter a descriptive name for your room" persistent-hint outlined dense :counter="50" class="mb-4"
-            required />
+          <v-text-field :disabled="originalData && originalData.name" v-model="formData.name" :rules="nameRules"
+            label="Room Name"
+            :hint="originalData && originalData.name ? 'Room name cannot be changed' : 'Choose wisely! Room name cannot be changed'"
+            persistent-hint outlined dense :counter="50" class="mb-4" required />
 
           <!-- Theme Selection -->
           <v-select v-model="formData.theme" :items="themeOptions" item-title="text" item-value="value" label="Theme"
@@ -19,21 +20,23 @@
 
           <!-- Description -->
           <v-textarea v-model="formData.description" :rules="descriptionRules" label="Description"
-            hint="Describe what your room is about" persistent-hint outlined dense :counter="200" rows="3"
+            hint="Let people know what your room is about" persistent-hint outlined dense :counter="200" rows="3"
             class="mb-4" />
 
           <!-- Room Settings Row -->
           <v-row class="mb-4">
             <v-col cols="12" sm="6">
               <v-text-field v-model.number="formData.maxUsers" :rules="maxUsersRules" label="Max Users" type="number"
-                hint="Maximum users allowed" persistent-hint outlined dense :min="2" :max="100" />
+                hint="Maximum users allowed" persistent-hint outlined dense :min="2" :max="30" />
             </v-col>
             <v-col cols="12" sm="6">
-              <v-text-field v-model.number="formData.minAge" :rules="minAgeRules" label="Minimum Age" type="number"
-                hint="Minimum age requirement" persistent-hint outlined dense :min="13" :max="99" />
+
+
             </v-col>
           </v-row>
 
+          <v-switch v-model="formData.minAge" label="+18" color="primary"
+            hint="Sexual content is not allowed but you may want only +18 visitors" persistent-hint class="mb-4" />
           <!-- Private Room Toggle -->
           <v-switch v-model="formData.isPrivate" label="Private Room" color="primary"
             hint="Private rooms are only visible to invited users" persistent-hint class="mb-4" />
@@ -200,10 +203,6 @@ const maxUsersRules = [
   (v) => v <= ROOM_CONSTRAINTS.maxUsers.max || `Must be no more than ${ROOM_CONSTRAINTS.maxUsers.max}`,
 ];
 
-const minAgeRules = [
-  (v) => v >= ROOM_CONSTRAINTS.minAge.min || `Must be at least ${ROOM_CONSTRAINTS.minAge.min}`,
-  (v) => v <= ROOM_CONSTRAINTS.minAge.max || `Must be no more than ${ROOM_CONSTRAINTS.minAge.max}`,
-];
 
 // Methods
 const onBackgroundFileChange = (fileOrEvent) => {
