@@ -53,11 +53,12 @@
 
 <script>
 import {
-  getAuth, applyActionCode, confirmPasswordReset, signInWithEmailLink, isSignInWithEmailLink, verifyPasswordResetCode,
+  getAuth, applyActionCode, confirmPasswordReset, signInWithEmailLink, isSignInWithEmailLink, verifyPasswordResetCode, linkWithCredential, EmailAuthProvider, signInWithCredential,
 } from 'firebase/auth';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import useMainStore from '@/stores/main';
+import useUserStore from '@/stores/user';
 
 export default {
   name: 'AuthAction',
@@ -65,6 +66,7 @@ export default {
     const router = useRouter();
     const route = useRoute();
     const mainStore = useMainStore();
+    const userStore = useUserStore();
 
     const loading = ref(true);
     const error = ref('');
@@ -174,17 +176,115 @@ export default {
           }
 
           if (email) {
-            await signInWithEmailLink(auth, email, url);
-            window.localStorage.removeItem('emailForSignIn');
+            let currentUser = auth.currentUser;
+            
+            // If no current user (new tab), try to get anonymous user info from localStorage
+            if (!currentUser) {
+              const storedAnonymousUid = window.localStorage.getItem('anonymousUserForUpgrade');
+              if (storedAnonymousUid) {
+                // Wait for auth state to initialize
+                await new Promise((resolve) => {
+                  const unsubscribe = auth.onAuthStateChanged((user) => {
+                    currentUser = user;
+                    unsubscribe();
+                    resolve();
+                  });
+                });
+              }
+            }
+            
+            // Check if we have an anonymous user that should be upgraded
+            if (currentUser && currentUser.isAnonymous) {
+              console.log('🔄 Upgrading anonymous user with email link');
+              
+              try {
+                // Create email credential from the link
+                const credential = EmailAuthProvider.credentialWithLink(email, url);
+                
+                // Link the credential to upgrade the anonymous user
+                const result = await linkWithCredential(currentUser, credential);
+                
+                // Trigger the user upgrade in the user store
+                userStore.userUpgraded({
+                  verifiedUser: result.user.uid,
+                  unverifiedUser: currentUser.uid,
+                  isCurrent: true,
+                });
+                
+                window.localStorage.removeItem('emailForSignIn');
+                
+                success.value = true;
+                successTitle.value = 'Account Upgraded!';
+                successMessage.value = 'Your anonymous account has been successfully upgraded with your email.';
 
-            success.value = true;
-            successTitle.value = 'Sign In Successful!';
-            successMessage.value = 'You have been successfully signed in with your email link.';
+                mainStore.setSnackbar({
+                  type: 'success',
+                  msg: 'Account upgraded successfully!',
+                });
+                
+                // Clean up stored anonymous user ID
+                window.localStorage.removeItem('anonymousUserForUpgrade');
+                
+                // Notify other tabs of the upgrade through broadcast channel
+                try {
+                  const channel = new BroadcastChannel('auth-upgrade');
+                  channel.postMessage({
+                    type: 'ANONYMOUS_UPGRADE_SUCCESS',
+                    verifiedUser: result.user.uid,
+                    unverifiedUser: currentUser.uid
+                  });
+                  channel.close();
+                } catch (e) {
+                  console.log('BroadcastChannel not supported');
+                }
+                
+                // Navigate back to the original tab/window
+                setTimeout(() => {
+                  // Try to redirect back to the main app instead of closing
+                  if (window.opener) {
+                    window.opener.focus();
+                    window.close();
+                  } else {
+                    router.push({ name: 'rooms' });
+                  }
+                }, 2000);
+                
+              } catch (linkError) {
+                console.error('Account linking error:', linkError);
+                
+                // If linking fails due to existing account, sign in with credential
+                if (linkError.code === 'auth/email-already-in-use') {
+                  try {
+                    // Sign in with the credential
+                    await signInWithCredential(auth, linkError.credential);
+                    
+                    success.value = true;
+                    successTitle.value = 'Sign In Successful!';
+                    successMessage.value = 'You have been signed in to your existing account.';
+                    
+                    window.localStorage.removeItem('emailForSignIn');
+                  } catch (signInError) {
+                    console.error('Sign in with credential error:', signInError);
+                    error.value = 'Failed to sign in with existing account.';
+                  }
+                } else {
+                  error.value = 'Failed to upgrade account. Please try again.';
+                }
+              }
+            } else {
+              // No anonymous user, proceed with regular sign in
+              await signInWithEmailLink(auth, email, url);
+              window.localStorage.removeItem('emailForSignIn');
 
-            mainStore.setSnackbar({
-              type: 'success',
-              msg: 'Successfully signed in!',
-            });
+              success.value = true;
+              successTitle.value = 'Sign In Successful!';
+              successMessage.value = 'You have been successfully signed in with your email link.';
+
+              mainStore.setSnackbar({
+                type: 'success',
+                msg: 'Successfully signed in!',
+              });
+            }
           } else {
             error.value = 'Email is required to complete sign in.';
           }

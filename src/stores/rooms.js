@@ -143,9 +143,9 @@ const useRoomsStore = defineStore('rooms', {
         let defaultUrl; let
           defaultMiniUrl;
 
-        // Find the default avatar from the room's allowedAvatars
-        if (roomData?.allowedAvatars) {
-          const defaultAvatar = roomData.allowedAvatars.find((avatar) => avatar.isDefault);
+        // Find the default avatar from the room's publicAvatars
+        if (roomData?.publicAvatars) {
+          const defaultAvatar = roomData.publicAvatars.find((avatar) => avatar.isDefault);
           if (defaultAvatar) {
             defaultUrl = defaultAvatar.url || defaultAvatar.avatarURL;
             defaultMiniUrl = defaultAvatar.miniUrl || defaultAvatar.miniAvatarURL;
@@ -527,23 +527,23 @@ const useRoomsStore = defineStore('rooms', {
 
         // The avatars should already be merged in the RoomForm, so this logic may be redundant
         // but keeping it as a safety net
-        if (!roomData.allowedAvatars && existingRoom.allowedAvatars) {
-          updatedRoom.allowedAvatars = existingRoom.allowedAvatars;
+        if (!roomData.publicAvatars && existingRoom.publicAvatars) {
+          updatedRoom.publicAvatars = existingRoom.publicAvatars;
         }
 
         // Validate that room has at least one avatar (safety check)
-        if (!updatedRoom.allowedAvatars || updatedRoom.allowedAvatars.length === 0) {
-          updatedRoom.allowedAvatars = existingRoom.allowedAvatars || [];
+        if (!updatedRoom.publicAvatars || updatedRoom.publicAvatars.length === 0) {
+          updatedRoom.publicAvatars = existingRoom.publicAvatars || [];
 
-          if (updatedRoom.allowedAvatars.length === 0) {
+          if (updatedRoom.publicAvatars.length === 0) {
             throw new Error('Room must have at least one avatar. Please add an avatar before saving.');
           }
         }
 
         // Check for removed avatars and delete their files from storage
-        if (roomData.allowedAvatars && existingRoom.allowedAvatars) {
-          const existingAvatarNames = existingRoom.allowedAvatars.map((a) => a.name);
-          const newAvatarNames = updatedRoom.allowedAvatars.map((a) => a.name);
+        if (roomData.publicAvatars && existingRoom.publicAvatars) {
+          const existingAvatarNames = existingRoom.publicAvatars.map((a) => a.name);
+          const newAvatarNames = updatedRoom.publicAvatars.map((a) => a.name);
           const removedAvatarNames = existingAvatarNames.filter((name) => !newAvatarNames.includes(name));
 
           if (removedAvatarNames.length > 0) {
@@ -652,7 +652,7 @@ const useRoomsStore = defineStore('rooms', {
         let avatarNames = existingAvatarNames;
         if (!avatarNames.length) {
           const existingRoom = this.roomList[roomId] || this.ownedRooms.find((r) => r.id === roomId);
-          avatarNames = existingRoom?.allowedAvatars?.map((a) => a.name) || [];
+          avatarNames = existingRoom?.publicAvatars?.map((a) => a.name) || [];
         }
         // Find the next available avatar number
         let nextAvatarNumber = 1;
@@ -854,8 +854,8 @@ const useRoomsStore = defineStore('rooms', {
         let avatarsToUse = [];
 
         // If room has custom avatars, use them
-        if (room?.allowedAvatars && room.allowedAvatars.length > 0) {
-          avatarsToUse = room.allowedAvatars;
+        if (room?.publicAvatars && room.publicAvatars.length > 0) {
+          avatarsToUse = room.publicAvatars;
         } else {
           // Otherwise, use default room avatars
           const urlList = [];
