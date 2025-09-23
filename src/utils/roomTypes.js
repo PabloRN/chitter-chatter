@@ -30,10 +30,6 @@ export const ROOM_CONSTRAINTS = {
     min: 2,
     max: 20,
   },
-  minAge: {
-    min: 13,
-    max: 99,
-  },
 };
 
 // Default room values
@@ -95,12 +91,6 @@ export function validateRoom(roomData) {
   if (roomData.maxUsers < ROOM_CONSTRAINTS.maxUsers.min || roomData.maxUsers > ROOM_CONSTRAINTS.maxUsers.max) {
     errors.push(`Maximum users must be between ${ROOM_CONSTRAINTS.maxUsers.min} and ${ROOM_CONSTRAINTS.maxUsers.max}`);
   }
-
-  // Min age validation
-  if (roomData.minAge < ROOM_CONSTRAINTS.minAge.min || roomData.minAge > ROOM_CONSTRAINTS.minAge.max) {
-    errors.push(`Minimum age must be between ${ROOM_CONSTRAINTS.minAge.min} and ${ROOM_CONSTRAINTS.minAge.max}`);
-  }
-
   // Theme validation
   const validThemes = ROOM_THEMES.map((t) => t.value);
   if (!validThemes.includes(roomData.theme)) {
