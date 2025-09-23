@@ -93,8 +93,8 @@ const avatarsList = computed(() => {
   if (props.roomId) {
     // If we're in a specific room, try to get room-specific avatars first
     const room = roomsStore.roomList[props.roomId] || roomsStore.currentRoom;
-    if (room?.allowedAvatars && room.allowedAvatars.length > 0) {
-      return room.allowedAvatars.map((avatar, index) => ({
+    if (room?.publicAvatars && room.publicAvatars.length > 0) {
+      return room.publicAvatars.map((avatar, index) => ({
         avatarId: index,
         url: avatar.url || avatar.avatarURL,
         name: avatar.name,
@@ -158,7 +158,7 @@ async function loadRoomAvatars() {
     if (roomAvatars && roomAvatars.length > 0) {
       const room = roomsStore.roomList[props.roomId];
       if (room) {
-        room.allowedAvatars = roomAvatars;
+        room.publicAvatars = roomAvatars;
       }
     }
   } catch (error) {

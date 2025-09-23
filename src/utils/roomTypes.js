@@ -41,7 +41,7 @@ export const DEFAULT_ROOM_VALUES = {
   minAge: 13,
   backgroundImage: '',
   isPrivate: false,
-  allowedAvatars: [],
+  publicAvatars: [],
   defaultAvatar: null, // Avatar that new users get when entering room
   createdBy: '',
 };
@@ -63,7 +63,7 @@ export function createRoom(data = {}) {
     minAge: data.minAge || DEFAULT_ROOM_VALUES.minAge,
     backgroundImage: data.backgroundImage || DEFAULT_ROOM_VALUES.backgroundImage,
     isPrivate: data.isPrivate || DEFAULT_ROOM_VALUES.isPrivate,
-    allowedAvatars: data.allowedAvatars || DEFAULT_ROOM_VALUES.allowedAvatars,
+    publicAvatars: data.publicAvatars || DEFAULT_ROOM_VALUES.publicAvatars,
     createdAt: data.createdAt || new Date().toISOString(),
     usersOnline: data.usersOnline || 0,
     users: data.users || {},

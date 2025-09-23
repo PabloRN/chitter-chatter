@@ -45,6 +45,7 @@ const useUserStore = defineStore('user', {
     otherUserUpgraded: null, // For tracking other users' upgrades
     showWelcomeForm: false, // For controlling welcome form visibility
     blockListeners: [], // cleanup functions
+    authUpgradeChannel: null, // For cross-tab communication
     initialUser: {
       nickname: '',
       avatar: '',
@@ -78,6 +79,32 @@ const useUserStore = defineStore('user', {
   },
 
   actions: {
+    initAuthUpgradeChannel() {
+      // Initialize cross-tab communication for auth upgrades
+      try {
+        this.authUpgradeChannel = new BroadcastChannel('auth-upgrade');
+        this.authUpgradeChannel.addEventListener('message', (event) => {
+          if (event.data.type === 'ANONYMOUS_UPGRADE_SUCCESS') {
+            console.log('🔄 Received upgrade notification from other tab:', event.data);
+            // Trigger user upgrade for this tab
+            this.userUpgraded({
+              verifiedUser: event.data.verifiedUser,
+              unverifiedUser: event.data.unverifiedUser,
+              isCurrent: true,
+            });
+          }
+        });
+      } catch (e) {
+        console.log('BroadcastChannel not supported');
+      }
+    },
+
+    cleanupAuthUpgradeChannel() {
+      if (this.authUpgradeChannel) {
+        this.authUpgradeChannel.close();
+        this.authUpgradeChannel = null;
+      }
+    },
 
     initBlockListeners(userId) {
       const db = getDatabase();
@@ -223,6 +250,9 @@ const useUserStore = defineStore('user', {
     async getUser() {
       const auth = getAuth();
       const db = getDatabase();
+
+      // Initialize cross-tab communication
+      this.initAuthUpgradeChannel();
 
       onAuthStateChanged(auth, async (user) => {
         console.log('🔍 onAuthStateChanged triggered', user);
@@ -540,6 +570,10 @@ const useUserStore = defineStore('user', {
       };
 
       try {
+        // Store anonymous user ID for potential cross-tab communication
+        if (anonymousUser?.uid) {
+          window.localStorage.setItem('anonymousUserForUpgrade', anonymousUser.uid);
+        }
         const uiConfig = {
           callbacks: {
             signInSuccessWithAuthResult: (authResult) => {
@@ -608,7 +642,7 @@ const useUserStore = defineStore('user', {
             {
               provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
               signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD,
-              forceSameDevice: false, // true = must click the link on the same device
+              forceSameDevice: true, // Force same device to maintain anonymous session
             },
           ],
           credentialHelper: window.firebaseui.auth.CredentialHelper.GOOGLE_YOLO,

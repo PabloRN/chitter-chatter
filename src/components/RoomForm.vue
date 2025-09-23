@@ -60,7 +60,7 @@
 
           <!-- Avatar Manager Section -->
           <div class="upload-section mb-4">
-            <AvatarManager ref="avatarManager" :roomId="props.roomId" v-model="formData.allowedAvatars" />
+            <AvatarManager ref="avatarManager" :roomId="props.roomId" v-model="formData.publicAvatars" />
           </div>
         </v-form>
       </v-card-text>
@@ -141,7 +141,7 @@ const formData = reactive({
   minAge: DEFAULT_ROOM_VALUES.minAge,
   isPrivate: DEFAULT_ROOM_VALUES.isPrivate,
   backgroundImage: DEFAULT_ROOM_VALUES.backgroundImage,
-  allowedAvatars: [...DEFAULT_ROOM_VALUES.allowedAvatars],
+  publicAvatars: [...DEFAULT_ROOM_VALUES.publicAvatars],
 });
 
 // Original data for change detection (only for edit mode)
@@ -171,15 +171,15 @@ const hasChanges = computed(() => {
   const backgroundChanged = !!backgroundFile.value;
 
   // Check for new avatars (avatars with isPreview: true)
-  const hasNewAvatars = formData.allowedAvatars.some((avatar) => avatar.isPreview);
+  const hasNewAvatars = formData.publicAvatars.some((avatar) => avatar.isPreview);
 
   // Check if avatars were removed (comparing lengths)
-  const avatarsRemoved = formData.allowedAvatars.filter((a) => !a.isPreview).length
-    !== originalData.value.allowedAvatars?.length;
+  const avatarsRemoved = formData.publicAvatars.filter((a) => !a.isPreview).length
+    !== originalData.value.publicAvatars?.length;
 
   // Check if default avatar changed
-  const currentDefaultAvatar = formData.allowedAvatars.find((a) => a.isDefault);
-  const originalDefaultAvatar = originalData.value.allowedAvatars?.find((a) => a.isDefault);
+  const currentDefaultAvatar = formData.publicAvatars.find((a) => a.isDefault);
+  const originalDefaultAvatar = originalData.value.publicAvatars?.find((a) => a.isDefault);
   const defaultAvatarChanged = currentDefaultAvatar?.name !== originalDefaultAvatar?.name;
 
   const result = basicFieldsChanged || backgroundChanged || hasNewAvatars || avatarsRemoved || defaultAvatarChanged;
@@ -263,7 +263,7 @@ const loadRoomData = async () => {
         minAge: room.minAge,
         isPrivate: room.isPrivate,
         backgroundImage: room.backgroundImage || room.picture || room.thumbnail,
-        allowedAvatars: room.allowedAvatars || [],
+        publicAvatars: room.publicAvatars || [],
       };
 
       // Update form data
@@ -275,7 +275,7 @@ const loadRoomData = async () => {
         minAge: room.minAge,
         isPrivate: room.isPrivate,
         backgroundImage: room.backgroundImage || room.picture || room.thumbnail,
-        allowedAvatars: (room.allowedAvatars || []).map((avatar) => ({
+        publicAvatars: (room.publicAvatars || []).map((avatar) => ({
           ...avatar,
           isPreview: false, // Mark existing avatars as not preview
         })),
@@ -313,39 +313,39 @@ const handleSubmit = async () => {
     }
 
     // Handle avatar management for rooms
-    if (avatarManager.value && formData.allowedAvatars.length > 0) {
+    if (avatarManager.value && formData.publicAvatars.length > 0) {
       // Check if there are any new avatars (isPreview = true)
-      const hasNewAvatars = formData.allowedAvatars.some((avatar) => avatar.isPreview);
+      const hasNewAvatars = formData.publicAvatars.some((avatar) => avatar.isPreview);
 
       if (hasNewAvatars) {
         const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId);
 
         // For edit mode, combine existing avatars with new ones
         if (props.isEdit) {
-          const existingAvatars = formData.allowedAvatars.filter((avatar) => !avatar.isPreview);
-          roomData.allowedAvatars = [...existingAvatars, ...uploadedAvatars];
+          const existingAvatars = formData.publicAvatars.filter((avatar) => !avatar.isPreview);
+          roomData.publicAvatars = [...existingAvatars, ...uploadedAvatars];
         } else {
           // For new rooms, just use the uploaded avatars
-          roomData.allowedAvatars = uploadedAvatars;
+          roomData.publicAvatars = uploadedAvatars;
         }
       } else {
         // No new avatars, but check if avatars were removed or modified
         if (props.isEdit) {
           // Always send the current avatar list for edit mode to handle removals
-          roomData.allowedAvatars = formData.allowedAvatars.filter((avatar) => !avatar.isPreview);
+          roomData.publicAvatars = formData.publicAvatars.filter((avatar) => !avatar.isPreview);
         } else {
-          roomData.allowedAvatars = formData.allowedAvatars;
+          roomData.publicAvatars = formData.publicAvatars;
         }
       }
     } else if (props.isEdit) {
       // Handle case where all avatars might have been removed (though this should be prevented by UI)
-      roomData.allowedAvatars = [];
+      roomData.publicAvatars = [];
     }
 
     // Safety check: ensure we don't accidentally remove all avatars
-    if (props.isEdit && (!roomData.allowedAvatars || roomData.allowedAvatars.length === 0)) {
+    if (props.isEdit && (!roomData.publicAvatars || roomData.publicAvatars.length === 0)) {
       // This should not happen due to UI prevention, but if it does, preserve existing avatars
-      delete roomData.allowedAvatars;
+      delete roomData.publicAvatars;
     }
 
     if (props.isEdit) {
@@ -365,7 +365,7 @@ const handleSubmit = async () => {
       }, 1500);
     } else {
       // For new rooms, update the room data directly instead of calling updateRoom
-      if (roomData.backgroundImage || roomData.allowedAvatars.length > 0) {
+      if (roomData.backgroundImage || roomData.publicAvatars.length > 0) {
         await roomsStore.updateRoomAssets(roomId, roomData);
       }
       successMessage.value = 'Room created successfully!';
