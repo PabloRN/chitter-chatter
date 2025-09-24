@@ -109,7 +109,7 @@ export default {
           console.log('Could not focus opener or close popup');
         }
       }
-      
+
       // Check if we can go back in history (opened via link in same browser)
       if (window.history.length > 1) {
         try {
@@ -119,7 +119,7 @@ export default {
           console.log('Could not go back in history');
         }
       }
-      
+
       // Fallback: redirect to main app
       router.push({ name: 'rooms' });
       return false;
@@ -128,7 +128,7 @@ export default {
     const handlePostAuthNavigation = () => {
       setTimeout(() => {
         const navigatedSuccessfully = handleTabNavigation();
-        
+
         if (!navigatedSuccessfully) {
           successMessage.value += ' You can now close this tab and return to the main application.';
           showCloseButton.value = true;
@@ -231,7 +231,7 @@ export default {
 
           if (email) {
             let currentUser = auth.currentUser;
-            
+
             // If no current user (new tab), try to get anonymous user info from localStorage
             if (!currentUser) {
               const storedAnonymousUid = window.localStorage.getItem('anonymousUserForUpgrade');
@@ -246,33 +246,33 @@ export default {
                 });
               }
             }
-            
+
             // Check if we have an anonymous user that should be upgraded
             if (currentUser && currentUser.isAnonymous) {
               console.log('🔄 Upgrading anonymous user with email link');
-              
+
               try {
                 // Create email credential from the link
                 const credential = EmailAuthProvider.credentialWithLink(email, url);
-                
+
                 // Link the credential to upgrade the anonymous user
                 const result = await linkWithCredential(currentUser, credential);
-                
+
                 // Update the database to set isAnonymous: false
                 const db = getDatabase();
                 await update(dbRef(db, `users/${result.user.uid}`), {
                   isAnonymous: false,
                 });
-                
+
                 // Trigger the user upgrade in the user store
                 userStore.userUpgraded({
                   verifiedUser: result.user.uid,
                   unverifiedUser: currentUser.uid,
                   isCurrent: true,
                 });
-                
+
                 window.localStorage.removeItem('emailForSignIn');
-                
+
                 success.value = true;
                 successTitle.value = 'Account Upgraded!';
                 successMessage.value = 'Your anonymous account has been successfully upgraded with your email.';
@@ -281,10 +281,10 @@ export default {
                   type: 'success',
                   msg: 'Account upgraded successfully!',
                 });
-                
+
                 // Clean up stored anonymous user ID
                 window.localStorage.removeItem('anonymousUserForUpgrade');
-                
+
                 // Notify other tabs of the upgrade through broadcast channel
                 try {
                   const channel = new BroadcastChannel('auth-upgrade');
@@ -297,34 +297,34 @@ export default {
                 } catch (e) {
                   console.log('BroadcastChannel not supported');
                 }
-                
+
                 // Handle navigation after successful upgrade
                 handlePostAuthNavigation();
-                
+
               } catch (linkError) {
                 console.error('Account linking error:', linkError);
-                
+
                 // If linking fails due to existing account, sign in with credential
                 if (linkError.code === 'auth/email-already-in-use') {
                   try {
                     // Sign in with the credential
                     const existingUserResult = await signInWithCredential(auth, linkError.credential);
-                    
+
                     // Update the database to set isAnonymous: false for existing account
                     const db = getDatabase();
                     await update(dbRef(db, `users/${existingUserResult.user.uid}`), {
                       isAnonymous: false,
                     });
-                    
+
                     success.value = true;
                     successTitle.value = 'Sign In Successful!';
                     successMessage.value = 'You have been signed in to your existing account.';
-                    
+
                     window.localStorage.removeItem('emailForSignIn');
-                    
+
                     // Handle navigation for existing account scenario
                     handlePostAuthNavigation();
-                    
+
                   } catch (signInError) {
                     console.error('Sign in with credential error:', signInError);
                     error.value = 'Failed to sign in with existing account.';
@@ -336,13 +336,15 @@ export default {
             } else {
               // No anonymous user, proceed with regular sign in
               const result = await signInWithEmailLink(auth, email, url);
-              
+
               // Update the database to set isAnonymous: false
               const db = getDatabase();
               await update(dbRef(db, `users/${result.user.uid}`), {
                 isAnonymous: false,
+                status: 'online',
+                onlineState: true
               });
-              
+
               window.localStorage.removeItem('emailForSignIn');
 
               success.value = true;
@@ -353,7 +355,7 @@ export default {
                 type: 'success',
                 msg: 'Successfully signed in!',
               });
-              
+
               // Handle navigation for regular sign in
               handlePostAuthNavigation();
             }
