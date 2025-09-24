@@ -31,7 +31,6 @@
             </v-col>
             <v-col cols="12" sm="6">
 
-
             </v-col>
           </v-row>
 
@@ -202,7 +201,6 @@ const maxUsersRules = [
   (v) => v >= ROOM_CONSTRAINTS.maxUsers.min || `Must be at least ${ROOM_CONSTRAINTS.maxUsers.min}`,
   (v) => v <= ROOM_CONSTRAINTS.maxUsers.max || `Must be no more than ${ROOM_CONSTRAINTS.maxUsers.max}`,
 ];
-
 
 // Methods
 const onBackgroundFileChange = (fileOrEvent) => {

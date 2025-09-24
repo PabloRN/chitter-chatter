@@ -25,12 +25,32 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase (modular v10+)
+// Note: Firebase is now initialized via src/config/firebase.js to avoid conflicts
 initializeApp(firebaseConfig);
 
 // Initialize Firebase compat for FirebaseUI
-if (typeof window !== 'undefined' && window.firebase) {
-  window.firebase.initializeApp(firebaseConfig);
-}
+// Wait for Firebase compat to load, then initialize
+const initFirebaseCompat = () => {
+  // @ts-ignore - Accessing global Firebase compat
+  const windowAny = window;
+  if (typeof window !== 'undefined' && windowAny.firebase) {
+    try {
+      // Check if already initialized
+      if (!windowAny.firebase.apps.length) {
+        windowAny.firebase.initializeApp(firebaseConfig);
+        console.log('🔥 Firebase compat initialized for FirebaseUI');
+      }
+    } catch (error) {
+      console.warn('Firebase compat initialization error:', error);
+    }
+  } else {
+    // Retry after a short delay if firebase compat isn't loaded yet
+    setTimeout(initFirebaseCompat, 100);
+  }
+};
+
+// Initialize compat Firebase
+initFirebaseCompat();
 
 const app = createApp(App);
 

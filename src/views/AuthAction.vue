@@ -1,610 +1,505 @@
 <template>
   <div class="auth-action-container">
-    <div class="auth-action-card">
-      <div v-if="loading" class="loading">
-        <div class="spinner"></div>
-        <p>Processing your request...</p>
-      </div>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="loading-container">
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        size="64"
+      ></v-progress-circular>
+      <p class="mt-4">{{ loadingMessage }}</p>
+    </div>
 
-      <div v-else-if="error" class="error">
-        <h2>Authentication Error</h2>
-        <p>{{ error }}</p>
-        <button @click="goToRooms" class="btn btn-primary">Go to Rooms</button>
-      </div>
+    <!-- Success State -->
+    <div v-else-if="successMessage" class="success-container">
+      <v-icon color="success" size="64" class="mb-4">mdi-check-circle</v-icon>
+      <h2>{{ successMessage }}</h2>
+      <p v-if="successDetails" class="mt-2">{{ successDetails }}</p>
+      <v-btn
+        v-if="showReturnButton"
+        color="primary"
+        class="mt-4"
+        @click="returnToOriginalTab"
+      >
+        Return to App
+      </v-btn>
+    </div>
 
-      <div v-else-if="showPasswordReset" class="password-reset-form">
-        <h2>Reset Your Password</h2>
-        <p>Enter your new password below:</p>
-        <form @submit.prevent="completePasswordReset">
-          <div class="form-group">
-            <label for="newPassword">New Password:</label>
-            <input id="newPassword" v-model="newPassword" type="password" class="form-input"
-              placeholder="Enter new password" required minlength="6" />
-          </div>
-          <div class="form-group">
-            <label for="confirmPassword">Confirm Password:</label>
-            <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-input"
-              placeholder="Confirm new password" required minlength="6" />
-          </div>
-          <div v-if="error" class="error-text">
-            {{ error }}
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary" :disabled="loading">
-              {{ loading ? 'Updating...' : 'Update Password' }}
-            </button>
-          </div>
-        </form>
-      </div>
+    <!-- Error State -->
+    <div v-else-if="errorMessage" class="error-container">
+      <v-icon color="error" size="64" class="mb-4">mdi-alert-circle</v-icon>
+      <h2>Authentication Error</h2>
+      <p class="mt-2">{{ errorMessage }}</p>
+      <v-btn
+        color="primary"
+        class="mt-4"
+        @click="handleRetry"
+      >
+        Try Again
+      </v-btn>
+    </div>
 
-      <div v-else-if="success" class="success">
-        <h2>{{ successTitle }}</h2>
-        <p>{{ successMessage }}</p>
-        <div class="button-group">
-          <button @click="goToRooms" class="btn btn-primary">Continue to Rooms</button>
-          <button @click="closeTab" class="btn btn-secondary" v-if="showCloseButton">Close Tab</button>
-        </div>
-      </div>
+    <!-- Email Input Form (if needed) -->
+    <div v-else-if="needsEmailInput" class="email-form-container">
+      <v-card class="mx-auto" max-width="400">
+        <v-card-title>
+          <v-icon class="mr-2">mdi-email</v-icon>
+          Complete Sign In
+        </v-card-title>
+        <v-card-text>
+          <p class="mb-4">Please enter your email to complete the sign-in process.</p>
+          <v-text-field
+            v-model="emailInput"
+            label="Email Address"
+            type="email"
+            outlined
+            :error-messages="emailError"
+            @keyup.enter="handleEmailSubmit"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            :loading="isProcessing"
+            @click="handleEmailSubmit"
+          >
+            Continue
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </div>
 
-      <div v-else class="default">
-        <h2>Authentication</h2>
-        <p>Processing authentication request...</p>
-      </div>
+    <!-- Password Reset Form -->
+    <div v-else-if="showPasswordReset" class="password-reset-container">
+      <v-card class="mx-auto" max-width="400">
+        <v-card-title>
+          <v-icon class="mr-2">mdi-lock-reset</v-icon>
+          Reset Password
+        </v-card-title>
+        <v-card-text>
+          <p class="mb-4">Enter your new password below.</p>
+          <v-text-field
+            v-model="newPassword"
+            label="New Password"
+            type="password"
+            outlined
+            :error-messages="passwordError"
+          ></v-text-field>
+          <v-text-field
+            v-model="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            outlined
+            :error-messages="confirmPasswordError"
+            @keyup.enter="handlePasswordReset"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            :loading="isProcessing"
+            @click="handlePasswordReset"
+          >
+            Reset Password
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import {
-  getAuth, applyActionCode, confirmPasswordReset, signInWithEmailLink, isSignInWithEmailLink, verifyPasswordResetCode, linkWithCredential, EmailAuthProvider, signInWithCredential,
-} from 'firebase/auth';
-import {
-  getDatabase, ref as dbRef, update,
-} from 'firebase/database';
-import { useRouter, useRoute } from 'vue-router';
-import { ref, onMounted } from 'vue';
-import useMainStore from '@/stores/main';
-import useUserStore from '@/stores/user';
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+} from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuth, useEmailManagement } from '@/composables/useAuth';
+import navigationService from '@/services/navigationService';
 
-export default {
-  name: 'AuthAction',
-  setup() {
-    const router = useRouter();
-    const route = useRoute();
-    const mainStore = useMainStore();
-    const userStore = useUserStore();
+// Composables
+const route = useRoute();
+const router = useRouter();
+const {
+  handleEmailLink,
+  isEmailLink,
+  verifyEmail,
+  verifyPasswordResetCode,
+  completePasswordReset,
+  error: authError,
+} = useAuth();
 
-    const loading = ref(true);
-    const error = ref('');
-    const success = ref(false);
-    const successTitle = ref('');
-    const successMessage = ref('');
-    const showPasswordReset = ref(false);
-    const newPassword = ref('');
-    const confirmPassword = ref('');
-    const resetActionCode = ref('');
-    const showCloseButton = ref(false);
+const {
+  getStoredEmail,
+  requestEmailFromOtherTabs,
+  storeEmailForSignIn,
+} = useEmailManagement();
 
-    const goToRooms = () => {
-      router.push({ name: 'rooms' });
-    };
+// Reactive state
+const isLoading = ref(false);
+const isProcessing = ref(false);
+const loadingMessage = ref('Processing...');
+const successMessage = ref('');
+const successDetails = ref('');
+const errorMessage = ref('');
+const needsEmailInput = ref(false);
+const showPasswordReset = ref(false);
+const showReturnButton = ref(false);
 
-    const closeTab = () => {
-      try {
-        window.close();
-      } catch (e) {
-        // If we can't close, redirect to rooms
-        router.push({ name: 'rooms' });
-      }
-    };
+// Form inputs
+const emailInput = ref('');
+const emailError = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const passwordError = ref('');
+const confirmPasswordError = ref('');
 
-    const handleTabNavigation = () => {
-      // Try immediate close if opened as popup
-      if (window.opener && !window.opener.closed) {
-        try {
-          window.opener.focus();
-          window.close();
-          return true;
-        } catch (e) {
-          console.log('Could not focus opener or close popup');
-        }
-      }
+// Computed
+const currentUrl = computed(() => window.location.href);
 
-      // Check if we can go back in history (opened via link in same browser)
-      if (window.history.length > 1) {
-        try {
-          window.history.back();
-          return true;
-        } catch (e) {
-          console.log('Could not go back in history');
-        }
-      }
+/**
+ * Initialize authentication action handling
+ */
+onMounted(async () => {
+  console.log('🚀 AuthAction component mounted');
 
-      // Fallback: redirect to main app
-      router.push({ name: 'rooms' });
-      return false;
-    };
+  try {
+    isLoading.value = true;
+    loadingMessage.value = 'Processing authentication...';
 
-    const handlePostAuthNavigation = () => {
-      setTimeout(() => {
-        const navigatedSuccessfully = handleTabNavigation();
+    const { mode, oobCode } = route.query;
 
-        if (!navigatedSuccessfully) {
-          successMessage.value += ' You can now close this tab and return to the main application.';
-          showCloseButton.value = true;
-        }
-      }, 500);
-    };
+    if (!mode || !oobCode) {
+      throw new Error('Invalid authentication link');
+    }
 
-    const handleEmailVerification = async (actionCode) => {
-      const auth = getAuth();
-      try {
-        await applyActionCode(auth, actionCode);
-        success.value = true;
-        successTitle.value = 'Email Verified!';
-        successMessage.value = 'Your email has been successfully verified. You can now use all features of the application.';
+    await handleAuthAction(mode, oobCode);
+  } catch (error) {
+    console.error('❌ Auth action initialization failed:', error);
+    handleError(error);
+  } finally {
+    isLoading.value = false;
+  }
+});
 
-        mainStore.setSnackbar({
-          type: 'success',
-          msg: 'Email verified successfully!',
-        });
-      } catch (err) {
-        console.error('Email verification error:', err);
-        error.value = 'Failed to verify email. The link may be expired or invalid.';
-      }
-    };
+/**
+ * Handle different authentication actions
+ */
+const handleAuthAction = async (mode, oobCode) => {
+  console.log(`🔧 Handling auth action: ${mode}`);
 
-    const handlePasswordReset = async (actionCode) => {
-      const auth = getAuth();
-      try {
-        // First verify the reset code is valid
-        await verifyPasswordResetCode(auth, actionCode);
-        // Store the action code for later use
-        resetActionCode.value = actionCode;
-        // Show password reset form instead of success message
-        showPasswordReset.value = true;
-        loading.value = false;
-        mainStore.setSnackbar({
-          type: 'info',
-          msg: 'Please enter your new password below.',
-        });
-      } catch (err) {
-        console.error('Password reset verification error:', err);
-        if (err.code === 'auth/invalid-action-code') {
-          error.value = 'The password reset link is invalid or has expired.';
-        } else if (err.code === 'auth/expired-action-code') {
-          error.value = 'The password reset link has expired. Please request a new one.';
-        } else {
-          error.value = 'Failed to verify password reset link. Please try again.';
-        }
-      }
-    };
-
-    const completePasswordReset = async () => {
-      if (newPassword.value !== confirmPassword.value) {
-        error.value = 'Passwords do not match.';
-        return;
-      }
-
-      if (newPassword.value.length < 6) {
-        error.value = 'Password must be at least 6 characters long.';
-        return;
-      }
-
-      const auth = getAuth();
-      loading.value = true;
-      try {
-        await confirmPasswordReset(auth, resetActionCode.value, newPassword.value);
-        success.value = true;
-        showPasswordReset.value = false;
-        successTitle.value = 'Password Reset Complete!';
-        successMessage.value = 'Your password has been successfully updated. You can now sign in with your new password.';
-        mainStore.setSnackbar({
-          type: 'success',
-          msg: 'Password reset successfully! You can now sign in.',
-        });
-      } catch (err) {
-        console.error('Password reset completion error:', err);
-        if (err.code === 'auth/weak-password') {
-          error.value = 'Password is too weak. Please choose a stronger password.';
-        } else if (err.code === 'auth/expired-action-code') {
-          error.value = 'The reset link has expired. Please request a new password reset.';
-        } else {
-          error.value = 'Failed to reset password. Please try again.';
-        }
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const handleEmailSignIn = async () => {
-      const auth = getAuth();
-      const url = window.location.href;
-      try {
-        const isValidLink = isSignInWithEmailLink(auth, url);
-        if (isValidLink) {
-          let email = window.localStorage.getItem('emailForSignIn');
-
-          if (!email) {
-            email = window.prompt('Please provide your email for confirmation');
-          }
-
-          if (email) {
-            let currentUser = auth.currentUser;
-
-            // If no current user (new tab), try to get anonymous user info from localStorage
-            if (!currentUser) {
-              const storedAnonymousUid = window.localStorage.getItem('anonymousUserForUpgrade');
-              if (storedAnonymousUid) {
-                // Wait for auth state to initialize
-                await new Promise((resolve) => {
-                  const unsubscribe = auth.onAuthStateChanged((user) => {
-                    currentUser = user;
-                    unsubscribe();
-                    resolve();
-                  });
-                });
-              }
-            }
-
-            // Check if we have an anonymous user that should be upgraded
-            if (currentUser && currentUser.isAnonymous) {
-              console.log('🔄 Upgrading anonymous user with email link');
-
-              try {
-                // Create email credential from the link
-                const credential = EmailAuthProvider.credentialWithLink(email, url);
-
-                // Link the credential to upgrade the anonymous user
-                const result = await linkWithCredential(currentUser, credential);
-
-                // Update the database to set isAnonymous: false
-                const db = getDatabase();
-                await update(dbRef(db, `users/${result.user.uid}`), {
-                  isAnonymous: false,
-                });
-
-                // Trigger the user upgrade in the user store
-                userStore.userUpgraded({
-                  verifiedUser: result.user.uid,
-                  unverifiedUser: currentUser.uid,
-                  isCurrent: true,
-                });
-
-                window.localStorage.removeItem('emailForSignIn');
-
-                success.value = true;
-                successTitle.value = 'Account Upgraded!';
-                successMessage.value = 'Your anonymous account has been successfully upgraded with your email.';
-
-                mainStore.setSnackbar({
-                  type: 'success',
-                  msg: 'Account upgraded successfully!',
-                });
-
-                // Clean up stored anonymous user ID
-                window.localStorage.removeItem('anonymousUserForUpgrade');
-
-                // Notify other tabs of the upgrade through broadcast channel
-                try {
-                  const channel = new BroadcastChannel('auth-upgrade');
-                  channel.postMessage({
-                    type: 'ANONYMOUS_UPGRADE_SUCCESS',
-                    verifiedUser: result.user.uid,
-                    unverifiedUser: currentUser.uid
-                  });
-                  channel.close();
-                } catch (e) {
-                  console.log('BroadcastChannel not supported');
-                }
-
-                // Handle navigation after successful upgrade
-                handlePostAuthNavigation();
-
-              } catch (linkError) {
-                console.error('Account linking error:', linkError);
-
-                // If linking fails due to existing account, sign in with credential
-                if (linkError.code === 'auth/email-already-in-use') {
-                  try {
-                    // Sign in with the credential
-                    const existingUserResult = await signInWithCredential(auth, linkError.credential);
-
-                    // Update the database to set isAnonymous: false for existing account
-                    const db = getDatabase();
-                    await update(dbRef(db, `users/${existingUserResult.user.uid}`), {
-                      isAnonymous: false,
-                    });
-
-                    success.value = true;
-                    successTitle.value = 'Sign In Successful!';
-                    successMessage.value = 'You have been signed in to your existing account.';
-
-                    window.localStorage.removeItem('emailForSignIn');
-
-                    // Handle navigation for existing account scenario
-                    handlePostAuthNavigation();
-
-                  } catch (signInError) {
-                    console.error('Sign in with credential error:', signInError);
-                    error.value = 'Failed to sign in with existing account.';
-                  }
-                } else {
-                  error.value = 'Failed to upgrade account. Please try again.';
-                }
-              }
-            } else {
-              // No anonymous user, proceed with regular sign in
-              const result = await signInWithEmailLink(auth, email, url);
-
-              // Update the database to set isAnonymous: false
-              const db = getDatabase();
-              await update(dbRef(db, `users/${result.user.uid}`), {
-                isAnonymous: false,
-                status: 'online',
-                onlineState: true
-              });
-
-              window.localStorage.removeItem('emailForSignIn');
-
-              success.value = true;
-              successTitle.value = 'Sign In Successful!';
-              successMessage.value = 'You have been successfully signed in with your email link.';
-
-              mainStore.setSnackbar({
-                type: 'success',
-                msg: 'Successfully signed in!',
-              });
-
-              // Handle navigation for regular sign in
-              handlePostAuthNavigation();
-            }
-          } else {
-            error.value = 'Email is required to complete sign in.';
-          }
-        } else {
-          error.value = 'Invalid sign-in link.';
-        }
-      } catch (err) {
-        console.error('Email sign-in error:', err);
-        if (err.code === 'auth/invalid-action-code') {
-          error.value = 'The sign-in link is invalid or has expired.';
-        } else if (err.code === 'auth/expired-action-code') {
-          error.value = 'The sign-in link has expired. Please request a new one.';
-        } else {
-          error.value = 'Failed to sign in with email link. Please try again.';
-        }
-      }
-    };
-
-    onMounted(async () => {
-      const { mode } = route.query;
-      const actionCode = route.query.oobCode;
-      const { continueUrl } = route.query;
-
-      console.log('Auth action params:', { mode, actionCode, continueUrl });
-
-      if (!mode || !actionCode) {
-        error.value = 'Invalid authentication link parameters.';
-        loading.value = false;
-        return;
-      }
-
-      try {
-        switch (mode) {
-          case 'verifyEmail':
-            await handleEmailVerification(actionCode);
-            break;
-          case 'resetPassword':
-            await handlePasswordReset(actionCode);
-            break;
-          case 'signIn':
-            await handleEmailSignIn();
-            break;
-          default:
-            error.value = 'Unknown authentication mode.';
-        }
-      } catch (err) {
-        console.error('Auth action error:', err);
-        error.value = 'An error occurred while processing your request.';
-      } finally {
-        loading.value = false;
-      }
-    });
-
-    return {
-      loading,
-      error,
-      success,
-      successTitle,
-      successMessage,
-      showPasswordReset,
-      newPassword,
-      confirmPassword,
-      showCloseButton,
-      goToRooms,
-      closeTab,
-      completePasswordReset,
-    };
-  },
+  switch (mode) {
+    case 'signIn':
+      await handleSignInWithEmailLink(oobCode);
+      break;
+    case 'verifyEmail':
+      await handleEmailVerification(oobCode);
+      break;
+    case 'resetPassword':
+      await handlePasswordResetVerification(oobCode);
+      break;
+    default:
+      throw new Error(`Unknown auth action mode: ${mode}`);
+  }
 };
+
+/**
+ * Handle sign-in with email link
+ */
+const handleSignInWithEmailLink = async (oobCode) => {
+  try {
+    loadingMessage.value = 'Signing you in...';
+
+    if (!isEmailLink(currentUrl.value)) {
+      throw new Error('Invalid email link');
+    }
+
+    // Try to get email from storage first
+    let email = getStoredEmail();
+
+    // If no stored email, try requesting from other tabs
+    if (!email) {
+      console.log('📨 No stored email found, requesting from other tabs...');
+      loadingMessage.value = 'Retrieving your email...';
+
+      try {
+        email = await requestEmailFromOtherTabs();
+      } catch (error) {
+        console.log('⚠️ Could not get email from other tabs, asking user');
+        needsEmailInput.value = true;
+        isLoading.value = false;
+        return;
+      }
+    }
+
+    // Perform sign-in
+    const result = await handleEmailLink(email, currentUrl.value);
+
+    // Handle success
+    await handleSignInSuccess(result);
+  } catch (error) {
+    console.error('❌ Email link sign-in failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Handle email verification
+ */
+const handleEmailVerification = async (oobCode) => {
+  try {
+    loadingMessage.value = 'Verifying your email...';
+
+    const result = await verifyEmail(oobCode);
+
+    successMessage.value = 'Email Verified!';
+    successDetails.value = result.message || 'Your email has been successfully verified.';
+    showReturnButton.value = true;
+
+    // Navigate back after delay
+    setTimeout(() => {
+      returnToOriginalTab();
+    }, 2000);
+  } catch (error) {
+    console.error('❌ Email verification failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Handle password reset verification
+ */
+const handlePasswordResetVerification = async (oobCode) => {
+  try {
+    loadingMessage.value = 'Verifying reset code...';
+
+    await verifyPasswordResetCode(oobCode);
+
+    // Show password reset form
+    showPasswordReset.value = true;
+    isLoading.value = false;
+  } catch (error) {
+    console.error('❌ Password reset verification failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Handle successful sign-in
+ */
+const handleSignInSuccess = async (result) => {
+  console.log('✅ Sign-in successful:', result);
+
+  if (result.isUpgrade) {
+    successMessage.value = 'Account Upgraded!';
+    successDetails.value = 'Your anonymous account has been successfully upgraded.';
+  } else {
+    successMessage.value = 'Sign In Successful!';
+    successDetails.value = 'You have been successfully signed in.';
+  }
+
+  showReturnButton.value = true;
+
+  // Auto-navigate back to original tab after short delay
+  setTimeout(() => {
+    returnToOriginalTab();
+  }, 1500);
+};
+
+/**
+ * Handle email input submission
+ */
+const handleEmailSubmit = async () => {
+  if (!emailInput.value) {
+    emailError.value = 'Please enter your email address';
+    return;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+    emailError.value = 'Please enter a valid email address';
+    return;
+  }
+
+  emailError.value = '';
+
+  try {
+    isProcessing.value = true;
+
+    // Store email for future use
+    storeEmailForSignIn(emailInput.value);
+
+    // Perform sign-in
+    const result = await handleEmailLink(emailInput.value, currentUrl.value);
+
+    // Handle success
+    needsEmailInput.value = false;
+    await handleSignInSuccess(result);
+  } catch (error) {
+    console.error('❌ Email sign-in failed:', error);
+    handleError(error);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+/**
+ * Handle password reset submission
+ */
+const handlePasswordReset = async () => {
+  // Validate passwords
+  if (!newPassword.value) {
+    passwordError.value = 'Please enter a new password';
+    return;
+  }
+
+  if (newPassword.value.length < 6) {
+    passwordError.value = 'Password must be at least 6 characters';
+    return;
+  }
+
+  if (newPassword.value !== confirmPassword.value) {
+    confirmPasswordError.value = 'Passwords do not match';
+    return;
+  }
+
+  passwordError.value = '';
+  confirmPasswordError.value = '';
+
+  try {
+    isProcessing.value = true;
+
+    const result = await completePasswordReset(route.query.oobCode, newPassword.value);
+
+    showPasswordReset.value = false;
+    successMessage.value = 'Password Reset Complete!';
+    successDetails.value = result.message || 'Your password has been successfully reset.';
+    showReturnButton.value = true;
+
+    // Auto-navigate after delay
+    setTimeout(() => {
+      returnToOriginalTab();
+    }, 2000);
+  } catch (error) {
+    console.error('❌ Password reset failed:', error);
+    handleError(error);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+/**
+ * Handle retry action
+ */
+const handleRetry = () => {
+  // Reset error state
+  errorMessage.value = '';
+  needsEmailInput.value = false;
+  showPasswordReset.value = false;
+
+  // Retry the original action
+  const { mode, oobCode } = route.query;
+  handleAuthAction(mode, oobCode);
+};
+
+/**
+ * Return to original tab/context
+ */
+const returnToOriginalTab = () => {
+  console.log('🔄 Returning to original context');
+
+  const originalContext = navigationService.getOriginalContext();
+
+  if (originalContext) {
+    // Request focus of original tab
+    navigationService.requestFocusOriginalTab(originalContext);
+  } else {
+    // Fallback: navigate to home
+    router.push('/');
+  }
+};
+
+/**
+ * Handle errors
+ */
+const handleError = (error) => {
+  console.error('❌ AuthAction error:', error);
+
+  errorMessage.value = error.message || 'An authentication error occurred.';
+
+  // Clear other states
+  needsEmailInput.value = false;
+  showPasswordReset.value = false;
+  successMessage.value = '';
+};
+
+// Watch for auth errors
+const unwatchAuthError = computed(() => {
+  if (authError.value) {
+    handleError({ message: authError.value });
+  }
+});
+
+// Cleanup
+onUnmounted(() => {
+  if (unwatchAuthError.value) {
+    unwatchAuthError();
+  }
+});
 </script>
 
 <style scoped>
 .auth-action-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-}
-
-.auth-action-card {
-  background: white;
-  border-radius: 12px;
-  padding: 40px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  max-width: 500px;
-  width: 100%;
-  text-align: center;
-}
-
-.loading {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 20px;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error {
-  color: #e74c3c;
-}
-
-.success {
-  color: #27ae60;
-}
-
-.error h2,
-.success h2 {
-  margin-bottom: 20px;
-  font-size: 24px;
-}
-
-.error p,
-.success p,
-.loading p,
-.default p {
-  margin-bottom: 30px;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.btn {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.btn:hover {
-  background: #5a6fd8;
-}
-
-.btn-primary {
-  background: #667eea;
-}
-
-.btn-primary:hover {
-  background: #5a6fd8;
-}
-
-.password-reset-form {
-  text-align: left;
-}
-
-.password-reset-form h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.password-reset-form>p {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #666;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #333;
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e1e1e1;
-  border-radius: 6px;
-  font-size: 16px;
-  transition: border-color 0.3s ease;
-  box-sizing: border-box;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.form-input:invalid {
-  border-color: #e74c3c;
-}
-
-.error-text {
-  color: #e74c3c;
-  font-size: 14px;
-  margin-bottom: 20px;
-  padding: 10px;
-  background: #ffeaea;
-  border-radius: 4px;
-  border-left: 4px solid #e74c3c;
-}
-
-.form-actions {
-  text-align: center;
-  margin-top: 30px;
-}
-
-.btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.btn:disabled:hover {
-  background: #ccc;
-}
-
-.button-group {
-  display: flex;
-  gap: 12px;
   justify-content: center;
-  flex-wrap: wrap;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.btn-secondary {
-  background: #6c757d;
-  color: white;
+.loading-container,
+.success-container,
+.error-container {
+  text-align: center;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
 }
 
-.btn-secondary:hover {
-  background: #5a6268;
+.email-form-container,
+.password-reset-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.v-card {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  color: #333;
+  margin-bottom: 16px;
+}
+
+p {
+  color: #666;
+  line-height: 1.6;
+}
+
+.v-icon {
+  opacity: 0.9;
+}
+
+.v-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
 }
 </style>
