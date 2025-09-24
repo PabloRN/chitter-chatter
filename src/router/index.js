@@ -6,6 +6,8 @@ import Room from '@/views/Room';
 import Profile from '@/views/Profile';
 import RoomForm from '@/components/RoomForm';
 import AuthAction from '@/views/AuthAction';
+import ServicesTest from '@/views/ServicesTest';
+import { adminGuard } from '@/utils/adminAuth';
 
 const routes = [
   {
@@ -22,6 +24,24 @@ const routes = [
     path: '/acctmgmt/__/auth/action',
     name: 'auth-action',
     component: AuthAction,
+  },
+  {
+    path: '/test/services',
+    name: 'services-test',
+    component: ServicesTest,
+    beforeEnter: adminGuard,
+    meta: {
+      requiresAdmin: true,
+    },
+  },
+  {
+    path: '/admin/auth/test',
+    name: 'admin-auth-test',
+    component: AuthAction,
+    beforeEnter: adminGuard,
+    meta: {
+      requiresAdmin: true,
+    },
   },
   {
     path: '/rooms/:roomId',
@@ -104,6 +124,13 @@ router.beforeEach((to, from, next) => {
     // For now, we'll allow access and handle it in the component
     console.log('Accessing protected route:', to.name);
   }
+
+  // Check if route requires admin access
+  if (to.meta.requiresAdmin) {
+    console.log('Accessing admin route:', to.name);
+    // Admin check is handled by the beforeEnter guard
+  }
+
   next();
 });
 

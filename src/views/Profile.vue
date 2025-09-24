@@ -268,11 +268,10 @@ const nicknameCooldownMessage = computed(() => {
 
   if (days > 0) {
     return `You can change your nickname again in ${days} day${days > 1 ? 's' : ''}`;
-  } else if (hours > 0) {
+  } if (hours > 0) {
     return `You can change your nickname again in ${hours} hour${hours > 1 ? 's' : ''}`;
-  } else {
-    return 'You can change your nickname again very soon';
   }
+  return 'You can change your nickname again very soon';
 });
 // redirect if not authenticated
 onMounted(() => {

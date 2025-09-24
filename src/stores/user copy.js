@@ -18,14 +18,10 @@ import {
   getStorage, ref as storageRef, getDownloadURL, uploadBytes,
 } from 'firebase/storage';
 import router from '@/router/index';
-// Note: extractImageName moved to avatarService
-import authService from '@/services/authService';
-import tabCommunicationService from '@/services/tabCommunicationService';
-import avatarService from '@/services/avatarService';
-import profileService from '@/services/profileService';
+import extractImageName from '@/utils/avatarName';
 import useMainStore from './main';
 
-const useUserStore = defineStore('user', {
+const useOriginalUserStore = defineStore('userOriginal', {
   state: () => ({
     avatarsList: [],
     email: '',
@@ -49,7 +45,7 @@ const useUserStore = defineStore('user', {
     otherUserUpgraded: null, // For tracking other users' upgrades
     showWelcomeForm: false, // For controlling welcome form visibility
     blockListeners: [], // cleanup functions
-    authListener: null, // For cross-tab communication cleanup
+    authUpgradeChannel: null, // For cross-tab communication
     initialUser: {
       nickname: '',
       avatar: '',
@@ -84,97 +80,75 @@ const useUserStore = defineStore('user', {
 
   actions: {
     initAuthUpgradeChannel() {
-      // Initialize cross-tab communication for auth upgrades using tabCommunicationService
-      this.authListener = tabCommunicationService.addAuthListener((message) => {
-        this.handleCrossTabMessage(message);
-      });
-    },
-
-    handleCrossTabMessage(message) {
-      switch (message.type) {
-        case 'AUTH_SUCCESS':
-          if (message.isUpgrade) {
-            console.log('🔄 Received upgrade notification from other tab:', message);
+      // Initialize cross-tab communication for auth upgrades
+      try {
+        this.authUpgradeChannel = new BroadcastChannel('auth-upgrade');
+        this.authUpgradeChannel.addEventListener('message', (event) => {
+          if (event.data.type === 'ANONYMOUS_UPGRADE_SUCCESS') {
+            console.log('🔄 Received upgrade notification from other tab:', event.data);
             // Trigger user upgrade for this tab
             this.userUpgraded({
-              verifiedUser: message.verifiedUser,
-              unverifiedUser: message.unverifiedUser,
+              verifiedUser: event.data.verifiedUser,
+              unverifiedUser: event.data.unverifiedUser,
               isCurrent: true,
             });
-          }
-          break;
-        case 'EMAIL_STORE_REQUEST':
-          console.log('📧 Received email request from other tab');
-          // Check if we have the email and respond using tabCommunicationService storage
-          const storedEmailData = tabCommunicationService.getTabData('signin_email');
-          if (storedEmailData && storedEmailData.email) {
-            console.log('📧 Responding with stored email:', storedEmailData.email);
-            tabCommunicationService.broadcastEmailStoreResponse(
-              storedEmailData.email,
-              message.requestingTabId,
-              tabCommunicationService.getTabId(),
-            );
-          } else {
-            // Fallback to old storage for backwards compatibility
+          } else if (event.data.type === 'REQUEST_EMAIL_FOR_SIGNIN') {
+            console.log('📧 Received email request from other tab');
+            // Check if we have the email and respond
             const email = window.localStorage.getItem('emailForSignIn') || window.sessionStorage.getItem('emailForSignIn');
             if (email) {
-              console.log('📧 Responding with legacy stored email:', email);
-              tabCommunicationService.broadcastEmailStoreResponse(
+              console.log('📧 Responding with stored email:', email);
+              this.authUpgradeChannel.postMessage({
+                type: 'EMAIL_FOR_SIGNIN_STORED',
                 email,
-                message.requestingTabId,
-                tabCommunicationService.getTabId(),
-              );
+                timestamp: Date.now(),
+              });
+            }
+          } else if (event.data.type === 'FOCUS_ORIGINAL_TAB') {
+            console.log('🏠 Received focus request from auth tab');
+            // This is the original tab - gain focus and stay here
+            try {
+              window.focus();
+              // Optionally navigate to a specific route if needed
+              if (event.data.returnPath && window.location.pathname !== event.data.returnPath) {
+                this.$router?.push(event.data.returnPath);
+              }
+              console.log('✅ Original tab focused successfully');
+            } catch (e) {
+              console.log('Could not focus original tab:', e);
+            }
+          } else if (event.data.type === 'REQUEST_ORIGINAL_TAB_INFO') {
+            console.log('🏠 Received request for original tab info');
+            // Check if this tab has the original context
+            const storedContext = window.localStorage.getItem('authOriginalTabContext')
+              || window.sessionStorage.getItem('authOriginalTabContext');
+            if (storedContext) {
+              try {
+                const context = JSON.parse(storedContext);
+                // Only respond if this context is recent (within 10 minutes)
+                if (Date.now() - context.timestamp < 10 * 60 * 1000) {
+                  this.authUpgradeChannel.postMessage({
+                    type: 'ORIGINAL_TAB_INFO_RESPONSE',
+                    context,
+                    timestamp: Date.now(),
+                  });
+                  console.log('📍 Sent original tab info:', context);
+                }
+              } catch (e) {
+                console.log('Error parsing stored context:', e);
+              }
             }
           }
-          break;
-        case 'FOCUS_REQUEST':
-          console.log('🏠 Received focus request from auth tab');
-          // This is the original tab - gain focus and stay here
-          try {
-            window.focus();
-            // Optionally navigate to a specific route if needed
-            if (message.returnPath && window.location.pathname !== message.returnPath) {
-              this.$router?.push(message.returnPath);
-            }
-            console.log('✅ Original tab focused successfully');
-          } catch (e) {
-            console.log('Could not focus original tab:', e);
-          }
-          break;
-        default:
-          // Handle other message types as needed
-          break;
+        });
+      } catch (e) {
+        console.log('BroadcastChannel not supported');
       }
     },
 
     cleanupAuthUpgradeChannel() {
-      // Cleanup handled by tabCommunicationService
-      if (this.authListener) {
-        tabCommunicationService.removeAuthListener(this.authListener);
-        this.authListener = null;
-      }
-    },
-
-    cleanupExpiredEmailData() {
-      // Clean expired email data from tabCommunicationService
-      tabCommunicationService.cleanExpiredTabData();
-
-      // Clean up legacy email storage as well
-      try {
-        const timestampStr = window.sessionStorage.getItem('emailForSignInTimestamp');
-        if (timestampStr) {
-          const timestamp = parseInt(timestampStr, 10);
-          const tenMinutesAgo = Date.now() - 600000; // 10 minutes
-
-          if (timestamp < tenMinutesAgo) {
-            window.localStorage.removeItem('emailForSignIn');
-            window.sessionStorage.removeItem('emailForSignIn');
-            window.sessionStorage.removeItem('emailForSignInTimestamp');
-            console.log('🧹 Cleaned expired email data');
-          }
-        }
-      } catch (error) {
-        console.error('Error cleaning expired email data:', error);
+      if (this.authUpgradeChannel) {
+        this.authUpgradeChannel.close();
+        this.authUpgradeChannel = null;
       }
     },
 
@@ -201,10 +175,16 @@ const useUserStore = defineStore('user', {
       this.blockListeners.push(() => off(blockedByRef, 'value', unsubscribeBlockedBy));
     },
     async uploadUserPersonalAvatar(file) {
+      const storage = getStorage();
+      const db = getDatabase();
       const { currentUser } = this;
 
       try {
-        const downloadURL = await avatarService.uploadPersonalAvatar(currentUser.userId, file);
+        const imageRef = storageRef(storage, `users/${currentUser.userId}/avatars/L1/useravatar.png`);
+        const snapshot = await uploadBytes(imageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        await set(ref(db, `users/${currentUser.userId}/personalAvatar/`), downloadURL);
+        console.log('User avatar uploaded:', downloadURL);
         this.setCurrentUserPersonalAvatar({ personalAvatar: downloadURL });
       } catch (error) {
         console.error('Error uploading user avatar:', error);
@@ -214,12 +194,20 @@ const useUserStore = defineStore('user', {
       }
     },
     async toggleFavorite(roomId) {
+      const auth = getAuth();
+      const db = getDatabase();
+      const { currentUser } = auth;
+      const userRef = ref(db, `users/${currentUser.uid}`);
+
       try {
         const mainStore = useMainStore();
-        const result = await profileService.toggleFavorite(this.currentUser.userId, roomId);
+        const snapshot = await get(userRef);
+        const userData = snapshot.val();
+        const currentFavorites = userData?.favoriteRooms || [];
 
-        // Show success message
-        if (result.wasRemoved) {
+        let newFavorites;
+        if (currentFavorites.includes(roomId)) {
+          newFavorites = currentFavorites.filter((currentRoomId) => roomId !== currentRoomId);
           mainStore.setSnackbar({
             type: 'success',
             msg: 'Removed from favorites successfully',
@@ -229,13 +217,15 @@ const useUserStore = defineStore('user', {
             type: 'success',
             msg: 'Added to favorites successfully',
           });
+          newFavorites = [...currentFavorites, roomId];
         }
 
+        await update(userRef, { favoriteRooms: newFavorites });
+
         // Update local state
-        this.currentUser.favoriteRooms = result.favoriteRooms;
+        this.currentUser.favoriteRooms = newFavorites;
       } catch (error) {
         console.error('Error updating favorites:', error);
-        throw error;
       }
     },
     async toggleBlockUser(targetUserId) {
@@ -297,7 +287,7 @@ const useUserStore = defineStore('user', {
           onlineState: false,
           status: 'offline',
         });
-        await authService.signOut();
+        await signOut(auth);
         router.push({ name: 'rooms' });
         this.setUserSignedOut();
       }
@@ -310,9 +300,6 @@ const useUserStore = defineStore('user', {
       // Initialize cross-tab communication
       this.initAuthUpgradeChannel();
 
-      // Clean expired email data periodically
-      this.cleanupExpiredEmailData();
-
       onAuthStateChanged(auth, async (user) => {
         console.log('🔍 onAuthStateChanged triggered', user);
 
@@ -323,7 +310,6 @@ const useUserStore = defineStore('user', {
             const uidSnippet = user.uid.substring(0, 4);
             const nickname = `anon_${uidSnippet}`;
             this.initialUser.nickname = nickname;
-            // this.initialUser.userId = user.uid; // Ensure userId matches Firebase UID
             await set(userRef, this.initialUser);
           } else {
             // For verified users, update online status and ensure ownedRooms exists
@@ -437,8 +423,12 @@ const useUserStore = defineStore('user', {
       const {
         nickname, avatar, age, miniAvatar,
       } = data;
+      const auth = getAuth();
+      const db = getDatabase();
+
       try {
-        const credentials = await authService.createUserWithEmailAndPassword(this.email, this.password, {
+        const credentials = await createUserWithEmailAndPassword(auth, this.email, this.password);
+        await set(ref(db, `users/${credentials.user.uid}`), {
           nickname,
           avatar,
           age,
@@ -469,7 +459,7 @@ const useUserStore = defineStore('user', {
       const db = getDatabase();
       const mainStore = useMainStore();
       try {
-        const credentials = await authService.signInWithEmailAndPassword(auth, this.email, this.password);
+        const credentials = await signInWithEmailAndPassword(auth, this.email, this.password);
 
         if (credentials) {
           const snapshot = await get(ref(db, `users/${credentials.user.uid}`));
@@ -491,15 +481,23 @@ const useUserStore = defineStore('user', {
     },
 
     async changeAvatar(url) {
+      const storage = getStorage();
+      const db = getDatabase();
+
       try {
         const { currentUser } = this;
-        const { roomId } = router.currentRoute.value.params;
+        const avatarNameWithExt = extractImageName(url);
+        const avatarName = avatarNameWithExt.replace('.png', '');
 
-        const avatarData = await avatarService.changeAvatar(currentUser.userId, url, roomId);
-        this.setCurrentUserAvatar(avatarData);
+        await set(ref(db, `users/${currentUser.userId}/avatar/`), url);
+        const { roomId } = router.currentRoute.value.params;
+        const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}.png`);
+        const miniavatarRefUrl = await getDownloadURL(miniAvatarRef);
+        await set(ref(db, `users/${currentUser.userId}/miniAvatar/`), miniavatarRefUrl);
+
+        this.setCurrentUserAvatar({ avatar: url, miniAvatar: miniavatarRefUrl });
       } catch (error) {
-        console.error('Error changing avatar:', error);
-        throw error;
+        console.error(error);
       }
     },
 
@@ -525,40 +523,24 @@ const useUserStore = defineStore('user', {
     },
 
     async updateUserNickName(nickName) {
-      try {
-        await profileService.updateNickname(this.currentUser.userId, nickName);
-
-        // Update local state
-        this.currentUser.nickname = nickName;
-        if (this.userData[this.currentUser.userId]) {
-          this.userData[this.currentUser.userId].nickname = nickName;
-        }
-
-        // Reset flags after nickname update - this will allow dialog to close properly
-        this.signingInUpgraded = false;
-        this.showWelcomeForm = false;
-      } catch (error) {
-        console.error('Error updating nickname:', error);
-        throw error;
-      }
+      const db = getDatabase();
+      await update(
+        ref(db, `users/${this.currentUser.userId}`),
+        { nickname: nickName, nickNameUpdatedAt: Date.now() },
+      );
+      // Reset flags after nickname update - this will allow dialog to close properly
+      this.signingInUpgraded = false;
+      this.showWelcomeForm = false;
     },
     async updateUserAge(age) {
-      try {
-        await profileService.updateAge(this.currentUser.userId, age);
-
-        // Update local state
-        this.currentUser.age = age;
-        if (this.userData[this.currentUser.userId]) {
-          this.userData[this.currentUser.userId].age = age;
-        }
-
-        // Reset flags after age update - this will allow dialog to close properly
-        this.signingInUpgraded = false;
-        this.showWelcomeForm = false;
-      } catch (error) {
-        console.error('Error updating age:', error);
-        throw error;
-      }
+      const db = getDatabase();
+      await update(
+        ref(db, `users/${this.currentUser.userId}`),
+        { age },
+      );
+      // Reset flags after nickname update - this will allow dialog to close properly
+      this.signingInUpgraded = false;
+      this.showWelcomeForm = false;
     },
 
     async setFirebaseUiInstance(roomId) {
@@ -660,22 +642,23 @@ const useUserStore = defineStore('user', {
         auth.sendSignInLinkToEmail = function (email, actionCodeSettings) {
           console.log('📧 Intercepted email link request for:', email);
 
-          // Store email using tabCommunicationService for cross-tab access
-          tabCommunicationService.storeTabData('signin_email', {
-            email,
-            timestamp: Date.now(),
-          }, 600000); // 10 minutes expiry
-
-          // Maintain legacy storage for backwards compatibility
+          // Store email in multiple places for cross-tab access
           window.localStorage.setItem('emailForSignIn', email);
           window.sessionStorage.setItem('emailForSignIn', email);
           window.sessionStorage.setItem('emailForSignInTimestamp', Date.now().toString());
 
-          // Share via tabCommunicationService for other tabs
-          tabCommunicationService.broadcastEmailStoreRequest(
-            email,
-            tabCommunicationService.getTabId(),
-          );
+          // Share via BroadcastChannel for other tabs
+          try {
+            const channel = new BroadcastChannel('auth-upgrade');
+            channel.postMessage({
+              type: 'EMAIL_FOR_SIGNIN_STORED',
+              email,
+              timestamp: Date.now(),
+            });
+            channel.close();
+          } catch (e) {
+            console.log('BroadcastChannel not supported');
+          }
 
           // Call the original method
           return originalSendSignInLinkToEmail.call(this, email, actionCodeSettings);
@@ -809,16 +792,6 @@ const useUserStore = defineStore('user', {
     userUpgraded({ verifiedUser, unverifiedUser, isCurrent }) {
       console.log('🔄 userUpgraded called:', { verifiedUser, unverifiedUser, isCurrent });
 
-      // Broadcast auth success to other tabs
-      if (isCurrent) {
-        tabCommunicationService.broadcastAuthSuccess({
-          userId: verifiedUser,
-          isUpgrade: true,
-          verifiedUser,
-          unverifiedUser,
-        });
-      }
-
       if (isCurrent) {
         this.currentUser.isAnonymous = false;
         this.currentUser.userId = verifiedUser;
@@ -927,4 +900,4 @@ const useUserStore = defineStore('user', {
   },
 });
 
-export default useUserStore;
+export default useOriginalUserStore;

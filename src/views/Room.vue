@@ -181,7 +181,7 @@ const initUsers = async () => {
       for (const roomUserID of userIDs) {
         const { userId } = currentRoom.value.users[roomUserID];
         const userDataNew = await userStore.getUserData(userId);
-        if (Object.keys(userDataNew).length > 0) {
+        if (userDataNew && Object.keys(userDataNew).length > 0) {
           chatters.value.set(userId, userDataNew);
           chattersCounter.value += 1;
         }
@@ -271,11 +271,12 @@ const handleEmit = (item) => {
 };
 
 const leaveRoom = () => {
+  const user = getCurrentUser.value || currentUser.value;
   roomsStore.removeUser({
-    userId: roomsStore.getCurrentUser?.value.userId,
+    userId: user?.userId,
     roomId: route.params.roomId,
-    roomUsersKey: roomsStore.getCurrentUser?.value.rooms[route.params.roomId].roomUsersKey,
-    isAnonymous: roomsStore.getCurrentUser?.value.isAnonymous,
+    roomUsersKey: user?.rooms[route.params.roomId]?.roomUsersKey,
+    isAnonymous: user?.isAnonymous,
   });
   messagesStore.cleanMessages();
   router.push({
