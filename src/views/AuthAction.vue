@@ -40,7 +40,10 @@
       <div v-else-if="success" class="success">
         <h2>{{ successTitle }}</h2>
         <p>{{ successMessage }}</p>
-        <button @click="goToRooms" class="btn btn-primary">Continue to Rooms</button>
+        <div class="button-group">
+          <button @click="goToRooms" class="btn btn-primary">Continue to Rooms</button>
+          <button @click="closeTab" class="btn btn-secondary" v-if="showCloseButton">Close Tab</button>
+        </div>
       </div>
 
       <div v-else class="default">
@@ -55,6 +58,9 @@
 import {
   getAuth, applyActionCode, confirmPasswordReset, signInWithEmailLink, isSignInWithEmailLink, verifyPasswordResetCode, linkWithCredential, EmailAuthProvider, signInWithCredential,
 } from 'firebase/auth';
+import {
+  getDatabase, ref as dbRef, update,
+} from 'firebase/database';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted } from 'vue';
 import useMainStore from '@/stores/main';
@@ -77,9 +83,57 @@ export default {
     const newPassword = ref('');
     const confirmPassword = ref('');
     const resetActionCode = ref('');
+    const showCloseButton = ref(false);
 
     const goToRooms = () => {
       router.push({ name: 'rooms' });
+    };
+
+    const closeTab = () => {
+      try {
+        window.close();
+      } catch (e) {
+        // If we can't close, redirect to rooms
+        router.push({ name: 'rooms' });
+      }
+    };
+
+    const handleTabNavigation = () => {
+      // Try immediate close if opened as popup
+      if (window.opener && !window.opener.closed) {
+        try {
+          window.opener.focus();
+          window.close();
+          return true;
+        } catch (e) {
+          console.log('Could not focus opener or close popup');
+        }
+      }
+      
+      // Check if we can go back in history (opened via link in same browser)
+      if (window.history.length > 1) {
+        try {
+          window.history.back();
+          return true;
+        } catch (e) {
+          console.log('Could not go back in history');
+        }
+      }
+      
+      // Fallback: redirect to main app
+      router.push({ name: 'rooms' });
+      return false;
+    };
+
+    const handlePostAuthNavigation = () => {
+      setTimeout(() => {
+        const navigatedSuccessfully = handleTabNavigation();
+        
+        if (!navigatedSuccessfully) {
+          successMessage.value += ' You can now close this tab and return to the main application.';
+          showCloseButton.value = true;
+        }
+      }, 500);
     };
 
     const handleEmailVerification = async (actionCode) => {
@@ -204,6 +258,12 @@ export default {
                 // Link the credential to upgrade the anonymous user
                 const result = await linkWithCredential(currentUser, credential);
                 
+                // Update the database to set isAnonymous: false
+                const db = getDatabase();
+                await update(dbRef(db, `users/${result.user.uid}`), {
+                  isAnonymous: false,
+                });
+                
                 // Trigger the user upgrade in the user store
                 userStore.userUpgraded({
                   verifiedUser: result.user.uid,
@@ -238,16 +298,8 @@ export default {
                   console.log('BroadcastChannel not supported');
                 }
                 
-                // Navigate back to the original tab/window
-                setTimeout(() => {
-                  // Try to redirect back to the main app instead of closing
-                  if (window.opener) {
-                    window.opener.focus();
-                    window.close();
-                  } else {
-                    router.push({ name: 'rooms' });
-                  }
-                }, 2000);
+                // Handle navigation after successful upgrade
+                handlePostAuthNavigation();
                 
               } catch (linkError) {
                 console.error('Account linking error:', linkError);
@@ -256,13 +308,23 @@ export default {
                 if (linkError.code === 'auth/email-already-in-use') {
                   try {
                     // Sign in with the credential
-                    await signInWithCredential(auth, linkError.credential);
+                    const existingUserResult = await signInWithCredential(auth, linkError.credential);
+                    
+                    // Update the database to set isAnonymous: false for existing account
+                    const db = getDatabase();
+                    await update(dbRef(db, `users/${existingUserResult.user.uid}`), {
+                      isAnonymous: false,
+                    });
                     
                     success.value = true;
                     successTitle.value = 'Sign In Successful!';
                     successMessage.value = 'You have been signed in to your existing account.';
                     
                     window.localStorage.removeItem('emailForSignIn');
+                    
+                    // Handle navigation for existing account scenario
+                    handlePostAuthNavigation();
+                    
                   } catch (signInError) {
                     console.error('Sign in with credential error:', signInError);
                     error.value = 'Failed to sign in with existing account.';
@@ -273,7 +335,14 @@ export default {
               }
             } else {
               // No anonymous user, proceed with regular sign in
-              await signInWithEmailLink(auth, email, url);
+              const result = await signInWithEmailLink(auth, email, url);
+              
+              // Update the database to set isAnonymous: false
+              const db = getDatabase();
+              await update(dbRef(db, `users/${result.user.uid}`), {
+                isAnonymous: false,
+              });
+              
               window.localStorage.removeItem('emailForSignIn');
 
               success.value = true;
@@ -284,6 +353,9 @@ export default {
                 type: 'success',
                 msg: 'Successfully signed in!',
               });
+              
+              // Handle navigation for regular sign in
+              handlePostAuthNavigation();
             }
           } else {
             error.value = 'Email is required to complete sign in.';
@@ -347,7 +419,9 @@ export default {
       showPasswordReset,
       newPassword,
       confirmPassword,
+      showCloseButton,
       goToRooms,
+      closeTab,
       completePasswordReset,
     };
   },
@@ -514,5 +588,21 @@ export default {
 
 .btn:disabled:hover {
   background: #ccc;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
 }
 </style>
