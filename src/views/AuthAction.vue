@@ -37,6 +37,29 @@
         </form>
       </div>
 
+      <div v-else-if="showEmailInput" class="email-input-form">
+        <h2>Email Confirmation</h2>
+        <p>Please confirm your email address to complete the sign-in process:</p>
+        <form @submit.prevent="handleEmailSubmit">
+          <div class="form-group">
+            <label for="emailInput">Email Address:</label>
+            <input id="emailInput" v-model="emailInput" type="email" class="form-input"
+              placeholder="Enter your email address" required />
+          </div>
+          <div v-if="error" class="error-text">
+            {{ error }}
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" :disabled="loading">
+              {{ loading ? 'Verifying...' : 'Continue' }}
+            </button>
+            <button type="button" class="btn btn-secondary" @click="cancelEmailInput">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+
       <div v-else-if="success" class="success">
         <h2>{{ successTitle }}</h2>
         <p>{{ successMessage }}</p>
@@ -84,6 +107,8 @@ export default {
     const confirmPassword = ref('');
     const resetActionCode = ref('');
     const showCloseButton = ref(false);
+    const showEmailInput = ref(false);
+    const emailInput = ref('');
 
     const goToRooms = () => {
       router.push({ name: 'rooms' });
@@ -98,8 +123,55 @@ export default {
       }
     };
 
-    const handleTabNavigation = () => {
-      // Try immediate close if opened as popup
+    const handleEmailSubmit = () => {
+      if (emailInput.value && emailInput.value.trim()) {
+        showEmailInput.value = false;
+        loading.value = true;
+        error.value = '';
+        // Continue with the email link processing
+        processEmailLink(emailInput.value.trim());
+      }
+    };
+
+    const cancelEmailInput = () => {
+      showEmailInput.value = false;
+      error.value = 'Email confirmation cancelled.';
+      loading.value = false;
+      
+      // Clean up stored context on cancellation
+      cleanupStoredContext();
+    };
+
+    const cleanupStoredContext = () => {
+      try {
+        window.localStorage.removeItem('authOriginalTabContext');
+        window.sessionStorage.removeItem('authOriginalTabContext');
+        console.log('🧹 Cleaned up stored auth context');
+      } catch (e) {
+        console.log('Could not clean up stored context:', e);
+      }
+    };
+
+    const handleTabNavigation = async () => {
+      // Try to focus the original tab first
+      try {
+        const originalTabFocused = await focusOriginalTab();
+        if (originalTabFocused) {
+          // Successfully focused original tab, now close this tab
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (e) {
+              console.log('Could not close auth tab');
+            }
+          }, 100);
+          return true;
+        }
+      } catch (e) {
+        console.log('Could not focus original tab, trying fallback navigation');
+      }
+
+      // Fallback 1: Try immediate close if opened as popup
       if (window.opener && !window.opener.closed) {
         try {
           window.opener.focus();
@@ -110,30 +182,182 @@ export default {
         }
       }
 
-      // Check if we can go back in history (opened via link in same browser)
-      if (window.history.length > 1) {
-        try {
-          window.history.back();
-          return true;
-        } catch (e) {
-          console.log('Could not go back in history');
+      // Fallback 2: Navigate to stored original URL if available
+      try {
+        const storedContext = window.localStorage.getItem('authOriginalTabContext')
+                            || window.sessionStorage.getItem('authOriginalTabContext');
+        if (storedContext) {
+          const context = JSON.parse(storedContext);
+          // Only use if recent (within 10 minutes)
+          if (Date.now() - context.timestamp < 10 * 60 * 1000) {
+            console.log('🏠 Navigating to stored original URL:', context.pathname);
+            router.push(context.pathname + context.search + context.hash);
+            return true;
+          }
         }
+      } catch (e) {
+        console.log('Could not navigate to stored original URL:', e);
       }
 
-      // Fallback: redirect to main app
+      // Fallback 3: Default navigation
       router.push({ name: 'rooms' });
       return false;
     };
 
+    const focusOriginalTab = () => {
+      return new Promise((resolve) => {
+        try {
+          const channel = new BroadcastChannel('auth-upgrade');
+          let timeoutId;
+
+          const handleResponse = (event) => {
+            if (event.data.type === 'ORIGINAL_TAB_INFO_RESPONSE') {
+              console.log('📍 Received original tab info:', event.data.context);
+              clearTimeout(timeoutId);
+              channel.close();
+              
+              // Send focus command to original tab
+              try {
+                const focusChannel = new BroadcastChannel('auth-upgrade');
+                focusChannel.postMessage({
+                  type: 'FOCUS_ORIGINAL_TAB',
+                  returnPath: event.data.context.pathname,
+                  timestamp: Date.now(),
+                });
+                focusChannel.close();
+                resolve(true);
+              } catch (e) {
+                resolve(false);
+              }
+            }
+          };
+
+          channel.addEventListener('message', handleResponse);
+
+          // Request original tab info
+          channel.postMessage({
+            type: 'REQUEST_ORIGINAL_TAB_INFO',
+            timestamp: Date.now(),
+          });
+
+          // Set timeout to resolve with false if no response
+          timeoutId = setTimeout(() => {
+            channel.close();
+            console.log('🏠 No original tab found via BroadcastChannel');
+            resolve(false);
+          }, 1500); // Wait 1.5 seconds for response
+
+        } catch (e) {
+          console.log('BroadcastChannel not supported for navigation');
+          resolve(false);
+        }
+      });
+    };
+
     const handlePostAuthNavigation = () => {
-      setTimeout(() => {
-        const navigatedSuccessfully = handleTabNavigation();
+      setTimeout(async () => {
+        const navigatedSuccessfully = await handleTabNavigation();
 
         if (!navigatedSuccessfully) {
           successMessage.value += ' You can now close this tab and return to the main application.';
           showCloseButton.value = true;
         }
       }, 500);
+    };
+
+    const getEmailForSignIn = () => {
+      return new Promise((resolve) => {
+        // 1. Check localStorage first (default Firebase UI storage)
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (email) {
+          console.log('📧 Found email in localStorage:', email);
+          resolve(email);
+          return;
+        }
+
+        // 2. Check sessionStorage as backup
+        email = window.sessionStorage.getItem('emailForSignIn');
+        if (email) {
+          console.log('📧 Found email in sessionStorage:', email);
+          resolve(email);
+          return;
+        }
+
+        // 3. Listen for BroadcastChannel message from other tabs
+        try {
+          const channel = new BroadcastChannel('auth-upgrade');
+          let timeoutId;
+
+          const handleMessage = (event) => {
+            if (event.data.type === 'EMAIL_FOR_SIGNIN_STORED' && event.data.email) {
+              console.log('📧 Received email via BroadcastChannel:', event.data.email);
+              clearTimeout(timeoutId);
+              channel.close();
+              resolve(event.data.email);
+            }
+          };
+
+          channel.addEventListener('message', handleMessage);
+
+          // Request email from other tabs
+          channel.postMessage({
+            type: 'REQUEST_EMAIL_FOR_SIGNIN',
+            timestamp: Date.now()
+          });
+
+          // Set timeout to show form if no response
+          timeoutId = setTimeout(() => {
+            channel.close();
+            console.log('📧 No email found via BroadcastChannel, showing form');
+            resolve(null);
+          }, 1000); // Wait 1 second for response
+
+        } catch (e) {
+          console.log('BroadcastChannel not supported, showing form');
+          resolve(null);
+        }
+      });
+    };
+
+    const processEmailLink = async (email) => {
+      const auth = getAuth();
+      const url = window.location.href;
+      
+      try {
+        let currentUser = auth.currentUser;
+
+        // If no current user (new tab), try to get anonymous user info from localStorage
+        if (!currentUser) {
+          const storedAnonymousUid = window.localStorage.getItem('anonymousUserForUpgrade');
+          if (storedAnonymousUid) {
+            // Wait for auth state to initialize
+            await new Promise((resolve) => {
+              const unsubscribe = auth.onAuthStateChanged((user) => {
+                currentUser = user;
+                unsubscribe();
+                resolve();
+              });
+            });
+          }
+        }
+
+        // Check if we have an anonymous user that should be upgraded
+        if (currentUser && currentUser.isAnonymous) {
+          await handleAnonymousUserUpgrade(currentUser, email, url);
+        } else {
+          await handleRegularSignIn(email, url);
+        }
+      } catch (err) {
+        console.error('Email link processing error:', err);
+        if (err.code === 'auth/invalid-action-code') {
+          error.value = 'The sign-in link is invalid or has expired.';
+        } else if (err.code === 'auth/expired-action-code') {
+          error.value = 'The sign-in link has expired. Please request a new one.';
+        } else {
+          error.value = 'Failed to process email link. Please try again.';
+        }
+        loading.value = false;
+      }
     };
 
     const handleEmailVerification = async (actionCode) => {
@@ -223,159 +447,161 @@ export default {
       try {
         const isValidLink = isSignInWithEmailLink(auth, url);
         if (isValidLink) {
-          let email = window.localStorage.getItem('emailForSignIn');
-
+          let email = await getEmailForSignIn();
+          
           if (!email) {
-            email = window.prompt('Please provide your email for confirmation');
+            // Show email input form instead of browser prompt
+            showEmailInput.value = true;
+            loading.value = false;
+            return;
           }
 
-          if (email) {
-            let currentUser = auth.currentUser;
-
-            // If no current user (new tab), try to get anonymous user info from localStorage
-            if (!currentUser) {
-              const storedAnonymousUid = window.localStorage.getItem('anonymousUserForUpgrade');
-              if (storedAnonymousUid) {
-                // Wait for auth state to initialize
-                await new Promise((resolve) => {
-                  const unsubscribe = auth.onAuthStateChanged((user) => {
-                    currentUser = user;
-                    unsubscribe();
-                    resolve();
-                  });
-                });
-              }
-            }
-
-            // Check if we have an anonymous user that should be upgraded
-            if (currentUser && currentUser.isAnonymous) {
-              console.log('🔄 Upgrading anonymous user with email link');
-
-              try {
-                // Create email credential from the link
-                const credential = EmailAuthProvider.credentialWithLink(email, url);
-
-                // Link the credential to upgrade the anonymous user
-                const result = await linkWithCredential(currentUser, credential);
-
-                // Update the database to set isAnonymous: false
-                const db = getDatabase();
-                await update(dbRef(db, `users/${result.user.uid}`), {
-                  isAnonymous: false,
-                });
-
-                // Trigger the user upgrade in the user store
-                userStore.userUpgraded({
-                  verifiedUser: result.user.uid,
-                  unverifiedUser: currentUser.uid,
-                  isCurrent: true,
-                });
-
-                window.localStorage.removeItem('emailForSignIn');
-
-                success.value = true;
-                successTitle.value = 'Account Upgraded!';
-                successMessage.value = 'Your anonymous account has been successfully upgraded with your email.';
-
-                mainStore.setSnackbar({
-                  type: 'success',
-                  msg: 'Account upgraded successfully!',
-                });
-
-                // Clean up stored anonymous user ID
-                window.localStorage.removeItem('anonymousUserForUpgrade');
-
-                // Notify other tabs of the upgrade through broadcast channel
-                try {
-                  const channel = new BroadcastChannel('auth-upgrade');
-                  channel.postMessage({
-                    type: 'ANONYMOUS_UPGRADE_SUCCESS',
-                    verifiedUser: result.user.uid,
-                    unverifiedUser: currentUser.uid
-                  });
-                  channel.close();
-                } catch (e) {
-                  console.log('BroadcastChannel not supported');
-                }
-
-                // Handle navigation after successful upgrade
-                handlePostAuthNavigation();
-
-              } catch (linkError) {
-                console.error('Account linking error:', linkError);
-
-                // If linking fails due to existing account, sign in with credential
-                if (linkError.code === 'auth/email-already-in-use') {
-                  try {
-                    // Sign in with the credential
-                    const existingUserResult = await signInWithCredential(auth, linkError.credential);
-
-                    // Update the database to set isAnonymous: false for existing account
-                    const db = getDatabase();
-                    await update(dbRef(db, `users/${existingUserResult.user.uid}`), {
-                      isAnonymous: false,
-                    });
-
-                    success.value = true;
-                    successTitle.value = 'Sign In Successful!';
-                    successMessage.value = 'You have been signed in to your existing account.';
-
-                    window.localStorage.removeItem('emailForSignIn');
-
-                    // Handle navigation for existing account scenario
-                    handlePostAuthNavigation();
-
-                  } catch (signInError) {
-                    console.error('Sign in with credential error:', signInError);
-                    error.value = 'Failed to sign in with existing account.';
-                  }
-                } else {
-                  error.value = 'Failed to upgrade account. Please try again.';
-                }
-              }
-            } else {
-              // No anonymous user, proceed with regular sign in
-              const result = await signInWithEmailLink(auth, email, url);
-
-              // Update the database to set isAnonymous: false
-              const db = getDatabase();
-              await update(dbRef(db, `users/${result.user.uid}`), {
-                isAnonymous: false,
-                status: 'online',
-                onlineState: true
-              });
-
-              window.localStorage.removeItem('emailForSignIn');
-
-              success.value = true;
-              successTitle.value = 'Sign In Successful!';
-              successMessage.value = 'You have been successfully signed in with your email link.';
-
-              mainStore.setSnackbar({
-                type: 'success',
-                msg: 'Successfully signed in!',
-              });
-
-              // Handle navigation for regular sign in
-              handlePostAuthNavigation();
-            }
-          } else {
-            error.value = 'Email is required to complete sign in.';
-          }
+          // Process the email link with the found email
+          await processEmailLink(email);
         } else {
           error.value = 'Invalid sign-in link.';
+          loading.value = false;
+          cleanupStoredContext();
         }
       } catch (err) {
         console.error('Email sign-in error:', err);
-        if (err.code === 'auth/invalid-action-code') {
-          error.value = 'The sign-in link is invalid or has expired.';
-        } else if (err.code === 'auth/expired-action-code') {
-          error.value = 'The sign-in link has expired. Please request a new one.';
+        error.value = 'Failed to process email link. Please try again.';
+        loading.value = false;
+        cleanupStoredContext();
+      }
+    };
+
+    const handleAnonymousUserUpgrade = async (currentUser, email, url) => {
+      console.log('🔄 Upgrading anonymous user with email link');
+      
+      try {
+        // Create email credential from the link
+        const credential = EmailAuthProvider.credentialWithLink(email, url);
+        
+        // Link the credential to upgrade the anonymous user
+        const result = await linkWithCredential(currentUser, credential);
+        
+        // Update the database to set isAnonymous: false
+        const db = getDatabase();
+        await update(dbRef(db, `users/${result.user.uid}`), {
+          isAnonymous: false,
+          status: 'online',
+          onlineState: true
+        });
+        
+        // Trigger the user upgrade in the user store
+        userStore.userUpgraded({
+          verifiedUser: result.user.uid,
+          unverifiedUser: currentUser.uid,
+          isCurrent: true,
+        });
+        
+        window.localStorage.removeItem('emailForSignIn');
+        
+        success.value = true;
+        successTitle.value = 'Account Upgraded!';
+        successMessage.value = 'Your anonymous account has been successfully upgraded with your email.';
+
+        mainStore.setSnackbar({
+          type: 'success',
+          msg: 'Account upgraded successfully!',
+        });
+        
+        // Clean up stored anonymous user ID and context
+        window.localStorage.removeItem('anonymousUserForUpgrade');
+        window.localStorage.removeItem('authOriginalTabContext');
+        window.sessionStorage.removeItem('authOriginalTabContext');
+        
+        // Notify other tabs of the upgrade through broadcast channel
+        try {
+          const channel = new BroadcastChannel('auth-upgrade');
+          channel.postMessage({
+            type: 'ANONYMOUS_UPGRADE_SUCCESS',
+            verifiedUser: result.user.uid,
+            unverifiedUser: currentUser.uid
+          });
+          channel.close();
+        } catch (e) {
+          console.log('BroadcastChannel not supported');
+        }
+        
+        // Handle navigation after successful upgrade
+        handlePostAuthNavigation();
+        
+      } catch (linkError) {
+        console.error('Account linking error:', linkError);
+        
+        // If linking fails due to existing account, sign in with credential
+        if (linkError.code === 'auth/email-already-in-use') {
+          try {
+            // Sign in with the credential
+            const existingUserResult = await signInWithCredential(getAuth(), linkError.credential);
+            
+            // Update the database to set isAnonymous: false for existing account
+            const db = getDatabase();
+            await update(dbRef(db, `users/${existingUserResult.user.uid}`), {
+              isAnonymous: false,
+              status: 'online',
+              onlineState: true
+            });
+            
+            success.value = true;
+            successTitle.value = 'Sign In Successful!';
+            successMessage.value = 'You have been signed in to your existing account.';
+            
+            window.localStorage.removeItem('emailForSignIn');
+            
+            // Clean up stored context
+            window.localStorage.removeItem('authOriginalTabContext');
+            window.sessionStorage.removeItem('authOriginalTabContext');
+            
+            // Handle navigation for existing account scenario
+            handlePostAuthNavigation();
+            
+          } catch (signInError) {
+            console.error('Sign in with credential error:', signInError);
+            error.value = 'Failed to sign in with existing account.';
+            loading.value = false;
+          }
         } else {
-          error.value = 'Failed to sign in with email link. Please try again.';
+          error.value = 'Failed to upgrade account. Please try again.';
+          loading.value = false;
+          cleanupStoredContext();
         }
       }
     };
+
+    const handleRegularSignIn = async (email, url) => {
+      // No anonymous user, proceed with regular sign in
+      const result = await signInWithEmailLink(getAuth(), email, url);
+      
+      // Update the database to set isAnonymous: false
+      const db = getDatabase();
+      await update(dbRef(db, `users/${result.user.uid}`), {
+        isAnonymous: false,
+        status: 'online',
+        onlineState: true
+      });
+      
+      window.localStorage.removeItem('emailForSignIn');
+
+      // Clean up stored context
+      window.localStorage.removeItem('authOriginalTabContext');
+      window.sessionStorage.removeItem('authOriginalTabContext');
+
+      success.value = true;
+      successTitle.value = 'Sign In Successful!';
+      successMessage.value = 'You have been successfully signed in with your email link.';
+
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: 'Successfully signed in!',
+      });
+      
+      // Handle navigation for regular sign in
+      handlePostAuthNavigation();
+    };
+
 
     onMounted(async () => {
       const { mode } = route.query;
@@ -422,9 +648,13 @@ export default {
       newPassword,
       confirmPassword,
       showCloseButton,
+      showEmailInput,
+      emailInput,
       goToRooms,
       closeTab,
       completePasswordReset,
+      handleEmailSubmit,
+      cancelEmailInput,
     };
   },
 };
@@ -522,17 +752,20 @@ export default {
   background: #5a6fd8;
 }
 
-.password-reset-form {
+.password-reset-form,
+.email-input-form {
   text-align: left;
 }
 
-.password-reset-form h2 {
+.password-reset-form h2,
+.email-input-form h2 {
   text-align: center;
   margin-bottom: 20px;
   color: #333;
 }
 
-.password-reset-form>p {
+.password-reset-form>p,
+.email-input-form>p {
   text-align: center;
   margin-bottom: 30px;
   color: #666;

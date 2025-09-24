@@ -92,6 +92,52 @@ const useUserStore = defineStore('user', {
               unverifiedUser: event.data.unverifiedUser,
               isCurrent: true,
             });
+          } else if (event.data.type === 'REQUEST_EMAIL_FOR_SIGNIN') {
+            console.log('📧 Received email request from other tab');
+            // Check if we have the email and respond
+            const email = window.localStorage.getItem('emailForSignIn') || window.sessionStorage.getItem('emailForSignIn');
+            if (email) {
+              console.log('📧 Responding with stored email:', email);
+              this.authUpgradeChannel.postMessage({
+                type: 'EMAIL_FOR_SIGNIN_STORED',
+                email,
+                timestamp: Date.now(),
+              });
+            }
+          } else if (event.data.type === 'FOCUS_ORIGINAL_TAB') {
+            console.log('🏠 Received focus request from auth tab');
+            // This is the original tab - gain focus and stay here
+            try {
+              window.focus();
+              // Optionally navigate to a specific route if needed
+              if (event.data.returnPath && window.location.pathname !== event.data.returnPath) {
+                this.$router?.push(event.data.returnPath);
+              }
+              console.log('✅ Original tab focused successfully');
+            } catch (e) {
+              console.log('Could not focus original tab:', e);
+            }
+          } else if (event.data.type === 'REQUEST_ORIGINAL_TAB_INFO') {
+            console.log('🏠 Received request for original tab info');
+            // Check if this tab has the original context
+            const storedContext = window.localStorage.getItem('authOriginalTabContext')
+                                || window.sessionStorage.getItem('authOriginalTabContext');
+            if (storedContext) {
+              try {
+                const context = JSON.parse(storedContext);
+                // Only respond if this context is recent (within 10 minutes)
+                if (Date.now() - context.timestamp < 10 * 60 * 1000) {
+                  this.authUpgradeChannel.postMessage({
+                    type: 'ORIGINAL_TAB_INFO_RESPONSE',
+                    context,
+                    timestamp: Date.now(),
+                  });
+                  console.log('📍 Sent original tab info:', context);
+                }
+              } catch (e) {
+                console.log('Error parsing stored context:', e);
+              }
+            }
           }
         });
       } catch (e) {
@@ -569,11 +615,55 @@ const useUserStore = defineStore('user', {
         }
       };
 
+      // Store anonymous user ID for potential cross-tab communication
+      if (anonymousUser?.uid) {
+        window.localStorage.setItem('anonymousUserForUpgrade', anonymousUser.uid);
+      }
+
+      // Store original tab context for return navigation
+      const originalTabContext = {
+        url: window.location.href,
+        origin: window.location.origin,
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hash: window.location.hash,
+        timestamp: Date.now(),
+        tabId: `tab_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+      };
+
+      window.localStorage.setItem('authOriginalTabContext', JSON.stringify(originalTabContext));
+      window.sessionStorage.setItem('authOriginalTabContext', JSON.stringify(originalTabContext));
+      console.log('🏠 Stored original tab context:', originalTabContext);
+
+      // Temporarily override sendSignInLinkToEmail to capture email
+      const originalSendSignInLinkToEmail = auth.sendSignInLinkToEmail;
+
       try {
-        // Store anonymous user ID for potential cross-tab communication
-        if (anonymousUser?.uid) {
-          window.localStorage.setItem('anonymousUserForUpgrade', anonymousUser.uid);
-        }
+        auth.sendSignInLinkToEmail = function (email, actionCodeSettings) {
+          console.log('📧 Intercepted email link request for:', email);
+
+          // Store email in multiple places for cross-tab access
+          window.localStorage.setItem('emailForSignIn', email);
+          window.sessionStorage.setItem('emailForSignIn', email);
+          window.sessionStorage.setItem('emailForSignInTimestamp', Date.now().toString());
+
+          // Share via BroadcastChannel for other tabs
+          try {
+            const channel = new BroadcastChannel('auth-upgrade');
+            channel.postMessage({
+              type: 'EMAIL_FOR_SIGNIN_STORED',
+              email,
+              timestamp: Date.now(),
+            });
+            channel.close();
+          } catch (e) {
+            console.log('BroadcastChannel not supported');
+          }
+
+          // Call the original method
+          return originalSendSignInLinkToEmail.call(this, email, actionCodeSettings);
+        };
+
         const uiConfig = {
           callbacks: {
             signInSuccessWithAuthResult: (authResult) => {
@@ -652,8 +742,21 @@ const useUserStore = defineStore('user', {
         };
 
         ui.start('#firebaseui-auth-container', uiConfig);
+
+        // Restore original method after a delay (when UI is likely done initializing)
+        setTimeout(() => {
+          if (originalSendSignInLinkToEmail) {
+            auth.sendSignInLinkToEmail = originalSendSignInLinkToEmail;
+            console.log('📧 Restored original sendSignInLinkToEmail method');
+          }
+        }, 5000);
+
       } catch (error) {
         console.error('Error starting Firebase UI:', error);
+        // Restore original method on error too
+        if (originalSendSignInLinkToEmail) {
+          auth.sendSignInLinkToEmail = originalSendSignInLinkToEmail;
+        }
       }
     },
 
