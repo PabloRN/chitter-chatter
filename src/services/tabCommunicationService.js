@@ -312,7 +312,7 @@ class TabCommunicationService {
   getTabId() {
     let tabId = sessionStorage.getItem('chitter_tab_id');
     if (!tabId) {
-      tabId = TabCommunicationService.generateTabId();
+      tabId = this.generateTabId();
       sessionStorage.setItem('chitter_tab_id', tabId);
     }
     return tabId;
@@ -329,11 +329,11 @@ class TabCommunicationService {
       search: window.location.search,
       hash: window.location.hash,
       timestamp: Date.now(),
-      tabId: TabCommunicationService.getTabId(),
+      tabId: this.getTabId(),
       ...additionalData,
     };
 
-    TabCommunicationService.storeTabData('original_context', tabContext);
+    this.storeTabData('original_context', tabContext);
     return tabContext;
   }
 
@@ -341,14 +341,14 @@ class TabCommunicationService {
  * Get original tab context
  */
   getOriginalTabContext() {
-    return TabCommunicationService.getTabData('original_context');
+    return this.getTabData('original_context');
   }
 
   /**
  * Clear original tab context
  */
   clearOriginalTabContext() {
-    TabCommunicationService.removeTabData('original_context');
+    this.removeTabData('original_context');
   }
 }
 

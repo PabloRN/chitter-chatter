@@ -437,18 +437,45 @@ export function useEmailManagement() {
   };
 
   /**
-   * Get stored email for sign-in
+   * Get stored email for sign-in (checks both new and old formats)
    */
   const getStoredEmail = () => {
+    console.log('📧 Looking for stored email in localStorage...');
+
     try {
+      // First try the new simple format
       const email = localStorage.getItem('emailForSignIn');
+      console.log('📧 Checking emailForSignIn:', email);
+
       if (email) {
         storedEmail.value = email;
-        console.log('📧 Email retrieved from localStorage:', email);
+        console.log('✅ Email found in new format:', email);
         return email;
       }
+
+      // Fallback to old format for backward compatibility
+      const oldFormatData = localStorage.getItem('chitter_signin_email');
+      console.log('📧 Checking chitter_signin_email:', oldFormatData);
+
+      if (oldFormatData) {
+        const parsedData = JSON.parse(oldFormatData);
+        console.log('📧 Parsed old format data:', parsedData);
+
+        if (parsedData.email) {
+          // Check if expired (but be lenient)
+          if (parsedData.expires && Date.now() > parsedData.expires) {
+            console.log('⚠️ Old format email expired, but using it anyway for better UX');
+          }
+
+          storedEmail.value = parsedData.email;
+          console.log('✅ Email found in old format:', parsedData.email);
+          return parsedData.email;
+        }
+      }
+
+      console.log('❌ No stored email found in any format');
     } catch (error) {
-      console.error('Error retrieving stored email:', error);
+      console.error('❌ Error retrieving stored email:', error);
     }
     return null;
   };
@@ -458,21 +485,21 @@ export function useEmailManagement() {
    */
   const requestEmailFromOtherTabs = () => new Promise((resolve, reject) => {
     isRequestingEmail.value = true;
+    console.log('📧 Requesting email from tabs (direct localStorage access)...');
 
     try {
-      // Direct localStorage access - much simpler and more reliable
-      const email = localStorage.getItem('emailForSignIn');
+      // Use the same robust email retrieval logic
+      const email = getStoredEmail();
 
       if (email) {
-        storedEmail.value = email;
-        console.log('📧 Email found in localStorage:', email);
+        console.log('✅ Email found via requestEmailFromOtherTabs:', email);
         resolve(email);
       } else {
-        console.log('📧 No email found in localStorage');
+        console.log('❌ No stored email found via requestEmailFromOtherTabs');
         reject(new Error('No stored email found'));
       }
     } catch (error) {
-      console.error('Error accessing stored email:', error);
+      console.error('❌ Error accessing stored email:', error);
       reject(error);
     } finally {
       isRequestingEmail.value = false;
@@ -480,11 +507,13 @@ export function useEmailManagement() {
   });
 
   /**
-   * Clear stored email
+   * Clear stored email (both formats)
    */
   const clearStoredEmail = () => {
     localStorage.removeItem('emailForSignIn');
+    localStorage.removeItem('chitter_signin_email');
     storedEmail.value = '';
+    console.log('🧹 Cleared all stored email formats');
   };
 
   return {
