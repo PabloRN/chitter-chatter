@@ -234,7 +234,7 @@ class AuthService {
    */
   async handleExistingAccountSignIn(credential) {
     try {
-      const existingUserResult = await signInWithCredential(this.getAuth(), credential);
+      const existingUserResult = await signInWithCredential(this.auth, credential);
 
       // Update user status in database
       await this.updateUserStatus(existingUserResult.user.uid, {
