@@ -104,31 +104,6 @@ const useUserStore = defineStore('user', {
             });
           }
           break;
-        case 'EMAIL_STORE_REQUEST': {
-          console.log('📧 Received email request from other tab');
-          // Check if we have the email and respond using tabCommunicationService storage
-          const storedEmailData = tabCommunicationService.getTabData('signin_email');
-          if (storedEmailData && storedEmailData.email) {
-            console.log('📧 Responding with stored email:', storedEmailData.email);
-            tabCommunicationService.broadcastEmailStoreResponse(
-              storedEmailData.email,
-              message.requestingTabId,
-              tabCommunicationService.getTabId(),
-            );
-          } else {
-            // Fallback to old storage for backwards compatibility
-            const email = window.localStorage.getItem('emailForSignIn') || window.sessionStorage.getItem('emailForSignIn');
-            if (email) {
-              console.log('📧 Responding with legacy stored email:', email);
-              tabCommunicationService.broadcastEmailStoreResponse(
-                email,
-                message.requestingTabId,
-                tabCommunicationService.getTabId(),
-              );
-            }
-          }
-        }
-          break;
         case 'FOCUS_REQUEST':
           console.log('🏠 Received focus request from auth tab');
           // This is the original tab - gain focus and stay here
@@ -158,26 +133,9 @@ const useUserStore = defineStore('user', {
     },
 
     cleanupExpiredEmailData() {
-      // Clean expired email data from tabCommunicationService
-      tabCommunicationService.cleanExpiredTabData();
-
-      // Clean up legacy email storage as well
-      try {
-        const timestampStr = window.sessionStorage.getItem('emailForSignInTimestamp');
-        if (timestampStr) {
-          const timestamp = parseInt(timestampStr, 10);
-          const tenMinutesAgo = Date.now() - 600000; // 10 minutes
-
-          if (timestamp < tenMinutesAgo) {
-            window.localStorage.removeItem('emailForSignIn');
-            window.sessionStorage.removeItem('emailForSignIn');
-            window.sessionStorage.removeItem('emailForSignInTimestamp');
-            console.log('🧹 Cleaned expired email data');
-          }
-        }
-      } catch (error) {
-        console.error('Error cleaning expired email data:', error);
-      }
+      // Email is now stored simply in localStorage without expiration
+      // No cleanup needed since localStorage persists until manually cleared
+      console.log('📧 Email cleanup skipped - using persistent localStorage');
     },
 
     initBlockListeners(userId) {
@@ -723,22 +681,9 @@ const useUserStore = defineStore('user', {
         auth.sendSignInLinkToEmail = (email, actionCodeSettings) => {
           console.log('📧 Intercepted email link request for:', email);
 
-          // Store email using tabCommunicationService for cross-tab access
-          tabCommunicationService.storeTabData('signin_email', {
-            email,
-            timestamp: Date.now(),
-          }, 600000); // 10 minutes expiry
-
-          // Maintain legacy storage for backwards compatibility
+          // Store email in localStorage for cross-tab access (simple and reliable)
           window.localStorage.setItem('emailForSignIn', email);
-          window.sessionStorage.setItem('emailForSignIn', email);
-          window.sessionStorage.setItem('emailForSignInTimestamp', Date.now().toString());
-
-          // Share via tabCommunicationService for other tabs
-          tabCommunicationService.broadcastEmailStoreRequest(
-            email,
-            tabCommunicationService.getTabId(),
-          );
+          console.log('📧 Email stored in localStorage for cross-tab access');
 
           // Call the original method
           return originalSendSignInLinkToEmail.call(this, email, actionCodeSettings);

@@ -257,13 +257,20 @@ const handleEmailVerification = async (oobCode) => {
     const result = await verifyEmail(oobCode);
 
     successMessage.value = 'Email Verified!';
-    successDetails.value = result.message || 'Your email has been successfully verified.';
-    showReturnButton.value = true;
+    successDetails.value = `${result.message || 'Your email has been successfully verified.'} This tab will close automatically.`;
+    showReturnButton.value = false;
 
-    // Navigate back after delay
+    // Auto-close tab after delay
     setTimeout(() => {
-      returnToOriginalTab();
-    }, 2000);
+      console.log('🏠 Auto-closing verification tab');
+      try {
+        window.close();
+      } catch (error) {
+        console.warn('Could not auto-close tab, showing return button:', error);
+        showReturnButton.value = true;
+        successDetails.value += ' Please close this tab manually or click the button below.';
+      }
+    }, 2500);
   } catch (error) {
     console.error('❌ Email verification failed:', error);
     throw error;
@@ -296,18 +303,27 @@ const handleSignInSuccess = async (result) => {
 
   if (result.isUpgrade) {
     successMessage.value = 'Account Upgraded!';
-    successDetails.value = 'Your anonymous account has been successfully upgraded.';
+    successDetails.value = 'Your anonymous account has been successfully upgraded. This tab will close automatically.';
   } else {
     successMessage.value = 'Sign In Successful!';
-    successDetails.value = 'You have been successfully signed in.';
+    successDetails.value = 'You have been successfully signed in. This tab will close automatically.';
   }
 
-  showReturnButton.value = true;
+  showReturnButton.value = false; // Hide return button since we're auto-closing
 
-  // Auto-navigate back to original tab after short delay
+  // Auto-close tab after short delay
   setTimeout(() => {
-    returnToOriginalTab();
-  }, 1500);
+    console.log('🏠 Auto-closing authentication tab');
+    try {
+      // Attempt to close the tab
+      window.close();
+    } catch (error) {
+      console.warn('Could not auto-close tab, showing return button:', error);
+      // If auto-close fails, show the return button as fallback
+      showReturnButton.value = true;
+      successDetails.value += ' Please close this tab manually or click the button below.';
+    }
+  }, 2000);
 };
 
 /**
