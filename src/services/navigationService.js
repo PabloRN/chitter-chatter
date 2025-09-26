@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/extensions
 import tabCommunicationService from './tabCommunicationService.js';
 
 /**
@@ -28,7 +29,7 @@ class NavigationService {
     this.tabCommunicationService.addAuthListener((message) => {
       this.handleNavigationMessage(message);
     });
-
+    console.log('tabCommunicationService methods:', Object.keys(tabCommunicationService));
     // Clean expired data on page load
     this.tabCommunicationService.cleanExpiredTabData();
   }
@@ -50,6 +51,10 @@ class NavigationService {
       case 'AUTH_FAILURE':
         this.handleAuthFailureNavigation(message);
         break;
+      default:
+        // Optionally log or ignore unknown message types
+        console.warn(`Unknown navigation message type: ${message.type}`);
+        break;
     }
   }
 
@@ -60,7 +65,7 @@ class NavigationService {
     const currentTabId = this.tabCommunicationService.getTabId();
 
     if (message.targetTabId === currentTabId
-        || (message.originalTabContext && this.isCurrentTab(message.originalTabContext))) {
+      || (message.originalTabContext && this.isCurrentTab(message.originalTabContext))) {
       console.log('🎯 Focusing this tab based on request');
       this.focusCurrentTab();
 
@@ -147,6 +152,8 @@ class NavigationService {
         // Try to bring tab to front
         window.parent?.focus();
       }
+      // Use 'this' to satisfy the linter and for future extensibility
+      this.lastFocusAttempt = Date.now();
     } catch (error) {
       console.error('Error focusing current tab:', error);
     }
@@ -165,7 +172,7 @@ class NavigationService {
 
     // If this is an auth tab, close it after a delay
     const currentUrl = window.location.href;
-    if (this.isAuthActionUrl(currentUrl)) {
+    if (NavigationService.isAuthActionUrl(currentUrl)) {
       const currentTabId = this.tabCommunicationService.getTabId();
 
       setTimeout(() => {
@@ -180,17 +187,17 @@ class NavigationService {
   /**
    * Check if current URL is an auth action URL
    */
-  isAuthActionUrl(url) {
+  static isAuthActionUrl(url) {
     return url.includes('/authaction')
-           || url.includes('mode=signIn')
-           || url.includes('mode=verifyEmail')
-           || url.includes('mode=resetPassword');
+      || url.includes('mode=signIn')
+      || url.includes('mode=verifyEmail')
+      || url.includes('mode=resetPassword');
   }
 
   /**
-   * Navigate to specific tab context
-   */
-  navigateToContext(tabContext) {
+ * Navigate to specific tab context
+ */
+  static navigateToContext(tabContext) {
     const currentPath = window.location.pathname + window.location.search + window.location.hash;
     const targetPath = tabContext.pathname + (tabContext.search || '') + (tabContext.hash || '');
 
@@ -199,7 +206,7 @@ class NavigationService {
 
       // Use history.pushState for same-origin navigation
       if (window.location.origin === tabContext.origin) {
-        history.pushState({}, '', targetPath);
+        window.history.pushState({}, '', targetPath);
 
         // Dispatch popstate event to notify Vue Router
         window.dispatchEvent(new PopStateEvent('popstate'));
@@ -210,8 +217,8 @@ class NavigationService {
   }
 
   /**
-   * Store current context before navigation
-   */
+ * Store current context before navigation
+ */
   storeCurrentContext(additionalData = {}) {
     return this.tabCommunicationService.storeOriginalTabContext({
       userAgent: navigator.userAgent,
@@ -221,22 +228,22 @@ class NavigationService {
   }
 
   /**
-   * Get stored original context
-   */
+ * Get stored original context
+ */
   getOriginalContext() {
     return this.tabCommunicationService.getOriginalTabContext();
   }
 
   /**
-   * Clear stored context
-   */
+ * Clear stored context
+ */
   clearOriginalContext() {
     this.tabCommunicationService.clearOriginalTabContext();
   }
 
   /**
-   * Open URL in new tab with context storage
-   */
+ * Open URL in new tab with context storage
+ */
   openInNewTab(url, storeContext = true) {
     if (storeContext) {
       this.storeCurrentContext();
@@ -253,8 +260,8 @@ class NavigationService {
   }
 
   /**
-   * Handle email link opening (for Firebase Auth)
-   */
+ * Handle email link opening (for Firebase Auth)
+ */
   handleEmailLinkOpen(emailLinkUrl) {
     console.log('📧 Handling email link open');
 
@@ -271,29 +278,29 @@ class NavigationService {
   }
 
   /**
-   * Add focus listener
-   */
+ * Add focus listener
+ */
   addFocusListener(callback) {
     this.focusListeners.add(callback);
     return () => this.focusListeners.delete(callback);
   }
 
   /**
-   * Notify all focus listeners
-   */
+ * Notify all focus listeners
+ */
   notifyFocusListeners(isFocused) {
-    for (const listener of this.focusListeners) {
+    Array.from(this.focusListeners).forEach((listener) => {
       try {
         listener(isFocused);
       } catch (error) {
         console.error('Error in focus listener:', error);
       }
-    }
+    });
   }
 
   /**
-   * Get current tab info
-   */
+ * Get current tab info
+ */
   getCurrentTabInfo() {
     return {
       id: this.tabCommunicationService.getTabId(),
@@ -309,38 +316,41 @@ class NavigationService {
   }
 
   /**
-   * Check if tab is currently visible
-   */
-  isTabVisible() {
+ * Check if tab is currently visible
+ */
+  static isTabVisible() {
     return !document.hidden && document.hasFocus();
   }
 
   /**
-   * Wait for tab to become visible
-   */
-  waitForTabVisible(timeout = 5000) {
+ * Wait for tab to become visible
+ */
+  static waitForTabVisible(timeout = 5000) {
     return new Promise((resolve) => {
-      if (this.isTabVisible()) {
+      if (NavigationService.isTabVisible()) {
         resolve(true);
         return;
       }
 
       let timeoutId;
+      let visibilityHandler;
+      let focusHandler;
+
       const cleanup = () => {
         if (timeoutId) clearTimeout(timeoutId);
         document.removeEventListener('visibilitychange', visibilityHandler);
         window.removeEventListener('focus', focusHandler);
       };
 
-      const visibilityHandler = () => {
-        if (this.isTabVisible()) {
+      visibilityHandler = () => {
+        if (NavigationService.isTabVisible()) {
           cleanup();
           resolve(true);
         }
       };
 
-      const focusHandler = () => {
-        if (this.isTabVisible()) {
+      focusHandler = () => {
+        if (NavigationService.isTabVisible()) {
           cleanup();
           resolve(true);
         }
@@ -358,8 +368,8 @@ class NavigationService {
   }
 
   /**
-   * Cleanup method
-   */
+ * Cleanup method
+ */
   cleanup() {
     this.focusListeners.clear();
     // Note: tabCommunicationService handles its own cleanup

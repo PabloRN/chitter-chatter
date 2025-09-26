@@ -7,7 +7,6 @@ import { useUserStore } from '@/stores/user';
  */
 export function useAvatars() {
   const userStore = useUserStore();
-  
   // Loading states
   const isUploadingAvatar = ref(false);
   const isChangingAvatar = ref(false);
@@ -22,7 +21,7 @@ export function useAvatars() {
 
     return {
       avatar: user.avatar || '',
-      personalAvatar: user.personalAvatar || '', 
+      personalAvatar: user.personalAvatar || '',
       miniAvatar: user.miniAvatar || '',
       level: user.level || 'L1',
     };
@@ -205,7 +204,6 @@ export function useAvatars() {
   const avatarDisplayUrl = computed(() => {
     const avatar = currentUserAvatar.value;
     if (!avatar) return '';
-    
     return avatar.personalAvatar || avatar.avatar || '';
   });
 
@@ -246,7 +244,6 @@ export function useAvatars() {
  */
 export function useAvatarSelector() {
   const { changeAvatar, isChangingAvatar, avatarError } = useAvatars();
-  
   const selectedAvatar = ref('');
   const isSelectionMode = ref(false);
 
@@ -319,7 +316,6 @@ export function useAvatarSelector() {
  */
 export function useAvatarUpload() {
   const { uploadPersonalAvatar, isUploadingAvatar, avatarError } = useAvatars();
-  
   const dragOver = ref(false);
   const previewUrl = ref('');
 
@@ -345,7 +341,7 @@ export function useAvatarUpload() {
     e.preventDefault();
     dragOver.value = false;
 
-    const files = e.dataTransfer.files;
+    const { files } = e.dataTransfer;
     if (files.length > 0) {
       await handleFileUpload(files[0]);
     }
@@ -355,7 +351,7 @@ export function useAvatarUpload() {
    * Handle file input change
    */
   const handleFileInput = async (e) => {
-    const files = e.target.files;
+    const { files } = e.target;
     if (files && files.length > 0) {
       await handleFileUpload(files[0]);
     }
@@ -368,13 +364,10 @@ export function useAvatarUpload() {
     try {
       // Create preview
       previewUrl.value = URL.createObjectURL(file);
-      
       // Upload file
       const result = await uploadPersonalAvatar(file);
-      
       // Clear preview after successful upload
       clearPreview();
-      
       return result;
     } catch (err) {
       clearPreview();

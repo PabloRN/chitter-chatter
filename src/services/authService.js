@@ -234,7 +234,7 @@ class AuthService {
    */
   async handleExistingAccountSignIn(credential) {
     try {
-      const existingUserResult = await signInWithCredential(this.auth, credential);
+      const existingUserResult = await signInWithCredential(this.getAuth(), credential);
 
       // Update user status in database
       await this.updateUserStatus(existingUserResult.user.uid, {
@@ -320,15 +320,15 @@ class AuthService {
   }
 
   /**
-   * Get current auth user
-   */
+ * Get current auth user
+ */
   getCurrentUser() {
     return this.auth.currentUser;
   }
 
   /**
-   * Check if user is anonymous
-   */
+ * Check if user is anonymous
+ */
   isAnonymous() {
     const user = this.getCurrentUser();
     return user?.isAnonymous || false;

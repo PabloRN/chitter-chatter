@@ -4,9 +4,10 @@ import {
   getAuth,
   onAuthStateChanged,
   signInAnonymously,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
+  deleteUser,
+  // createUserWithEmailAndPassword,
+  // signInWithEmailAndPassword,
+  // signOut,
   signInWithCredential,
   // GoogleAuthProvider,
   // EmailAuthProvider,
@@ -14,9 +15,9 @@ import {
 import {
   getDatabase, ref, set, update, onValue, off, get, onDisconnect,
 } from 'firebase/database';
-import {
-  getStorage, ref as storageRef, getDownloadURL, uploadBytes,
-} from 'firebase/storage';
+// import {
+//   getStorage, ref as storageRef, getDownloadURL, uploadBytes,
+// } from 'firebase/storage';
 import router from '@/router/index';
 // Note: extractImageName moved to avatarService
 import authService from '@/services/authService';
@@ -103,7 +104,7 @@ const useUserStore = defineStore('user', {
             });
           }
           break;
-        case 'EMAIL_STORE_REQUEST':
+        case 'EMAIL_STORE_REQUEST': {
           console.log('📧 Received email request from other tab');
           // Check if we have the email and respond using tabCommunicationService storage
           const storedEmailData = tabCommunicationService.getTabData('signin_email');
@@ -126,6 +127,7 @@ const useUserStore = defineStore('user', {
               );
             }
           }
+        }
           break;
         case 'FOCUS_REQUEST':
           console.log('🏠 Received focus request from auth tab');
@@ -180,7 +182,6 @@ const useUserStore = defineStore('user', {
 
     initBlockListeners(userId) {
       const db = getDatabase();
-      const userStore = useUserStore();
 
       // Clean up old listeners (in case user switches account)
       this.blockListeners.forEach((unsubscribe) => unsubscribe());
@@ -189,22 +190,20 @@ const useUserStore = defineStore('user', {
       // 🔔 Listen to "blocked" (who I blocked)
       const blockedRef = ref(db, `users/${userId}/blocked`);
       const unsubscribeBlocked = onValue(blockedRef, (snap) => {
-        userStore.currentUser.blocked = snap.val() || {};
+        this.currentUser.blocked = snap.val() || {};
       });
       this.blockListeners.push(() => off(blockedRef, 'value', unsubscribeBlocked));
 
       // 🔔 Listen to "blockedBy" (who blocked me)
       const blockedByRef = ref(db, `users/${userId}/blockedBy`);
       const unsubscribeBlockedBy = onValue(blockedByRef, (snap) => {
-        userStore.currentUser.blockedBy = snap.val() || {};
+        this.currentUser.blockedBy = snap.val() || {};
       });
       this.blockListeners.push(() => off(blockedByRef, 'value', unsubscribeBlockedBy));
     },
     async uploadUserPersonalAvatar(file) {
-      const { currentUser } = this;
-
       try {
-        const downloadURL = await avatarService.uploadPersonalAvatar(currentUser.userId, file);
+        const downloadURL = await avatarService.uploadPersonalAvatar(this.currentUser.userId, file);
         this.setCurrentUserPersonalAvatar({ personalAvatar: downloadURL });
       } catch (error) {
         console.error('Error uploading user avatar:', error);
@@ -277,10 +276,10 @@ const useUserStore = defineStore('user', {
     async userSignOut() {
       const auth = getAuth();
       const db = getDatabase();
-      const { currentUser } = auth;
+      const { currentUser: authCurrentUser } = auth;
 
-      if (currentUser) {
-        const userRef = ref(db, `users/${currentUser.uid}`);
+      if (authCurrentUser) {
+        const userRef = ref(db, `users/${authCurrentUser.uid}`);
 
         // await update(userRef, { onlineState: false, status: 'offline' });
 
@@ -306,6 +305,7 @@ const useUserStore = defineStore('user', {
     async getUser() {
       const auth = getAuth();
       const db = getDatabase();
+      const { currentUser: authCurrentUser } = auth;
 
       // Initialize cross-tab communication
       this.initAuthUpgradeChannel();
@@ -314,42 +314,74 @@ const useUserStore = defineStore('user', {
       this.cleanupExpiredEmailData();
 
       onAuthStateChanged(auth, async (user) => {
-        console.log('🔍 onAuthStateChanged triggered', user);
-
         if (user) {
           const userRef = ref(db, `users/${user.uid}`);
-
+          console.log(' 🔍 onAuthStateChanged triggered', user);
+          console.log('this.currentUser', this.currentUser);
           if (user.isAnonymous) {
+            // 🟢 Always seed anon with fresh data
             const uidSnippet = user.uid.substring(0, 4);
             const nickname = `anon_${uidSnippet}`;
-            this.initialUser.nickname = nickname;
-            // this.initialUser.userId = user.uid; // Ensure userId matches Firebase UID
-            await set(userRef, this.initialUser);
-          } else {
-            // For verified users, update online status and ensure ownedRooms exists
-            const userSnapshot = await get(userRef);
-            const existingUser = userSnapshot.val();
-
-            const updates = {
-              onlineState: true,
-              status: 'online',
-              isAnonymous: false,
-              // personalAvatar: user.providerData[0].photoURL || '',
+            const anonUser = {
+              ...this.initialUser,
+              nickname,
+              userId: user.uid,
+              isAnonymous: true,
             };
 
-            // Migration: Add ownedRooms array if it doesn't exist
-            if (!existingUser?.ownedRooms) {
-              updates.ownedRooms = [];
+            await set(userRef, anonUser);
+
+            onDisconnect(userRef).update({
+              onlineState: false,
+              status: 'offline',
+            });
+          } else {
+            // 🧹 Step 1: clean up the old anon
+            if (this.currentUser?.isAnonymous) {
+              const oldAnonRef = ref(db, `users/${this.currentUser.userId}`);
+              await onDisconnect(oldAnonRef).cancel();
+              await set(oldAnonRef, null);
+              // await deleteUser(authCurrentUser);
+              console.log('authCurrentUser', authCurrentUser);
             }
 
-            await update(userRef, updates);
+            // Step 2: check if real user already exists
+            const userSnapshot = await get(userRef);
+
+            if (!userSnapshot.exists()) {
+              // 🆕 First-time real user → seed from initialUser
+              const newUser = {
+                ...this.initialUser,
+                userId: user.uid,
+                isAnonymous: false,
+                status: 'online',
+                onlineState: true,
+              };
+              await set(userRef, newUser);
+            } else {
+              // 🔄 Existing real user → just update presence/status
+              const updates = {
+                onlineState: true,
+                status: 'online',
+                isAnonymous: false,
+              };
+
+              const existingUser = userSnapshot.val();
+              if (!existingUser?.ownedRooms) {
+                updates.ownedRooms = [];
+              }
+
+              await update(userRef, updates);
+            }
+
+            // Step 3: attach disconnect for real user
+            onDisconnect(userRef).update({
+              onlineState: false,
+              status: 'offline',
+            });
           }
 
-          onDisconnect(userRef).update({
-            onlineState: false,
-            status: 'offline',
-          });
-
+          // Always sync state to your app
           onValue(userRef, (snapshot) => {
             const userData = snapshot.val();
             this.setCurrentUser({ data: userData, userId: user.uid });
@@ -357,6 +389,7 @@ const useUserStore = defineStore('user', {
             this.initBlockListeners(user.uid);
           });
         } else {
+          // Signed out → login anonymously again
           this.loginAnonymously();
         }
       });
@@ -561,6 +594,97 @@ const useUserStore = defineStore('user', {
       }
     },
 
+    async handleAnonymousUserUpgrade(anonymousUser, loggedUser, roomId) {
+      const db = getDatabase();
+
+      try {
+        // Get anonymous user data
+        const anonymousSnapshot = await get(ref(db, `users/${anonymousUser.uid}`));
+        const anonymousData = anonymousSnapshot.val();
+
+        if (!anonymousData) {
+          throw new Error('No anonymous user data found.');
+        }
+
+        // Ensure the data being transferred belongs to the anonymous user
+        if (anonymousData.userId !== anonymousUser.uid) {
+          throw new Error('Data does not belong to the anonymous user.');
+        }
+
+        // Check if the logged user already exists in the database
+        const loggedUserSnapshot = await get(ref(db, `users/${loggedUser.uid}`));
+        const existingUserData = loggedUserSnapshot.val();
+
+        console.log('🔄 Upgrading anonymous user:', anonymousUser.uid, 'to user:', loggedUser.uid);
+        console.log('📊 Existing user data found:', !!existingUserData);
+
+        if (existingUserData) {
+          // User already exists - preserve ALL existing data, only update specific fields
+          const updatesToExistingUser = {
+            onlineState: true,
+            status: 'online',
+            isAnonymous: false,
+            unverified: anonymousUser.uid,
+          };
+
+          // Preserve position from anonymous user (for room context)
+          if (anonymousData.position) {
+            updatesToExistingUser.position = anonymousData.position;
+          }
+
+          // Preserve rooms data from anonymous user (current room participation)
+          if (anonymousData.rooms) {
+            updatesToExistingUser.rooms = anonymousData.rooms;
+          }
+
+          // Add personal avatar from provider if not already set
+          if (!existingUserData.personalAvatar && loggedUser.providerData[0]?.photoURL) {
+            updatesToExistingUser.personalAvatar = loggedUser.providerData[0].photoURL;
+          }
+
+          // Update existing user with minimal changes
+          await update(ref(db, `users/${loggedUser.uid}`), updatesToExistingUser);
+        } else {
+          // New user - transfer all anonymous data (existing behavior)
+          const newUserData = {
+            ...anonymousData,
+            isAnonymous: false,
+            userId: loggedUser.uid,
+            personalAvatar: loggedUser.providerData[0]?.photoURL || '',
+            unverified: anonymousUser.uid,
+          };
+
+          await set(ref(db, `users/${loggedUser.uid}`), newUserData);
+        }
+
+        // Handle room user transfer (if user was in a room)
+        try {
+          if (this.currentUser?.rooms?.[roomId]) {
+            const { roomUsersKey } = this.currentUser.rooms[roomId];
+            await set(ref(db, `rooms/${roomId}/users/${roomUsersKey}/userId`), loggedUser.uid);
+            await update(ref(db, `rooms/${roomId}/usersUpgraded`), {
+              verifiedUser: loggedUser.uid,
+              unverifiedUser: anonymousUser.uid,
+            });
+          }
+        } catch (roomError) {
+          console.warn('Room transfer failed, but continuing with upgrade:', roomError);
+        }
+
+        // Cleanup anonymous user data from database
+        try {
+          await set(ref(db, `users/${anonymousUser.uid}`), null);
+        } catch (cleanupError) {
+          console.warn('Anonymous user database cleanup failed, but upgrade completed:', cleanupError);
+        }
+
+        console.log('✅ Anonymous user upgrade completed successfully');
+      } catch (error) {
+        console.error('❌ Error during anonymous user upgrade:', error);
+        throw error;
+      }
+    },
+
     async setFirebaseUiInstance(roomId) {
       const auth = getAuth();
       const anonymousUser = auth.currentUser;
@@ -571,67 +695,6 @@ const useUserStore = defineStore('user', {
 
       const ui = window.firebaseui.auth.AuthUI.getInstance()
         || new window.firebaseui.auth.AuthUI(window.firebase.auth());
-
-      const handleUpgrade = async (user) => {
-        const db = getDatabase();
-        let data = null;
-
-        try {
-          // Save anonymous user data (adapted from old working code)
-          const snapshot = await get(ref(db, `users/${anonymousUser.uid}`));
-          data = snapshot.val();
-
-          if (!data) {
-            throw new Error('No anonymous user data found.');
-          }
-
-          // Ensure the data being transferred belongs to the anonymous user
-          if (data.userId !== anonymousUser.uid) {
-            throw new Error('Data does not belong to the anonymous user.');
-          }
-          console.log('User Data', user);
-          // Update the user data with the new user ID
-          data.isAnonymous = false;
-          data.userId = user.uid;
-          data.personalAvatar = user.providerData[0].photoURL || '';
-
-          // Transfer the user data to the new user ID
-          if (anonymousUser.uid !== user.uid) {
-            data.unverified = anonymousUser.uid;
-
-            // Try to transfer room user data (but don't fail if permissions don't allow it)
-            try {
-              if (this.currentUser?.rooms?.[roomId]) {
-                const { roomUsersKey } = this.currentUser.rooms[roomId];
-                await set(ref(db, `rooms/${roomId}/users/${roomUsersKey}/userId`), user.uid);
-                await update(ref(db, `rooms/${roomId}/usersUpgraded`), {
-                  verifiedUser: user.uid,
-                  unverifiedUser: anonymousUser.uid,
-                });
-              }
-            } catch (roomError) {
-              // Continue with the upgrade even if room transfer fails
-            }
-
-            // Set the new user data first (most important step)
-            await set(ref(db, `users/${user.uid}`), data);
-
-            // Only cleanup the database data, NOT the user account
-            // (Firebase should handle the account upgrade automatically)
-            try {
-              await set(ref(db, `users/${anonymousUser.uid}`), null);
-            } catch (cleanupError) {
-              // Continue even if cleanup fails
-            }
-          } else {
-            // Same UID, just update the data
-            await set(ref(db, `users/${user.uid}`), data);
-          }
-        } catch (error) {
-          console.error('Error during user upgrade:', error);
-          throw error;
-        }
-      };
 
       // Store anonymous user ID for potential cross-tab communication
       if (anonymousUser?.uid) {
@@ -657,7 +720,7 @@ const useUserStore = defineStore('user', {
       const originalSendSignInLinkToEmail = auth.sendSignInLinkToEmail;
 
       try {
-        auth.sendSignInLinkToEmail = function (email, actionCodeSettings) {
+        auth.sendSignInLinkToEmail = (email, actionCodeSettings) => {
           console.log('📧 Intercepted email link request for:', email);
 
           // Store email using tabCommunicationService for cross-tab access
@@ -686,9 +749,9 @@ const useUserStore = defineStore('user', {
             signInSuccessWithAuthResult: (authResult) => {
               console.log('🚀 signInSuccessWithAuthResult called:', { authResult, anonymousUser });
               const { user } = authResult;
-              // Call handleUpgrade without awaiting to ensure we return false immediately
-              handleUpgrade(user).then(() => {
-                console.log('🎯 handleUpgrade completed, calling userUpgraded');
+              // Call handleAnonymousUserUpgrade without awaiting to ensure we return false immediately
+              this.handleAnonymousUserUpgrade(anonymousUser, user, roomId).then(() => {
+                console.log('🎯 handleAnonymousUserUpgrade completed, calling userUpgraded');
                 if (authResult && !authResult.user.isAnonymous) {
                   this.userUpgraded({
                     verifiedUser: authResult.user.uid,
@@ -697,7 +760,7 @@ const useUserStore = defineStore('user', {
                   });
                 }
               }).catch((error) => {
-                console.error('Error during user upgrade:', error);
+                console.error('Error during anonymous user upgrade:', error);
               });
 
               return false; // prevent redirect
@@ -720,8 +783,8 @@ const useUserStore = defineStore('user', {
                 const userCredential = await signInWithCredential(auth, cred);
                 const { user } = userCredential;
 
-                // Call handleUpgrade with the user
-                await handleUpgrade(user);
+                // Call handleAnonymousUserUpgrade with the user
+                await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
                 console.log('🎯 Calling userUpgraded from signInFailure');
                 this.userUpgraded({
                   verifiedUser: user.uid,
@@ -787,6 +850,7 @@ const useUserStore = defineStore('user', {
 
     setCurrentUser(payload) {
       Object.assign(this.currentUser, { ...payload.data, userId: payload.userId });
+      console.log('this.currentUser', this.currentUser);
     },
 
     setUserData(data) {
