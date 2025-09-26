@@ -55,9 +55,7 @@ class AvatarService {
       const imageRef = storageRef(storage, `users/${userId}/avatars/L1/useravatar.png`);
       const snapshot = await uploadBytes(imageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
-      
       await set(dbRef(db, `users/${userId}/personalAvatar/`), downloadURL);
-      
       console.log('User avatar uploaded:', downloadURL);
       return downloadURL;
     } catch (error) {

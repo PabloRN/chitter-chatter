@@ -68,12 +68,11 @@ class TabCommunicationService {
       if (!channel || !listeners) return;
 
       // Find wrapped callback
-      for (const listener of listeners) {
-        if (listener.original === callback) {
-          channel.removeEventListener('message', listener.wrapped);
-          listeners.delete(listener);
-          break;
-        }
+      const listenerArr = Array.from(listeners);
+      const foundListener = listenerArr.find((listener) => listener.original === callback);
+      if (foundListener) {
+        channel.removeEventListener('message', foundListener.wrapped);
+        listeners.delete(foundListener);
       }
     } catch (error) {
       console.error(`Error removing listener from ${channelName}:`, error);
@@ -90,9 +89,9 @@ class TabCommunicationService {
 
       if (!channel || !listeners) return;
 
-      for (const listener of listeners) {
+      Array.from(listeners).forEach((listener) => {
         channel.removeEventListener('message', listener.wrapped);
-      }
+      });
 
       listeners.clear();
     } catch (error) {
@@ -121,9 +120,9 @@ class TabCommunicationService {
    * Close all channels
    */
   closeAllChannels() {
-    for (const channelName of this.channels.keys()) {
+    Array.from(this.channels.keys()).forEach((channelName) => {
       this.closeChannel(channelName);
-    }
+    });
   }
 
   // Auth-specific communication methods
@@ -237,8 +236,8 @@ class TabCommunicationService {
   }
 
   /**
-   * Retrieve data from cross-tab storage
-   */
+ * Retrieve data from cross-tab storage
+ */
   getTabData(key, removeAfterRead = false) {
     try {
       const stored = sessionStorage.getItem(`chitter_${key}`);
@@ -265,8 +264,8 @@ class TabCommunicationService {
   }
 
   /**
-   * Remove tab data
-   */
+ * Remove tab data
+ */
   removeTabData(key) {
     try {
       sessionStorage.removeItem(`chitter_${key}`);
@@ -276,14 +275,15 @@ class TabCommunicationService {
   }
 
   /**
-   * Clean expired tab data
-   */
+ * Clean expired tab data
+ */
+  // eslint-disable-next-line class-methods-use-this
   cleanExpiredTabData() {
     try {
       const keys = Object.keys(sessionStorage);
       const chitterKeys = keys.filter((key) => key.startsWith('chitter_'));
 
-      for (const key of chitterKeys) {
+      chitterKeys.forEach((key) => {
         const stored = sessionStorage.getItem(key);
         if (stored) {
           const storageData = JSON.parse(stored);
@@ -291,7 +291,7 @@ class TabCommunicationService {
             sessionStorage.removeItem(key);
           }
         }
-      }
+      });
     } catch (error) {
       console.error('Error cleaning expired tab data:', error);
     }
@@ -300,27 +300,27 @@ class TabCommunicationService {
   // Tab identification utilities
 
   /**
-   * Generate unique tab ID
-   */
+ * Generate unique tab ID
+ */
   generateTabId() {
     return `tab_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   /**
-   * Get or create tab ID for current tab
-   */
+ * Get or create tab ID for current tab
+ */
   getTabId() {
     let tabId = sessionStorage.getItem('chitter_tab_id');
     if (!tabId) {
-      tabId = this.generateTabId();
+      tabId = TabCommunicationService.generateTabId();
       sessionStorage.setItem('chitter_tab_id', tabId);
     }
     return tabId;
   }
 
   /**
-   * Store original tab context for return navigation
-   */
+ * Store original tab context for return navigation
+ */
   storeOriginalTabContext(additionalData = {}) {
     const tabContext = {
       url: window.location.href,
@@ -329,26 +329,26 @@ class TabCommunicationService {
       search: window.location.search,
       hash: window.location.hash,
       timestamp: Date.now(),
-      tabId: this.getTabId(),
+      tabId: TabCommunicationService.getTabId(),
       ...additionalData,
     };
 
-    this.storeTabData('original_context', tabContext);
+    TabCommunicationService.storeTabData('original_context', tabContext);
     return tabContext;
   }
 
   /**
-   * Get original tab context
-   */
+ * Get original tab context
+ */
   getOriginalTabContext() {
-    return this.getTabData('original_context');
+    return TabCommunicationService.getTabData('original_context');
   }
 
   /**
-   * Clear original tab context
-   */
+ * Clear original tab context
+ */
   clearOriginalTabContext() {
-    this.removeTabData('original_context');
+    TabCommunicationService.removeTabData('original_context');
   }
 }
 

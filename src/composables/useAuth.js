@@ -427,13 +427,8 @@ export function useEmailManagement() {
    */
   const storeEmailForSignIn = (email) => {
     try {
-      // Use localStorage for cross-tab sharing
-      const emailData = {
-        email,
-        timestamp: Date.now(),
-        expires: Date.now() + 600000, // 10 minutes
-      };
-      localStorage.setItem('chitter_signin_email', JSON.stringify(emailData));
+      // Simple localStorage storage for cross-tab sharing
+      localStorage.setItem('emailForSignIn', email);
       storedEmail.value = email;
       console.log('📧 Email stored for cross-tab sign-in');
     } catch (error) {
@@ -446,18 +441,11 @@ export function useEmailManagement() {
    */
   const getStoredEmail = () => {
     try {
-      const stored = localStorage.getItem('chitter_signin_email');
-      if (stored) {
-        const emailData = JSON.parse(stored);
-
-        // Check if expired
-        if (Date.now() > emailData.expires) {
-          localStorage.removeItem('chitter_signin_email');
-          return null;
-        }
-
-        storedEmail.value = emailData.email;
-        return emailData.email;
+      const email = localStorage.getItem('emailForSignIn');
+      if (email) {
+        storedEmail.value = email;
+        console.log('📧 Email retrieved from localStorage:', email);
+        return email;
       }
     } catch (error) {
       console.error('Error retrieving stored email:', error);
@@ -466,45 +454,36 @@ export function useEmailManagement() {
   };
 
   /**
-   * Request email from other tabs
+   * Request email from other tabs (simplified to direct localStorage access)
    */
   const requestEmailFromOtherTabs = () => new Promise((resolve, reject) => {
     isRequestingEmail.value = true;
-    const currentTabId = tabCommunicationService.getTabId();
-    let timeout;
-    let listener;
 
-    const cleanup = () => {
-      if (timeout) clearTimeout(timeout);
-      if (listener) tabCommunicationService.removeAuthListener(listener);
-      isRequestingEmail.value = false;
-    };
+    try {
+      // Direct localStorage access - much simpler and more reliable
+      const email = localStorage.getItem('emailForSignIn');
 
-    // Listen for email response
-    listener = tabCommunicationService.addAuthListener((message) => {
-      if (message.type === 'EMAIL_STORE_RESPONSE'
-            && message.requestingTabId === currentTabId) {
-        cleanup();
-        storedEmail.value = message.email;
-        resolve(message.email);
+      if (email) {
+        storedEmail.value = email;
+        console.log('📧 Email found in localStorage:', email);
+        resolve(email);
+      } else {
+        console.log('📧 No email found in localStorage');
+        reject(new Error('No stored email found'));
       }
-    });
-
-    // Send request
-    tabCommunicationService.broadcastEmailStoreRequest('', currentTabId);
-
-    // Set timeout
-    timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Email request timeout'));
-    }, 5000);
+    } catch (error) {
+      console.error('Error accessing stored email:', error);
+      reject(error);
+    } finally {
+      isRequestingEmail.value = false;
+    }
   });
 
   /**
    * Clear stored email
    */
   const clearStoredEmail = () => {
-    localStorage.removeItem('chitter_signin_email');
+    localStorage.removeItem('emailForSignIn');
     storedEmail.value = '';
   };
 

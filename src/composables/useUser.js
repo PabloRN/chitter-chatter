@@ -7,7 +7,7 @@ import { useUserStore } from '@/stores/user';
  */
 export function useUser() {
   const userStore = useUserStore();
-  
+
   // Reactive state from store
   const currentUser = computed(() => userStore.currentUser);
   const userData = computed(() => userStore.userData);
@@ -85,9 +85,7 @@ export function useUser() {
   /**
    * Get user data for specific user ID
    */
-  const getUserData = (userId) => {
-    return userStore.getUserData(userId);
-  };
+  const getUserData = (userId) => userStore.getUserData(userId);
 
   /**
    * Check if room is favorited by current user
@@ -192,7 +190,7 @@ export function useUser() {
  */
 export function useUserProfile() {
   const userStore = useUserStore();
-  
+
   // Loading states
   const isUpdatingProfile = ref(false);
   const profileError = ref(null);
@@ -206,11 +204,11 @@ export function useUserProfile() {
       profileError.value = null;
 
       const updates = [];
-      
+
       if (profileData.nickname !== undefined) {
         updates.push(userStore.updateUserNickName(profileData.nickname));
       }
-      
+
       if (profileData.age !== undefined) {
         updates.push(userStore.updateUserAge(profileData.age));
       }

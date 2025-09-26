@@ -34,9 +34,9 @@ class ProfileService {
       const db = this.getDatabase();
       await update(
         dbRef(db, `users/${userId}`),
-        { 
-          nickname, 
-          nickNameUpdatedAt: Date.now() 
+        {
+          nickname,
+          nickNameUpdatedAt: Date.now(),
         },
       );
       console.log('Nickname updated successfully');
@@ -70,14 +70,14 @@ class ProfileService {
     try {
       const db = this.getDatabase();
       const userRef = dbRef(db, `users/${userId}`);
-      
+
       const snapshot = await get(userRef);
       const userData = snapshot.val();
       const currentFavorites = userData?.favoriteRooms || [];
 
       let newFavorites;
       let wasRemoved = false;
-      
+
       if (currentFavorites.includes(roomId)) {
         newFavorites = currentFavorites.filter((currentRoomId) => roomId !== currentRoomId);
         wasRemoved = true;
