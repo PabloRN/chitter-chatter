@@ -1,0 +1,59 @@
+name: Release to Production
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger only on version tags (v1.2.0, v1.2.1, etc.)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build
+        env:
+          VITE_APP_VERSION: ${{ steps.version.outputs.VERSION }}
+
+      - name: Deploy to Firebase Hosting (LIVE)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CHITTER_CHATTER_F762A }}
+          channelId: live
+          projectId: chitter-chatter-f762a
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          if [ -f "release-notes.md" ]; then
+            echo "Found release notes"
+          else
+            echo "No release notes found, using default"
+            echo "Release v${{ steps.version.outputs.VERSION }}" > release-notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          release_name: Release v${{ steps.version.outputs.VERSION }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: false
