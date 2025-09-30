@@ -138,6 +138,9 @@
         <!-- My Rooms Section -->
         <ProfileRooms />
 
+        <!-- Admin Panel (Only for Admin Users) -->
+        <AdminPanel v-if="getCurrentUser?.isAdmin" />
+
         <!-- Actions Section -->
         <v-card v-if="!getCurrentUser?.isAnonymous" class="profile-section themed-card" elevation="2">
           <v-card-title class="section-title">
@@ -207,6 +210,7 @@ import {
 import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
 import ProfileRooms from '@/components/ProfileRooms.vue';
+import AdminPanel from '@/components/AdminPanel.vue';
 import {
   GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
