@@ -1,0 +1,35 @@
+name: Deploy Development to Staging
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  deploy_staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build staging
+        run: npm run build
+        env:
+          VITE_APP_VERSION: "dev-${{ github.sha }}"
+
+      - name: Deploy to Firebase Staging Channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CHITTER_CHATTER_F762A }}
+          channelId: staging
+          expires: 30d
+          projectId: chitter-chatter-f762a
