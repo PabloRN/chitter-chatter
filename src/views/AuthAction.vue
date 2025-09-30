@@ -2,11 +2,7 @@
   <div class="auth-action-container">
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-container">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="64"
-      ></v-progress-circular>
+      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
       <p class="mt-4">{{ loadingMessage }}</p>
     </div>
 
@@ -15,12 +11,7 @@
       <v-icon color="success" size="64" class="mb-4">mdi-check-circle</v-icon>
       <h2>{{ successMessage }}</h2>
       <p v-if="successDetails" class="mt-2">{{ successDetails }}</p>
-      <v-btn
-        v-if="showReturnButton"
-        color="primary"
-        class="mt-4"
-        @click="returnToOriginalTab"
-      >
+      <v-btn v-if="showReturnButton" color="primary" class="mt-4" @click="returnToOriginalTab">
         Return to App
       </v-btn>
     </div>
@@ -30,11 +21,7 @@
       <v-icon color="error" size="64" class="mb-4">mdi-alert-circle</v-icon>
       <h2>Authentication Error</h2>
       <p class="mt-2">{{ errorMessage }}</p>
-      <v-btn
-        color="primary"
-        class="mt-4"
-        @click="handleRetry"
-      >
+      <v-btn color="primary" class="mt-4" @click="handleRetry">
         Try Again
       </v-btn>
     </div>
@@ -48,22 +35,12 @@
         </v-card-title>
         <v-card-text>
           <p class="mb-4">Please enter your email to complete the sign-in process.</p>
-          <v-text-field
-            v-model="emailInput"
-            label="Email Address"
-            type="email"
-            outlined
-            :error-messages="emailError"
-            @keyup.enter="handleEmailSubmit"
-          ></v-text-field>
+          <v-text-field v-model="emailInput" label="Email Address" type="email" outlined :error-messages="emailError"
+            @keyup.enter="handleEmailSubmit"></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            :loading="isProcessing"
-            @click="handleEmailSubmit"
-          >
+          <v-btn color="primary" :loading="isProcessing" @click="handleEmailSubmit">
             Continue
           </v-btn>
         </v-card-actions>
@@ -79,29 +56,14 @@
         </v-card-title>
         <v-card-text>
           <p class="mb-4">Enter your new password below.</p>
-          <v-text-field
-            v-model="newPassword"
-            label="New Password"
-            type="password"
-            outlined
-            :error-messages="passwordError"
-          ></v-text-field>
-          <v-text-field
-            v-model="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            outlined
-            :error-messages="confirmPasswordError"
-            @keyup.enter="handlePasswordReset"
-          ></v-text-field>
+          <v-text-field v-model="newPassword" label="New Password" type="password" outlined
+            :error-messages="passwordError"></v-text-field>
+          <v-text-field v-model="confirmPassword" label="Confirm Password" type="password" outlined
+            :error-messages="confirmPasswordError" @keyup.enter="handlePasswordReset"></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            :loading="isProcessing"
-            @click="handlePasswordReset"
-          >
+          <v-btn color="primary" :loading="isProcessing" @click="handlePasswordReset">
             Reset Password
           </v-btn>
         </v-card-actions>
@@ -257,7 +219,7 @@ const handleEmailVerification = async (oobCode) => {
     const result = await verifyEmail(oobCode);
 
     successMessage.value = 'Email Verified!';
-    successDetails.value = `${result.message || 'Your email has been successfully verified.'} This tab will close automatically.`;
+    successDetails.value = `${result.message || 'Your email has been successfully verified.'} This tab will close automatically in 5 seconds.`;
     showReturnButton.value = false;
 
     // Auto-close tab after delay
@@ -270,7 +232,7 @@ const handleEmailVerification = async (oobCode) => {
         showReturnButton.value = true;
         successDetails.value += ' Please close this tab manually or click the button below.';
       }
-    }, 2500);
+    }, 5000);
   } catch (error) {
     console.error('❌ Email verification failed:', error);
     throw error;

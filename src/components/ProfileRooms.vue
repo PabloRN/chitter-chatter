@@ -54,8 +54,8 @@
               @click="goToRoom(room.id)">
               <!-- Room Background -->
               <div class="room-background">
-                <v-img v-if="room.backgroundImage || room.picture || room.thumbnail"
-                  :src="room.backgroundImage || room.picture || room.thumbnail" height="120" cover
+                <v-img v-if="room.thumbnail || room.backgroundImage"
+                  :src="room.thumbnail || room.backgroundImage" height="120" cover
                   class="room-bg-image" />
                 <div v-else class="room-bg-placeholder">
                   <v-icon size="40" color="grey">mdi-image-off</v-icon>
