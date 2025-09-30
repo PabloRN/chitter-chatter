@@ -4,7 +4,7 @@
     <div class="room-card-container" @mouseenter="showPreview = true" @mouseleave="showPreview = false"
       @focusin="showPreview = true" @focusout="showPreview = false">
       <v-card @click="enterRoom(room, id)" class="mx-auto room-card">
-        <v-img :src="room?.thumbnail ? room.thumbnail : room.picture" class="room-image" height="200px" :cover="true">
+        <v-img :src="room?.thumbnail || room?.backgroundImage" class="room-image" height="200px" :cover="true">
           <!-- Subtle gradient overlay for text visibility -->
           <div class="gradient-overlay"></div>
           <!-- Heart icon for favorites (top right) -->

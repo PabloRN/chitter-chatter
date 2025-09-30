@@ -2,15 +2,20 @@
   <div class="avatar-manager">
     <div class="text-subtitle-1 font-weight-medium mb-2">Room Avatars</div>
     <p class="text-caption mb-4">
-      Upload avatars that users can choose from in this room. Mini versions will be auto-cropped from the head area.
+      Upload custom avatars or select from preloaded collection. Mini versions will be auto-cropped from the head area.
     </p>
 
     <!-- Avatars Grid with Add Button -->
     <v-card outlined>
-      <v-card-title class="text-h6">
-        {{ roomAvatars.length > 0 ? 'Room Avatars' : 'Add Your First Avatar' }}
-      </v-card-title>
+      <v-tabs v-model="activeTab" grow>
+        <v-tab>Manage Avatars</v-tab>
+        <v-tab>Add from Collection</v-tab>
+      </v-tabs>
+
       <v-card-text>
+        <v-tabs-window v-model="activeTab">
+          <!-- Tab 1: Manage Avatars -->
+          <v-tabs-window-item>
         <div class="avatars-grid">
           <!-- Existing Avatars -->
           <div v-for="(avatar, index) in roomAvatars" :key="avatar.name || index" class="avatar-item"
@@ -97,6 +102,53 @@
             </div>
           </div>
         </v-alert>
+          </v-tabs-window-item>
+
+          <!-- Tab 2: Add from Collection -->
+          <v-tabs-window-item>
+            <div v-if="loadingPreloaded" class="text-center py-8">
+              <v-progress-circular indeterminate color="primary" />
+              <p class="mt-2">Loading preloaded avatars...</p>
+            </div>
+
+            <div v-else-if="preloadedAvatars.length === 0" class="text-center py-8">
+              <v-icon size="64" color="grey">mdi-account-off</v-icon>
+              <p class="mt-2 text-caption">No preloaded avatars available yet</p>
+            </div>
+
+            <div v-else class="avatars-grid">
+              <div v-for="avatar in preloadedAvatars" :key="avatar.id"
+                   class="avatar-item selectable"
+                   :class="{ 'already-added': isPreloadedAlreadyAdded(avatar.id) }"
+                   @click="addPreloadedAvatar(avatar)">
+                <!-- Main Avatar Display -->
+                <div class="avatar-display">
+                  <v-img :src="avatar.originalPath" height="100" class="main-avatar" />
+
+                  <!-- Already Added Badge -->
+                  <v-chip v-if="isPreloadedAlreadyAdded(avatar.id)" small color="info" class="added-badge">
+                    <v-icon small left>mdi-check</v-icon>
+                    Added
+                  </v-chip>
+
+                  <!-- Add Button Overlay -->
+                  <div v-if="!isPreloadedAlreadyAdded(avatar.id)" class="add-button-overlay">
+                    <v-btn color="primary" fab small>
+                      <v-icon>mdi-plus</v-icon>
+                    </v-btn>
+                  </div>
+                </div>
+
+                <!-- Mini Avatar Display -->
+                <div class="mini-avatar-section">
+                  <v-avatar size="40" class="mini-avatar">
+                    <v-img :src="avatar.miniPath" />
+                  </v-avatar>
+                </div>
+              </div>
+            </div>
+          </v-tabs-window-item>
+        </v-tabs-window>
       </v-card-text>
     </v-card>
 
@@ -136,8 +188,11 @@ const emit = defineEmits(['update:modelValue']);
 const roomsStore = useRoomsStore();
 
 // State
+const activeTab = ref(0);
 const fileInput = ref(null);
 const roomAvatars = ref([]);
+const preloadedAvatars = ref([]);
+const loadingPreloaded = ref(false);
 const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
@@ -308,6 +363,58 @@ const cleanupPreviewUrls = () => {
   previewUrls.value = [];
 };
 
+const loadPreloadedAvatars = async () => {
+  loadingPreloaded.value = true;
+  try {
+    const avatars = await roomsStore.fetchPreloadedAvatars();
+    preloadedAvatars.value = Object.values(avatars);
+  } catch (error) {
+    console.error('Error loading preloaded avatars:', error);
+    showError.value = true;
+    errorMessage.value = 'Failed to load preloaded avatars';
+  } finally {
+    loadingPreloaded.value = false;
+  }
+};
+
+const isPreloadedAlreadyAdded = (preloadedId) => {
+  return roomAvatars.value.some((avatar) => avatar.preloadedId === preloadedId);
+};
+
+const addPreloadedAvatar = (preloadedAvatar) => {
+  // Check if already added
+  if (isPreloadedAlreadyAdded(preloadedAvatar.id)) {
+    showError.value = true;
+    errorMessage.value = 'This avatar is already added to your room';
+    return;
+  }
+
+  const avatarIndex = roomAvatars.value.length;
+  const willBeDefault = roomAvatars.value.length === 0 || !roomAvatars.value.some((a) => a.isDefault);
+
+  const newAvatar = {
+    name: preloadedAvatar.id,
+    url: preloadedAvatar.originalPath,
+    avatarURL: preloadedAvatar.originalPath,
+    mainUrl: preloadedAvatar.originalPath,
+    miniUrl: preloadedAvatar.miniPath,
+    miniAvatarURL: preloadedAvatar.miniPath,
+    isDefault: willBeDefault,
+    isPreview: false, // Preloaded avatars don't need upload
+    type: 'preloaded',
+    preloadedId: preloadedAvatar.id, // Track which preloaded avatar this is
+  };
+
+  roomAvatars.value.push(newAvatar);
+  emit('update:modelValue', roomAvatars.value);
+
+  showSuccess.value = true;
+  successMessage.value = 'Preloaded avatar added to room!';
+
+  // Switch back to manage tab to see the added avatar
+  activeTab.value = 0;
+};
+
 // Watchers
 watch(() => props.modelValue, () => {
   loadExistingAvatars();
@@ -316,6 +423,7 @@ watch(() => props.modelValue, () => {
 // Lifecycle
 onMounted(() => {
   loadExistingAvatars();
+  loadPreloadedAvatars();
 });
 
 onUnmounted(() => {
@@ -470,6 +578,42 @@ onUnmounted(() => {
 
 .add-avatar-card:hover .add-avatar-text {
   color: var(--primary);
+}
+
+/* Preloaded Avatar Selection */
+.avatar-item.selectable {
+  cursor: pointer;
+}
+
+.avatar-item.already-added {
+  border-color: var(--info);
+  background: rgba(var(--info-rgb), 0.1);
+  opacity: 0.7;
+}
+
+.added-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 1;
+}
+
+.add-button-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.avatar-item.selectable:hover .add-button-overlay {
+  opacity: 1;
+}
+
+.avatar-item.already-added:hover {
+  transform: none;
+  cursor: not-allowed;
 }
 
 /* Preview Section */

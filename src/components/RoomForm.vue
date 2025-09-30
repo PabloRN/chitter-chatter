@@ -40,27 +40,31 @@
           <v-switch v-model="formData.isPrivate" label="Private Room" color="primary"
             hint="Private rooms are only visible to invited users" persistent-hint class="mb-4" />
 
-          <!-- Background Image Upload -->
+          <!-- Background Selector -->
           <div class="upload-section mb-4">
-            <div class="text-subtitle-2 font-weight-medium mb-2">Background Image</div>
-            <v-file-input v-model="backgroundFile" accept="image/*" label="Upload Background Image"
-              hint="Recommended size: 1920x1080px" persistent-hint outlined dense show-size prepend-icon="mdi-image"
-              @change="onBackgroundFileChange" />
-
-            <div v-if="backgroundPreview || formData.backgroundImage || formData.picture || formData.thumbnail"
-              class="mt-3">
-              <v-img :src="backgroundPreview || formData.backgroundImage || formData.picture || formData.thumbnail"
-                height="200" class="background-preview" />
-              <v-btn v-if="backgroundPreview" small color="error" class="mt-2" @click="removeBackgroundImage">
-                Remove Image
-              </v-btn>
-            </div>
+            <BackgroundSelector v-model="selectedBackground" />
           </div>
 
           <!-- Avatar Manager Section -->
           <div class="upload-section mb-4">
-            <AvatarManager ref="avatarManager" :roomId="props.roomId" v-model="formData.publicAvatars" />
+            <AvatarManager ref="avatarManager" v-model="formData.publicAvatars" />
           </div>
+
+          <!-- Requirements Check Alert -->
+          <v-alert v-if="!hasMinimumRequirements" type="warning" prominent border="left" class="mb-4">
+            <div class="text-subtitle-2 mb-2">
+              <v-icon class="mr-2">mdi-alert-circle</v-icon>
+              Missing Requirements to Publish Room:
+            </div>
+            <ul class="ml-4">
+              <li v-if="!selectedBackground.value && !formData.backgroundImage">
+                <strong>Room background is required</strong> - Upload or select a background image
+              </li>
+              <li v-if="formData.publicAvatars.length < 2">
+                <strong>At least 2 avatars required</strong> (currently: {{ formData.publicAvatars.length }})
+              </li>
+            </ul>
+          </v-alert>
         </v-form>
       </v-card-text>
 
@@ -69,11 +73,15 @@
           Cancel
         </v-btn>
         <v-spacer />
-        <v-btn color="primary" :disabled="!formValid || !hasChanges" :loading="roomsStore.roomCreationLoading"
+        <v-btn color="primary" :disabled="!canPublishRoom || !hasChanges" :loading="roomsStore.roomCreationLoading"
           @click="handleSubmit">
           {{ isEdit ? 'Update Room' : 'Create Room' }}
           <v-tooltip v-if="isEdit && formValid && !hasChanges" activator="parent" location="top">
             No changes to save
+          </v-tooltip>
+          <v-tooltip v-else-if="!hasMinimumRequirements" activator="parent" location="top">
+            Missing required: {{ !selectedBackground.value && !formData.backgroundImage ? 'Background' : '' }}
+            {{ formData.publicAvatars.length < 2 ? ((!selectedBackground.value && !formData.backgroundImage) ? ' & ' : '') + 'At least 2 avatars' : '' }}
           </v-tooltip>
         </v-btn>
       </v-card-actions>
@@ -101,6 +109,7 @@ import {
   ROOM_THEMES, ROOM_CONSTRAINTS, DEFAULT_ROOM_VALUES, validateRoom,
 } from '@/utils/roomTypes';
 import AvatarManager from '@/components/AvatarManager.vue';
+import BackgroundSelector from '@/components/BackgroundSelector.vue';
 
 const props = defineProps({
   roomId: {
@@ -117,6 +126,7 @@ const router = useRouter();
 const route = useRoute();
 const roomsStore = useRoomsStore();
 const userStore = useUserStore();
+const getPublicAvatars = () => roomsStore.getPublicAvatars;
 
 // Form state
 const formValid = ref(false);
@@ -124,6 +134,7 @@ const form = ref(null);
 const avatarManager = ref(null);
 const backgroundFile = ref(null);
 const backgroundPreview = ref('');
+const selectedBackground = ref(null);
 
 // UI state
 const showSuccess = ref(false);
@@ -152,8 +163,17 @@ const themeOptions = computed(() => ROOM_THEMES.map((theme) => ({
   value: theme.value,
 })));
 
+const hasMinimumRequirements = computed(() => {
+  const hasBackground = !!selectedBackground.value || !!formData.backgroundImage;
+  const hasEnoughAvatars = formData.publicAvatars.length >= 2;
+  return hasBackground && hasEnoughAvatars;
+});
+
+const canPublishRoom = computed(() => {
+  return formValid.value && hasMinimumRequirements.value;
+});
+
 const hasChanges = computed(() => {
-  console.log('Checking for changes...', formData.theme);
   if (!props.isEdit) return true; // For new rooms, always allow creation
 
   // Check for basic form field changes
@@ -166,24 +186,13 @@ const hasChanges = computed(() => {
     || formData.isPrivate !== originalData.value.isPrivate
   );
 
-  // Check for background image changes
-  const backgroundChanged = !!backgroundFile.value;
+  // Check for background changes
+  const backgroundChanged = !!selectedBackground.value;
 
-  // Check for new avatars (avatars with isPreview: true)
-  const hasNewAvatars = formData.publicAvatars.some((avatar) => avatar.isPreview);
+  // Check for avatar changes - compare current avatars with original
+  const avatarsChanged = JSON.stringify(formData.publicAvatars) !== JSON.stringify(originalData.value.publicAvatars);
 
-  // Check if avatars were removed (comparing lengths)
-  const avatarsRemoved = formData.publicAvatars.filter((a) => !a.isPreview).length
-    !== originalData.value.publicAvatars?.length;
-
-  // Check if default avatar changed
-  const currentDefaultAvatar = formData.publicAvatars.find((a) => a.isDefault);
-  const originalDefaultAvatar = originalData.value.publicAvatars?.find((a) => a.isDefault);
-  const defaultAvatarChanged = currentDefaultAvatar?.name !== originalDefaultAvatar?.name;
-
-  const result = basicFieldsChanged || backgroundChanged || hasNewAvatars || avatarsRemoved || defaultAvatarChanged;
-
-  return result;
+  return basicFieldsChanged || backgroundChanged || avatarsChanged;
 });
 
 // Validation rules
@@ -203,33 +212,6 @@ const maxUsersRules = [
 ];
 
 // Methods
-const onBackgroundFileChange = (fileOrEvent) => {
-  // Handle different ways the file can be passed (similar to AvatarManager)
-  let file = fileOrEvent;
-  if (fileOrEvent && fileOrEvent.length) {
-    // If it's a FileList, get the first file
-    file = fileOrEvent[0];
-  } else if (fileOrEvent && fileOrEvent.target && fileOrEvent.target.files) {
-    // If it's an event object
-    file = fileOrEvent.target.files[0];
-  }
-
-  if (file && file instanceof File) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      backgroundPreview.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  } else {
-    backgroundPreview.value = '';
-  }
-};
-
-const removeBackgroundImage = () => {
-  backgroundFile.value = null;
-  backgroundPreview.value = '';
-};
-
 const loadRoomData = async () => {
   if (!props.isEdit || !props.roomId) return;
 
@@ -260,7 +242,7 @@ const loadRoomData = async () => {
         maxUsers: room.maxUsers,
         minAge: room.minAge,
         isPrivate: room.isPrivate,
-        backgroundImage: room.backgroundImage || room.picture || room.thumbnail,
+        backgroundImage: room.backgroundImage || room.thumbnail,
         publicAvatars: room.publicAvatars || [],
       };
 
@@ -272,12 +254,21 @@ const loadRoomData = async () => {
         maxUsers: room.maxUsers,
         minAge: room.minAge,
         isPrivate: room.isPrivate,
-        backgroundImage: room.backgroundImage || room.picture || room.thumbnail,
+        backgroundImage: room.backgroundImage || room.thumbnail,
         publicAvatars: (room.publicAvatars || []).map((avatar) => ({
           ...avatar,
           isPreview: false, // Mark existing avatars as not preview
         })),
       });
+
+      // Load existing background for BackgroundSelector
+      if (room.backgroundImage || room.thumbnail) {
+        selectedBackground.value = {
+          type: 'existing',
+          url: room.backgroundImage || room.thumbnail,
+          previewUrl: room.thumbnail || room.backgroundImage,
+        };
+      }
     } else {
       showError.value = true;
       errorMessage.value = 'Room not found or you do not have permission to edit it';
@@ -301,49 +292,38 @@ const handleSubmit = async () => {
       roomId = result.roomId;
     }
 
-    // Upload background image if selected
-    if (backgroundFile.value) {
-      const backgroundURL = await roomsStore.uploadBackgroundImage(roomId, backgroundFile.value);
-      roomData.backgroundImage = backgroundURL;
-      // Also set picture and thumbnail for compatibility
-      roomData.picture = backgroundURL;
-      roomData.thumbnail = backgroundURL;
-    }
-
-    // Handle avatar management for rooms
-    if (avatarManager.value && formData.publicAvatars.length > 0) {
-      // Check if there are any new avatars (isPreview = true)
-      const hasNewAvatars = formData.publicAvatars.some((avatar) => avatar.isPreview);
-
-      if (hasNewAvatars) {
-        const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId);
-
-        // For edit mode, combine existing avatars with new ones
-        if (props.isEdit) {
-          const existingAvatars = formData.publicAvatars.filter((avatar) => !avatar.isPreview);
-          roomData.publicAvatars = [...existingAvatars, ...uploadedAvatars];
-        } else {
-          // For new rooms, just use the uploaded avatars
-          roomData.publicAvatars = uploadedAvatars;
-        }
-      } else {
-        // No new avatars, but check if avatars were removed or modified
-        if (props.isEdit) {
-          // Always send the current avatar list for edit mode to handle removals
-          roomData.publicAvatars = formData.publicAvatars.filter((avatar) => !avatar.isPreview);
-        } else {
-          roomData.publicAvatars = formData.publicAvatars;
-        }
+    // Handle background selection
+    if (selectedBackground.value) {
+      if (selectedBackground.value.type === 'uploaded' && selectedBackground.value.file) {
+        // Upload custom background (includes thumbnail generation)
+        const { backgroundURL, thumbnailURL } = await roomsStore.uploadBackgroundImage(roomId, selectedBackground.value.file);
+        roomData.backgroundImage = backgroundURL;
+        roomData.thumbnail = thumbnailURL;
+      } else if (selectedBackground.value.type === 'preloaded') {
+        // Use preloaded background URLs directly
+        roomData.backgroundImage = selectedBackground.value.url;
+        roomData.thumbnail = selectedBackground.value.previewUrl || selectedBackground.value.url;
       }
-    } else if (props.isEdit) {
-      // Handle case where all avatars might have been removed (though this should be prevented by UI)
-      roomData.publicAvatars = [];
     }
 
-    // Safety check: ensure we don't accidentally remove all avatars
-    if (props.isEdit && (!roomData.publicAvatars || roomData.publicAvatars.length === 0)) {
-      // This should not happen due to UI prevention, but if it does, preserve existing avatars
-      delete roomData.publicAvatars;
+    // Handle avatar uploads from AvatarManager
+    if (avatarManager.value && formData.publicAvatars.length > 0) {
+      const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId);
+
+      // Merge uploaded avatars with existing/preloaded avatars
+      if (uploadedAvatars && uploadedAvatars.length > 0) {
+        // Replace preview avatars with uploaded ones
+        formData.publicAvatars = formData.publicAvatars.map((avatar) => {
+          if (avatar.isPreview) {
+            // Find corresponding uploaded avatar
+            const uploaded = uploadedAvatars.find((ua) => ua.isDefault === avatar.isDefault);
+            return uploaded || avatar;
+          }
+          return avatar;
+        });
+      }
+
+      roomData.publicAvatars = formData.publicAvatars;
     }
 
     if (props.isEdit) {

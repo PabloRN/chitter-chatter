@@ -1,0 +1,39 @@
+  {
+    "rules": {
+      "privateMessages": {
+        ".read": true,
+        ".write": false
+      },
+      ".write": "auth !== null",
+      "users": {
+        "$uid": {
+          "privateMessage": {
+            "requestedBy": {
+              ".read": "$uid === auth.uid",
+              ".write": "auth !== null"
+            }
+          },
+          ".read": "auth !== null",
+          ".write": "$uid === auth.uid"
+        }
+      },
+      "rooms": {
+        ".read": true,
+        ".write": false
+      },
+      "preloadedBackgrounds": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        "$backgroundId": {
+          ".validate": "newData.hasChildren(['id', 'originalPath', 'thumbnailPath', 'uploadedAt', 'uploadedBy'])"
+        }
+      },
+      "preloadedAvatars": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        "$avatarId": {
+          ".validate": "newData.hasChildren(['id', 'originalPath', 'miniPath', 'uploadedAt', 'uploadedBy'])"
+        }
+      }
+    }
+  }

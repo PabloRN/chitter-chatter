@@ -429,12 +429,6 @@ const useRoomsStore = defineStore('rooms', {
           ownerId: currentUser.userId,
         });
 
-        // For compatibility with existing components, also set picture field
-        if (roomData.backgroundImage) {
-          newRoom.picture = roomData.backgroundImage;
-          newRoom.thumbnail = roomData.backgroundImage; // Set thumbnail too for RoomThumbnail compatibility
-        }
-
         await set(roomRef, newRoom);
 
         // Add roomId to user's ownedRooms array
@@ -630,11 +624,28 @@ const useRoomsStore = defineStore('rooms', {
       this.roomUploadLoading = true;
 
       try {
-        const imageRef = storageRef(storage, `rooms/${roomId}/places/L1/background.jpg`);
-        const snapshot = await uploadBytes(imageRef, file);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        console.log('Background image uploaded:', downloadURL);
-        return downloadURL;
+        // Compress and generate thumbnail (same as preloaded backgrounds)
+        const { compressImage, generateThumbnail } = await import('@/utils/imageUtils');
+        const compressedBlob = await compressImage(file, 0.8, 1920, 1080);
+        const thumbnailBlob = await generateThumbnail(file, 300, 200);
+
+        const backgroundRef = storageRef(storage, `rooms/${roomId}/places/L1/background.jpg`);
+        const thumbnailRef = storageRef(storage, `rooms/${roomId}/places/L1/thumbnail.jpg`);
+
+        // Upload both files
+        const [backgroundSnapshot, thumbnailSnapshot] = await Promise.all([
+          uploadBytes(backgroundRef, compressedBlob),
+          uploadBytes(thumbnailRef, thumbnailBlob),
+        ]);
+
+        // Get download URLs
+        const [backgroundURL, thumbnailURL] = await Promise.all([
+          getDownloadURL(backgroundSnapshot.ref),
+          getDownloadURL(thumbnailSnapshot.ref),
+        ]);
+
+        console.log('Background and thumbnail uploaded:', { backgroundURL, thumbnailURL });
+        return { backgroundURL, thumbnailURL };
       } catch (error) {
         console.error('Error uploading background image:', error);
         throw error;
@@ -874,6 +885,194 @@ const useRoomsStore = defineStore('rooms', {
         return avatarsToUse;
       } catch (error) {
         console.error('Error getting room avatars:', error);
+        throw error;
+      }
+    },
+
+    // Admin Management Actions for Preuploaded Assets
+
+    async fetchPreloadedBackgrounds() {
+      const db = getDatabase();
+      try {
+        const backgroundsRef = ref(db, 'preloadedBackgrounds');
+        const snapshot = await get(backgroundsRef);
+        return snapshot.val() || {};
+      } catch (error) {
+        console.error('Error fetching preloaded backgrounds:', error);
+        throw error;
+      }
+    },
+
+    async fetchPreloadedAvatars() {
+      const db = getDatabase();
+      try {
+        const avatarsRef = ref(db, 'preloadedAvatars');
+        const snapshot = await get(avatarsRef);
+        return snapshot.val() || {};
+      } catch (error) {
+        console.error('Error fetching preloaded avatars:', error);
+        throw error;
+      }
+    },
+
+    async uploadPreloadedBackground(file, adminUserId) {
+      const storage = getStorage();
+      const db = getDatabase();
+
+      try {
+        const backgroundId = `bg_${Date.now()}`;
+
+        // Upload original (compressed)
+        const { compressImage, generateThumbnail } = await import('@/utils/imageUtils');
+        const compressedBlob = await compressImage(file, 0.8, 1920, 1080);
+        const thumbnailBlob = await generateThumbnail(file, 330, 200);
+
+        const originalRef = storageRef(storage, `preloaded/backgrounds/L1/${backgroundId}.jpg`);
+        const thumbnailRef = storageRef(storage, `preloaded/backgrounds/L1/thumbnails/${backgroundId}_thumb.jpg`);
+
+        // Upload both files
+        const [originalSnapshot, thumbnailSnapshot] = await Promise.all([
+          uploadBytes(originalRef, compressedBlob),
+          uploadBytes(thumbnailRef, thumbnailBlob),
+        ]);
+
+        // Get download URLs
+        const [originalURL, thumbnailURL] = await Promise.all([
+          getDownloadURL(originalSnapshot.ref),
+          getDownloadURL(thumbnailSnapshot.ref),
+        ]);
+
+        // Save to database
+        const backgroundData = {
+          id: backgroundId,
+          originalPath: originalURL,
+          thumbnailPath: thumbnailURL,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: adminUserId,
+        };
+
+        const backgroundRef = ref(db, `preloadedBackgrounds/${backgroundId}`);
+        await set(backgroundRef, backgroundData);
+
+        console.log('Preloaded background uploaded:', backgroundId);
+        return backgroundData;
+      } catch (error) {
+        console.error('Error uploading preloaded background:', error);
+        throw error;
+      }
+    },
+
+    async uploadPreloadedAvatar(file, adminUserId) {
+      const storage = getStorage();
+      const db = getDatabase();
+
+      try {
+        const avatarId = `avatar_${Date.now()}`;
+
+        // Generate resized avatar and mini avatar
+        const { resizeImage, cropToMiniAvatar } = await import('@/utils/imageUtils');
+        const resizedBlob = await resizeImage(file, 80, 220, true);
+        const miniBlob = await cropToMiniAvatar(file, 0.35);
+
+        const avatarRef = storageRef(storage, `preloaded/avatars/L1/${avatarId}.png`);
+        const miniAvatarRef = storageRef(storage, `preloaded/avatars/L1/miniavatars/${avatarId}.png`);
+
+        // Upload both files
+        const [avatarSnapshot, miniSnapshot] = await Promise.all([
+          uploadBytes(avatarRef, resizedBlob),
+          uploadBytes(miniAvatarRef, miniBlob),
+        ]);
+
+        // Get download URLs
+        const [avatarURL, miniAvatarURL] = await Promise.all([
+          getDownloadURL(avatarSnapshot.ref),
+          getDownloadURL(miniSnapshot.ref),
+        ]);
+
+        // Save to database
+        const avatarData = {
+          id: avatarId,
+          originalPath: avatarURL,
+          miniPath: miniAvatarURL,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: adminUserId,
+        };
+
+        const avatarDbRef = ref(db, `preloadedAvatars/${avatarId}`);
+        await set(avatarDbRef, avatarData);
+
+        console.log('Preloaded avatar uploaded:', avatarId);
+        return avatarData;
+      } catch (error) {
+        console.error('Error uploading preloaded avatar:', error);
+        throw error;
+      }
+    },
+
+    async deletePreloadedBackground(backgroundId) {
+      const storage = getStorage();
+      const db = getDatabase();
+
+      try {
+        // Get background data first
+        const backgroundRef = ref(db, `preloadedBackgrounds/${backgroundId}`);
+        const snapshot = await get(backgroundRef);
+        const backgroundData = snapshot.val();
+
+        if (!backgroundData) {
+          throw new Error('Background not found');
+        }
+
+        // Delete files from storage
+        const originalRef = storageRef(storage, `preloaded/backgrounds/L1/${backgroundId}.jpg`);
+        const thumbnailRef = storageRef(storage, `preloaded/backgrounds/L1/thumbnails/${backgroundId}_thumb.jpg`);
+
+        await Promise.all([
+          deleteObject(originalRef).catch((err) => console.warn('Failed to delete original:', err)),
+          deleteObject(thumbnailRef).catch((err) => console.warn('Failed to delete thumbnail:', err)),
+        ]);
+
+        // Delete from database
+        await set(backgroundRef, null);
+
+        console.log('Preloaded background deleted:', backgroundId);
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting preloaded background:', error);
+        throw error;
+      }
+    },
+
+    async deletePreloadedAvatar(avatarId) {
+      const storage = getStorage();
+      const db = getDatabase();
+
+      try {
+        // Get avatar data first
+        const avatarRef = ref(db, `preloadedAvatars/${avatarId}`);
+        const snapshot = await get(avatarRef);
+        const avatarData = snapshot.val();
+
+        if (!avatarData) {
+          throw new Error('Avatar not found');
+        }
+
+        // Delete files from storage
+        const originalRef = storageRef(storage, `preloaded/avatars/L1/${avatarId}.png`);
+        const miniRef = storageRef(storage, `preloaded/avatars/L1/miniavatars/${avatarId}.png`);
+
+        await Promise.all([
+          deleteObject(originalRef).catch((err) => console.warn('Failed to delete original:', err)),
+          deleteObject(miniRef).catch((err) => console.warn('Failed to delete mini:', err)),
+        ]);
+
+        // Delete from database
+        await set(avatarRef, null);
+
+        console.log('Preloaded avatar deleted:', avatarId);
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting preloaded avatar:', error);
         throw error;
       }
     },
