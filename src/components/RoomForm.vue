@@ -280,6 +280,7 @@ const loadRoomData = async () => {
 };
 
 const handleSubmit = async () => {
+  const currentUser = userStore.getCurrentUser;
   if (!form.value.validate()) return;
 
   try {
@@ -288,6 +289,7 @@ const handleSubmit = async () => {
 
     // For new rooms, create room first to get roomId
     if (!props.isEdit) {
+      roomData.createdBy = currentUser.nickname;
       const result = await roomsStore.createRoom(roomData);
       roomId = result.roomId;
     }
