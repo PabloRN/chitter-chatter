@@ -39,9 +39,9 @@ const useRoomsStore = defineStore('rooms', {
       if (!user || user.isAnonymous) return false;
 
       // TODO: Add paid user check when payment system is implemented
-      const isPaid = false; // user.isPaid || false;
 
-      if (isPaid) return true;
+      if (user.isPaid) return true;
+      if (user.isAdmin) return true;
 
       // Free users can create only 1 room
       // Use the rooms store as the authoritative source for owned rooms count

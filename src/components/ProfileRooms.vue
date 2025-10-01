@@ -54,9 +54,8 @@
               @click="goToRoom(room.id)">
               <!-- Room Background -->
               <div class="room-background">
-                <v-img v-if="room.thumbnail || room.backgroundImage"
-                  :src="room.thumbnail || room.backgroundImage" height="120" cover
-                  class="room-bg-image" />
+                <v-img v-if="room.thumbnail || room.backgroundImage" :src="room.thumbnail || room.backgroundImage"
+                  height="120" cover class="room-bg-image" />
                 <div v-else class="room-bg-placeholder">
                   <v-icon size="40" color="grey">mdi-image-off</v-icon>
                 </div>
@@ -218,9 +217,14 @@ const errorMessage = ref('');
 // Computed
 const ownedRooms = computed(() => roomsStore.getOwnedRooms);
 const canCreateRoom = computed(() => roomsStore.canCreateRoom);
-const roomLimit = computed(() =>
+const roomLimit = computed(() => {
   // TODO: Check if user is paid when payment system is implemented
-  USER_ROOM_LIMITS.free);
+  const currentUser = userStore.getCurrentUser;
+  if (currentUser?.isPaid) return USER_ROOM_LIMITS.paid;
+  if (currentUser?.isAdmin) return USER_ROOM_LIMITS.admin;
+  return USER_ROOM_LIMITS.free;
+});
+
 
 // Methods
 const loadOwnedRooms = async (forceRefresh = false) => {

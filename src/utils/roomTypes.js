@@ -49,7 +49,8 @@ export const DEFAULT_ROOM_VALUES = {
 // Room creation limits
 export const USER_ROOM_LIMITS = {
   free: 1,
-  paid: -1, // -1 means unlimited
+  paid: 10, // -1 means unlimited
+  admin: 100, // -1 means unlimited
 };
 
 export function createRoom(data = {}) {
