@@ -1,6 +1,8 @@
-## [0.20.1] - 2025-09-30
+## [0.20.2] - 2025-10-01
 
 ### 📦 Other Changes
 
-- fix node version on release workflow ([f00b1db])
-- update workflow to node 20 ([808201a])
+- update release file ([50f402d])
+- add some fixes ([9f9bf0d])
+- update release to node 20 ([f33f9a7])
+- add new release notes ([b1fe655])

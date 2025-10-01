@@ -295,3 +295,19 @@ If you encounter issues with the release process:
 1. Check this guide
 2. Review GitHub Actions logs
 3. Check Firebase console for deployment status
+
+
+
+# Si v0.20.2 fue un intento fallido y quieres que todo quede bien alineado:
+
+# 1. Borrar el tag local
+git tag -d v0.20.2
+
+# 2. Borrar el tag remoto
+git push origin :refs/tags/v0.20.2
+
+# 3. Volver a correr el release
+npm run release 0.20.2
+
+
+👉 Esto actualizará package.json, generará changelog y creará el tag de nuevo correctamente.
