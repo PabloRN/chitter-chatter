@@ -644,16 +644,10 @@ const useUserStore = defineStore('user', {
     },
 
     async setFirebaseUiInstance(roomId) {
-      console.log('🚀 [FIREBASE UI] setFirebaseUiInstance called for roomId:', roomId);
       const auth = getAuth();
       const anonymousUser = auth.currentUser;
-      console.log('👤 [FIREBASE UI] Current anonymous user:', {
-        uid: anonymousUser?.uid,
-        isAnonymous: anonymousUser?.isAnonymous,
-      });
 
       // Reset the signingInUpgraded state to ensure watchers can detect the change
-      console.log('🔄 [FIREBASE UI] Resetting signingInUpgraded to false before authentication');
       this.signingInUpgraded = false;
 
       const ui = window.firebaseui.auth.AuthUI.getInstance()
@@ -680,71 +674,37 @@ const useUserStore = defineStore('user', {
       console.log('🏠 Stored original tab context:', originalTabContext);
 
       // Override sendSignInLinkToEmail to capture email for cross-tab communication
-      console.log('📧 [EMAIL LINK] Setting up email interception...');
       const firebaseAuth = window.firebase.auth();
       const originalSendSignInLinkToEmail = firebaseAuth.sendSignInLinkToEmail.bind(firebaseAuth);
 
       firebaseAuth.sendSignInLinkToEmail = function(email, actionCodeSettings) {
-        console.log('📧 [EMAIL LINK] Intercepted email link request for:', email);
-        console.log('📧 [EMAIL LINK] Action code settings:', actionCodeSettings);
-
         // Store email in localStorage for cross-tab access
         window.localStorage.setItem('emailForSignIn', email);
-        console.log('✅ [EMAIL LINK] Email stored in localStorage for cross-tab access');
 
         // Call the original method
         return originalSendSignInLinkToEmail(email, actionCodeSettings);
       };
-      console.log('✅ [EMAIL LINK] Email interception setup complete');
 
       const uiConfig = {
           callbacks: {
             signInSuccessWithAuthResult: (authResult) => {
-              console.log('✅ [POPUP AUTH] signInSuccessWithAuthResult called');
-              console.log('📊 [POPUP AUTH] Auth result:', {
-                provider: authResult.additionalUserInfo?.providerId,
-                isNewUser: authResult.additionalUserInfo?.isNewUser,
-                userUid: authResult.user?.uid,
-                userEmail: authResult.user?.email,
-                isAnonymous: authResult.user?.isAnonymous,
-              });
-              console.log('👤 [POPUP AUTH] Anonymous user before upgrade:', {
-                uid: anonymousUser?.uid,
-                isAnonymous: anonymousUser?.isAnonymous,
-              });
-
               const { user } = authResult;
 
               // Queue upgrade to happen asynchronously AFTER popup closes
-              console.log('⏱️ [POPUP AUTH] Queuing upgrade with setTimeout...');
               setTimeout(() => {
-                console.log('🔄 [POPUP AUTH] Starting handleAnonymousUserUpgrade');
                 this.handleAnonymousUserUpgrade(anonymousUser, user, roomId).then(() => {
-                  console.log('✅ [POPUP AUTH] handleAnonymousUserUpgrade completed successfully');
                   if (authResult && !authResult.user.isAnonymous) {
-                    console.log('🎯 [POPUP AUTH] Calling userUpgraded with:', {
-                      verifiedUser: authResult.user.uid,
-                      unverifiedUser: anonymousUser.uid,
-                    });
                     this.userUpgraded({
                       verifiedUser: authResult.user.uid,
                       unverifiedUser: anonymousUser.uid,
                       isCurrent: true,
                     });
-                  } else {
-                    console.warn('⚠️ [POPUP AUTH] User still anonymous after upgrade?', authResult.user.isAnonymous);
                   }
                 }).catch((error) => {
-                  console.error('❌ [POPUP AUTH] Error during anonymous user upgrade:', error);
-                  console.error('❌ [POPUP AUTH] Error details:', {
-                    message: error.message,
-                    code: error.code,
-                    stack: error.stack,
-                  });
+                  console.error('Error during anonymous user upgrade:', error);
                 });
               }, 0);
 
-              console.log('↩️ [POPUP AUTH] Returning false to close popup');
               return false; // prevent redirect - popup will close immediately
             },
             uiShown() {
@@ -752,32 +712,18 @@ const useUserStore = defineStore('user', {
               if (loader) loader.style.display = 'none';
             },
             signInFailure: async (error) => {
-              console.log('⚠️ [POPUP AUTH] signInFailure called');
-              console.log('📋 [POPUP AUTH] Error details:', {
-                code: error.code,
-                message: error.message,
-                credential: error.credential ? 'present' : 'missing',
-              });
-
               if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
-                console.log('ℹ️ [POPUP AUTH] Not a merge conflict, resolving...');
                 return Promise.resolve();
               }
 
-              console.log('🔄 [POPUP AUTH] Handling anonymous upgrade merge conflict');
               const cred = error.credential;
               try {
-                console.log('🔐 [POPUP AUTH] Signing in with credential...');
                 const userCredential = await signInWithCredential(auth, cred);
                 const { user } = userCredential;
-                console.log('✅ [POPUP AUTH] Signed in with credential:', user.uid);
 
                 // Call handleAnonymousUserUpgrade with the user
-                console.log('🔄 [POPUP AUTH] Starting handleAnonymousUserUpgrade from signInFailure');
                 await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
-                console.log('✅ [POPUP AUTH] handleAnonymousUserUpgrade completed from signInFailure');
 
-                console.log('🎯 [POPUP AUTH] Calling userUpgraded from signInFailure');
                 this.userUpgraded({
                   verifiedUser: user.uid,
                   unverifiedUser: anonymousUser.uid,
@@ -786,12 +732,7 @@ const useUserStore = defineStore('user', {
 
                 return Promise.resolve();
               } catch (err) {
-                console.error('❌ [POPUP AUTH] Error in signInFailure handler:', err);
-                console.error('❌ [POPUP AUTH] Error details:', {
-                  message: err.message,
-                  code: err.code,
-                  stack: err.stack,
-                });
+                console.error('Error in signInFailure:', err);
                 return Promise.reject(err);
               }
             },
@@ -827,16 +768,7 @@ const useUserStore = defineStore('user', {
           privacyPolicyUrl: '<your-privacy-policy-url>',
         };
 
-        console.log('🎨 [FIREBASE UI] Starting FirebaseUI with config:', {
-          signInFlow: uiConfig.signInFlow,
-          providers: uiConfig.signInOptions.map(opt =>
-            typeof opt === 'string' ? opt : opt.provider
-          ),
-          autoUpgradeAnonymousUsers: uiConfig.autoUpgradeAnonymousUsers,
-        });
-
         ui.start('#firebaseui-auth-container', uiConfig);
-        console.log('✅ [FIREBASE UI] FirebaseUI started successfully');
     },
 
     // Mutations converted to actions
