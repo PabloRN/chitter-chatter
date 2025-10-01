@@ -224,6 +224,7 @@ function avatarSelected(e, item) {
   e.stopPropagation();
   e.preventDefault();
   if (!currentUser.value.isAnonymous) {
+    console.log('🎨 selected avatar:', item);
     userStore.changeAvatar(item.url);
     emit('onClose');
   } else {

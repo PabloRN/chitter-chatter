@@ -163,7 +163,7 @@ const chattersArray = computed(() => {
   // Use the variables to avoid unused expression warnings
   return (avatarTrigger || dataTrigger || chattersCounter.value > 0) ? Array.from(chatters.value) : [];
 });
-const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms.some((room) => room === props.roomId));
+const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms?.some((room) => room === props.roomId));
 // Methods
 
 const toggleMessages = () => {

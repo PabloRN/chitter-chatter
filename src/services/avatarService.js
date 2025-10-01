@@ -74,13 +74,21 @@ class AvatarService {
 
       const avatarNameWithExt = extractImageName(avatarUrl);
       const avatarName = avatarNameWithExt.replace('.png', '');
-
+      const isPreloaded = avatarUrl.includes('preloaded');
       // Set the main avatar
       await set(dbRef(db, `users/${userId}/avatar/`), avatarUrl);
-
+      let miniAvatarRef = null;
       // Get and set the mini avatar
-      const miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}.png`);
+      if (isPreloaded) {
+        miniAvatarRef = storageRef(storage, `preloaded/avatars/L1/miniavatars/${avatarName}.png`);
+      } else {
+        miniAvatarRef = storageRef(storage, `rooms/${roomId}/avatars/L1/miniavatars/${avatarName}.png`);
+      }
+
+      console.log('miniAvatarRef', miniAvatarRef);
+
       const miniavatarRefUrl = await getDownloadURL(miniAvatarRef);
+      console.log('miniavatarRefUrl', miniavatarRefUrl);
       await set(dbRef(db, `users/${userId}/miniAvatar/`), miniavatarRefUrl);
 
       return {
@@ -88,7 +96,7 @@ class AvatarService {
         miniAvatar: miniavatarRefUrl,
       };
     } catch (error) {
-      console.error('Error changing avatar:', error);
+      console.error('Error changing avatar:', error.code);
       throw error;
     }
   }

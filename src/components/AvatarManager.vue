@@ -16,92 +16,90 @@
         <v-tabs-window v-model="activeTab">
           <!-- Tab 1: Manage Avatars -->
           <v-tabs-window-item>
-        <div class="avatars-grid">
-          <!-- Existing Avatars -->
-          <div v-for="(avatar, index) in roomAvatars" :key="avatar.name || index" class="avatar-item"
-            :class="{ 'default-avatar': avatar.isDefault, 'pending-avatar': avatar.isPreview }">
-            <!-- Main Avatar Display -->
-            <div class="avatar-display">
-              <v-img :src="avatar.mainUrl || avatar.url || avatar.avatarURL" max-height="100" max-width="100"
-                class="main-avatar" fill />
+            <div class="avatars-grid">
+              <!-- Existing Avatars -->
+              <div v-for="(avatar, index) in roomAvatars" :key="avatar.name || index" class="avatar-item"
+                :class="{ 'default-avatar': avatar.isDefault, 'pending-avatar': avatar.isPreview }">
+                <!-- Main Avatar Display -->
+                <div class="avatar-display">
+                  <v-img :src="avatar.mainUrl || avatar.url || avatar.avatarURL" max-height="100" max-width="100"
+                    class="main-avatar" fill />
 
-              <!-- Default Badge -->
-              <v-chip v-if="avatar.isDefault" small color="success" class="default-badge">
-                <v-icon small left>mdi-star</v-icon>
-                Default
-              </v-chip>
+                  <!-- Default Badge -->
+                  <v-chip v-if="avatar.isDefault" small color="success" class="default-badge">
+                    <v-icon small left>mdi-star</v-icon>
+                    Default
+                  </v-chip>
 
-              <!-- Pending Save Badge -->
-              <v-chip v-if="avatar.isPreview" small color="warning" class="pending-badge">
-                <v-icon small left>mdi-content-save-alert</v-icon>
-                Pending
-              </v-chip>
+                  <!-- Pending Save Badge -->
+                  <v-chip v-if="avatar.isPreview" small color="warning" class="pending-badge">
+                    <v-icon small left>mdi-content-save-alert</v-icon>
+                    Pending
+                  </v-chip>
 
-              <!-- Action Buttons Overlay -->
-              <div class="avatar-actions">
-                <v-btn v-if="!avatar.isDefault" x-small color="success" fab class="action-btn"
-                  @click="setAsDefault(index)">
-                  <v-icon>mdi-star</v-icon>
-                </v-btn>
-                <v-btn x-small color="error" fab class="action-btn" :disabled="!canDeleteAvatar"
-                  @click="deleteAvatar(index)">
-                  <v-icon>mdi-delete</v-icon>
-                  <v-tooltip v-if="!canDeleteAvatar" activator="parent" location="top">
-                    At least one avatar is required
-                  </v-tooltip>
-                </v-btn>
+                  <!-- Action Buttons Overlay -->
+                  <div class="avatar-actions">
+                    <v-btn v-if="!avatar.isDefault" x-small color="success" fab class="action-btn"
+                      @click="setAsDefault(index)">
+                      <v-icon>mdi-star</v-icon>
+                    </v-btn>
+                    <v-btn x-small color="error" fab class="action-btn" :disabled="!canDeleteAvatar"
+                      @click="deleteAvatar(index)">
+                      <v-icon>mdi-delete</v-icon>
+                      <v-tooltip v-if="!canDeleteAvatar" activator="parent" location="top">
+                        At least one avatar is required
+                      </v-tooltip>
+                    </v-btn>
+                  </div>
+                </div>
+
+                <!-- Mini Avatar Display -->
+                <div class="mini-avatar-section">
+                  <v-avatar size="40" class="mini-avatar">
+                    <v-img :src="avatar.miniUrl || avatar.miniAvatarURL" />
+                  </v-avatar>
+                </div>
+
+                <small v-if="avatar.isPreview" class="pending-text">After room updated</small>
+
+              </div>
+
+              <!-- Add Avatar Card -->
+              <div class="avatar-item add-avatar-card" @click="triggerFileUpload">
+                <div class="add-avatar-content">
+                  <v-icon size="48" color="primary" class="mb-2">mdi-plus</v-icon>
+                  <div class="add-avatar-text">Add Avatar</div>
+                </div>
+
+                <!-- Hidden file input -->
+                <input ref="fileInput" type="file" accept="image/*" style="display: none"
+                  @change="onAvatarFileChange" />
               </div>
             </div>
 
-            <!-- Mini Avatar Display -->
-            <div class="mini-avatar-section">
-              <v-avatar size="40" class="mini-avatar">
-                <v-img :src="avatar.miniUrl || avatar.miniAvatarURL" />
-              </v-avatar>
-            </div>
+            <!-- No Default Warning -->
+            <v-alert v-if="roomAvatars.length > 0 && !hasDefaultAvatar" type="warning" class="mt-4">
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-alert</v-icon>
+                <div>
+                  <strong>No Default Avatar Selected</strong>
+                  <br>
+                  <small>Please select a default avatar that new users will use when entering the room.</small>
+                </div>
+              </div>
+            </v-alert>
 
-            <!-- Avatar Name -->
-            <div class="avatar-name">
-              {{ avatar.name || `Avatar ${index + 1}` }}
-              <small v-if="avatar.isPreview" class="pending-text">After room updated</small>
-            </div>
-          </div>
-
-          <!-- Add Avatar Card -->
-          <div class="avatar-item add-avatar-card" @click="triggerFileUpload">
-            <div class="add-avatar-content">
-              <v-icon size="48" color="primary" class="mb-2">mdi-plus</v-icon>
-              <div class="add-avatar-text">Add Avatar</div>
-            </div>
-
-            <!-- Hidden file input -->
-            <input ref="fileInput" type="file" accept="image/*" style="display: none" @change="onAvatarFileChange" />
-          </div>
-        </div>
-
-        <!-- No Default Warning -->
-        <v-alert v-if="roomAvatars.length > 0 && !hasDefaultAvatar" type="warning" class="mt-4">
-          <div class="d-flex align-center">
-            <v-icon class="mr-2">mdi-alert</v-icon>
-            <div>
-              <strong>No Default Avatar Selected</strong>
-              <br>
-              <small>Please select a default avatar that new users will use when entering the room.</small>
-            </div>
-          </div>
-        </v-alert>
-
-        <!-- Minimum Avatar Warning -->
-        <v-alert v-if="roomAvatars.length === 1" type="info" class="mt-4">
-          <div class="d-flex align-center">
-            <v-icon class="mr-2">mdi-information</v-icon>
-            <div>
-              <strong>Minimum Avatar Required</strong>
-              <br>
-              <small>Rooms must have at least one avatar. Delete button is disabled for the last avatar.</small>
-            </div>
-          </div>
-        </v-alert>
+            <!-- Minimum Avatar Warning -->
+            <v-alert v-if="roomAvatars.length === 1" type="info" class="mt-4">
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-information</v-icon>
+                <div>
+                  <strong>Minimum Avatar Required</strong>
+                  <br>
+                  <small>Rooms must have at least one avatar. Delete button is disabled for the last avatar.</small>
+                </div>
+              </div>
+            </v-alert>
           </v-tabs-window-item>
 
           <!-- Tab 2: Add from Collection -->
@@ -117,10 +115,8 @@
             </div>
 
             <div v-else class="avatars-grid">
-              <div v-for="avatar in preloadedAvatars" :key="avatar.id"
-                   class="avatar-item selectable"
-                   :class="{ 'already-added': isPreloadedAlreadyAdded(avatar.id) }"
-                   @click="addPreloadedAvatar(avatar)">
+              <div v-for="avatar in preloadedAvatars" :key="avatar.id" class="avatar-item selectable"
+                :class="{ 'already-added': isPreloadedAlreadyAdded(avatar.id) }" @click="addPreloadedAvatar(avatar)">
                 <!-- Main Avatar Display -->
                 <div class="avatar-display">
                   <v-img :src="avatar.originalPath" height="100" class="main-avatar" />
@@ -290,7 +286,7 @@ const uploadAllAvatars = async (roomId) => {
 
   try {
     // Only upload new avatars (those with isPreview: true)
-    const newAvatars = roomAvatars.value.filter((avatar) => avatar.isPreview);
+    const newAvatars = roomAvatars.value.filter((avatar) => avatar.isPreview && avatar.type !== 'preloaded');
     if (newAvatars.length === 0) return [];
 
     const avatarFiles = newAvatars.map((avatar) => ({
@@ -301,7 +297,7 @@ const uploadAllAvatars = async (roomId) => {
 
     // Get existing avatar names to avoid conflicts
     const existingAvatarNames = roomAvatars.value
-      .filter((avatar) => !avatar.isPreview)
+      .filter((avatar) => !avatar.isPreview && avatar.type !== 'preloaded')
       .map((avatar) => avatar.name);
 
     return await roomsStore.uploadRoomAvatars(roomId, avatarFiles, existingAvatarNames);
@@ -394,14 +390,12 @@ const addPreloadedAvatar = (preloadedAvatar) => {
 
   const newAvatar = {
     name: preloadedAvatar.id,
-    url: preloadedAvatar.originalPath,
     avatarURL: preloadedAvatar.originalPath,
-    mainUrl: preloadedAvatar.originalPath,
     miniUrl: preloadedAvatar.miniPath,
     miniAvatarURL: preloadedAvatar.miniPath,
     isDefault: willBeDefault,
-    isPreview: false, // Preloaded avatars don't need upload
     type: 'preloaded',
+    isPreview: true,
     preloadedId: preloadedAvatar.id, // Track which preloaded avatar this is
   };
 
