@@ -4,7 +4,7 @@ import {
   getAuth,
   onAuthStateChanged,
   signInAnonymously,
-  deleteUser,
+  // deleteUser,
   // createUserWithEmailAndPassword,
   // signInWithEmailAndPassword,
   // signOut,
@@ -795,7 +795,6 @@ const useUserStore = defineStore('user', {
 
     setCurrentUser(payload) {
       Object.assign(this.currentUser, { ...payload.data, userId: payload.userId });
-      console.log('this.currentUser', this.currentUser);
     },
 
     setUserData(data) {

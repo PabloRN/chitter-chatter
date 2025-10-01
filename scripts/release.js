@@ -10,8 +10,9 @@ const path = require('path');
  */
 
 // Parse arguments
-const newVersion = process.argv[2];
-const isHotfix = process.argv.includes('--hotfix');
+const args = process.argv.slice(2);
+const isHotfix = args.includes('--hotfix');
+const newVersion = args.find((arg) => !arg.startsWith('-'));
 
 // Validation: Version is required
 if (!newVersion) {

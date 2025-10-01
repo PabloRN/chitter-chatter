@@ -1,6 +1,6 @@
 {
   "name": "toonstalk",
-  "version": "0.1.0",
+  "version": "0.20.3",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -39,6 +39,7 @@
     "jsdom": "^23.0.1",
     "sass": "^1.69.5",
     "vite": "^5.0.8",
+    "vite-plugin-pwa": "^1.0.3",
     "vite-plugin-vuetify": "^2.0.1",
     "vitest": "^1.0.4"
   },

@@ -57,7 +57,7 @@
               Missing Requirements to Publish Room:
             </div>
             <ul class="ml-4">
-              <li v-if="!selectedBackground.value && !formData.backgroundImage">
+              <li v-if="!selectedBackground?.value && !formData.backgroundImage">
                 <strong>Room background is required</strong> - Upload or select a background image
               </li>
               <li v-if="formData.publicAvatars.length < 2">
@@ -80,9 +80,9 @@
             No changes to save
           </v-tooltip>
           <v-tooltip v-else-if="!hasMinimumRequirements" activator="parent" location="top">
-            Missing required: {{ !selectedBackground.value && !formData.backgroundImage ? 'Background' : '' }}
-            {{ formData.publicAvatars.length < 2 ? ((!selectedBackground.value && !formData.backgroundImage) ? ' & ' : '') + 'At least 2 avatars' : '' }}
-          </v-tooltip>
+            Missing required: {{ !selectedBackground?.value && !formData.backgroundImage ? 'Background' : '' }}
+            {{ formData.publicAvatars.length < 2 ? ((!selectedBackground?.value && !formData.backgroundImage) ? ' & '
+              : '') + 'At least 2 avatars' : '' }} </v-tooltip>
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -314,7 +314,7 @@ const handleSubmit = async () => {
       if (uploadedAvatars && uploadedAvatars.length > 0) {
         // Replace preview avatars with uploaded ones
         formData.publicAvatars = formData.publicAvatars.map((avatar) => {
-          if (avatar.isPreview) {
+          if (avatar.isPreview && avatar.type !== 'preloaded') {
             // Find corresponding uploaded avatar
             const uploaded = uploadedAvatars.find((ua) => ua.isDefault === avatar.isDefault);
             return uploaded || avatar;
