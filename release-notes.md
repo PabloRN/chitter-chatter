@@ -1,9 +1,10 @@
-## [0.20.3] - 2025-10-01
+## [0.20.5] - 2025-10-01
 
-### 🏗️  Build System
+### 🐛 Bug Fixes
 
-- adding serviceworkers ([089b75c])
+- serviceworker intercepting oauth redirection ([8549828])
 
 ### 📦 Other Changes
 
-- update release notes ([af4867d])
+- Merge branch 'hotfix/fix-background-image-missing' into development ([b458524])
+- update release notes ([a34c14a])
