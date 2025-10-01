@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.2] - 2025-10-01
+
+### 📦 Other Changes
+
+- update release file ([50f402d])
+- add some fixes ([9f9bf0d])
+- update release to node 20 ([f33f9a7])
+- add new release notes ([b1fe655])
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [0.20.1] - 2025-09-30
 
 ### 📦 Other Changes
