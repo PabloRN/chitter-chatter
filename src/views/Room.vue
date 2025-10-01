@@ -305,9 +305,9 @@ onMounted(async () => {
 
   if (Object.keys(currentRoom.value).length === 0) {
     await roomsStore.getRoomDetails(route.params.roomId);
-    background.value = currentRoom.value.picture;
+    background.value = currentRoom.value.backgroundImage;
   } else {
-    background.value = currentRoom.value.picture; // TODO: Add a default background toonstalk image if no image
+    background.value = currentRoom.value.backgroundImage; // TODO: Add a default background toonstalk image if no image
   }
 
   // Check room capacity BEFORE adding user
