@@ -18,6 +18,21 @@ export default defineConfig({
       injectRegister: 'auto',
       workbox: {
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        // Exclude Firebase auth URLs from service worker caching
+        navigateFallbackDenylist: [
+          /^\/__\//,  // All Firebase reserved URLs
+        ],
+        // Don't precache or handle Firebase URLs
+        globIgnores: ['**/__/**'],
+        runtimeCaching: [
+          {
+            // Always fetch Firebase URLs from network, never cache
+            urlPattern: /^\/__\//,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
       includeAssets: ['favicon.svg'],
       manifest: {
