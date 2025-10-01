@@ -677,7 +677,7 @@ const useUserStore = defineStore('user', {
       const firebaseAuth = window.firebase.auth();
       const originalSendSignInLinkToEmail = firebaseAuth.sendSignInLinkToEmail.bind(firebaseAuth);
 
-      firebaseAuth.sendSignInLinkToEmail = function(email, actionCodeSettings) {
+      firebaseAuth.sendSignInLinkToEmail = function (email, actionCodeSettings) {
         // Store email in localStorage for cross-tab access
         window.localStorage.setItem('emailForSignIn', email);
 
@@ -686,89 +686,110 @@ const useUserStore = defineStore('user', {
       };
 
       const uiConfig = {
-          callbacks: {
-            signInSuccessWithAuthResult: (authResult) => {
-              const { user } = authResult;
+        callbacks: {
+          signInSuccessWithAuthResult: (authResult) => {
+            const { user } = authResult;
 
-              // Queue upgrade to happen asynchronously AFTER popup closes
-              setTimeout(() => {
-                this.handleAnonymousUserUpgrade(anonymousUser, user, roomId).then(() => {
-                  if (authResult && !authResult.user.isAnonymous) {
-                    this.userUpgraded({
-                      verifiedUser: authResult.user.uid,
-                      unverifiedUser: anonymousUser.uid,
-                      isCurrent: true,
-                    });
-                  }
-                }).catch((error) => {
-                  console.error('Error during anonymous user upgrade:', error);
-                });
-              }, 0);
+            // Queue upgrade to happen asynchronously AFTER popup closes
+            setTimeout(() => {
+              this.handleAnonymousUserUpgrade(anonymousUser, user, roomId).then(() => {
+                if (authResult && !authResult.user.isAnonymous) {
+                  this.userUpgraded({
+                    verifiedUser: authResult.user.uid,
+                    unverifiedUser: anonymousUser.uid,
+                    isCurrent: true,
+                  });
+                }
+              }).catch((error) => {
+                console.error('Error during anonymous user upgrade:', error);
+              });
+            }, 0);
 
-              return false; // prevent redirect - popup will close immediately
-            },
-            uiShown() {
-              const loader = document.getElementById('loader');
-              if (loader) loader.style.display = 'none';
-            },
-            signInFailure: async (error) => {
-              if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
-                return Promise.resolve();
-              }
+            return false; // prevent redirect - popup will close immediately
+          },
+          uiShown() {
+            const loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'none';
+          },
+          signInFailure: async (error) => {
+            if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
+              return Promise.resolve();
+            }
 
-              const cred = error.credential;
-              try {
-                const userCredential = await signInWithCredential(auth, cred);
-                const { user } = userCredential;
+            const cred = error.credential;
+            try {
+              const userCredential = await signInWithCredential(auth, cred);
+              const { user } = userCredential;
 
-                // Call handleAnonymousUserUpgrade with the user
-                await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
+              // Call handleAnonymousUserUpgrade with the user
+              await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
 
-                this.userUpgraded({
-                  verifiedUser: user.uid,
-                  unverifiedUser: anonymousUser.uid,
-                  isCurrent: true,
-                });
+              this.userUpgraded({
+                verifiedUser: user.uid,
+                unverifiedUser: anonymousUser.uid,
+                isCurrent: true,
+              });
 
-                return Promise.resolve();
-              } catch (err) {
-                console.error('Error in signInFailure:', err);
-                return Promise.reject(err);
-              }
+              return Promise.resolve();
+            } catch (err) {
+              console.error('Error in signInFailure:', err);
+              return Promise.reject(err);
+            }
+          },
+        },
+        signInFlow: 'popup',
+        signInOptions: [
+          window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          {
+            provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
+            requireDisplayName: false,
+            signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD,
+          },
+          {
+            provider: 'yahoo.com',
+            scopes: ['mail-r', 'sdps-r'],
+            customParameters: {
+              prompt: 'login',
             },
           },
-          signInFlow: 'popup',
-          signInOptions: [
-            window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-            // {
-            //   provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            //   requireDisplayName: false,
-            //   signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD,
-            // },
-            {
-              provider: 'yahoo.com',
-              scopes: ['mail-r', 'sdps-r'],
-              customParameters: {
-                prompt: 'login',
-              },
-            },
-            {
-              provider: window.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-              scopes: ['email', 'public_profile'],
-            },
-            {
-              provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
-              signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD,
-              forceSameDevice: true, // Force same device to maintain anonymous session
-            },
-          ],
-          credentialHelper: window.firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
-          autoUpgradeAnonymousUsers: true,
-          tosUrl: '<your-tos-url>',
-          privacyPolicyUrl: '<your-privacy-policy-url>',
-        };
+          {
+            provider: window.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+            scopes: ['email', 'public_profile'],
+          },
+          {
+            provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
+            signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD,
+            forceSameDevice: true,
+          },
+        ],
+        credentialHelper: window.firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
+        autoUpgradeAnonymousUsers: true,
+        tosUrl: '<your-tos-url>',
+        privacyPolicyUrl: '<your-privacy-policy-url>',
+      };
 
-        ui.start('#firebaseui-auth-container', uiConfig);
+      ui.start('#firebaseui-auth-container', uiConfig);
+
+      // Customize button text after FirebaseUI renders
+      setTimeout(() => {
+        const buttons = document.querySelectorAll('.firebaseui-idp-button');
+        buttons.forEach((button) => {
+          const text = button.querySelector('.firebaseui-idp-text');
+          if (text && text.textContent.includes('Sign in with email')) {
+            // Check if it's the password method (has password input) or link method
+            const buttonList = button.closest('.firebaseui-list-item');
+            const buttonIndex = Array.from(buttonList?.parentNode?.children || []).indexOf(buttonList);
+
+            // First email button (index 1) = Email/Password
+            // Second email button (index 4) = Email Link
+            if (buttonIndex === 1) {
+              text.textContent = 'Sign up / Sign in with email';
+            } else if (buttonIndex === 4) {
+              text.textContent = 'Sign in with magic link';
+            }
+          }
+        });
+      }, 100);
     },
 
     // Mutations converted to actions
