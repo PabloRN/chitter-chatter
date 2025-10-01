@@ -1,3 +1,15 @@
+
+## [0.20.5] - 2025-10-01
+
+### 🐛 Bug Fixes
+
+- serviceworker intercepting oauth redirection ([8549828])
+
+### 📦 Other Changes
+
+- Merge branch 'hotfix/fix-background-image-missing' into development ([b458524])
+- update release notes ([a34c14a])
+
 ## [0.20.4] - 2025-10-01
 
 ### 🐛 Bug Fixes
@@ -21,3 +33,4 @@
 - Merge pull request #34 from PabloRN/development ([e04ce69])
 - Merge pull request #33 from PabloRN/development ([3ddc27a])
 - Merge pull request #32 from PabloRN/development ([73d6c3a])
+
