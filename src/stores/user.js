@@ -170,6 +170,13 @@ const useUserStore = defineStore('user', {
         this.roomUploadLoading = false;
       }
     },
+    async updateUserHobbies(hobbies) {
+      const db = getDatabase();
+      await update(
+        ref(db, `users/${this.currentUser.userId}`),
+        { hobbies },
+      );
+    },
     async toggleFavorite(roomId) {
       try {
         const mainStore = useMainStore();

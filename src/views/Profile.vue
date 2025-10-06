@@ -107,6 +107,36 @@
               <v-text-field :disabled="getCurrentUser?.age" v-else v-model="editedUser.age" label="Age" type="number"
                 class="edit-field" outlined dense hint="Age can only be set one time" persistent-hint />
             </div>
+            <div class="info-row">
+              <span class="info-label">Hobbies:</span>
+              <div v-if="!isEditing" class=" d-flex justify-start flex-wrap">
+                <v-chip v-for="chip in getCurrentUser?.hobbies" class="ma-2" :color="chip.color"
+                  :prepend-icon="chip.icon">
+                  {{ chip.name }}
+                </v-chip>
+              </div>
+              <v-combobox v-if="isEditing" closable-chips v-model="editedUser.selectedHobbies" :items="categories"
+                item-title="name" item-value="name" multiple chips clearable :disabled="loading" label="Search & Select"
+                hide-selectedHobbies>
+                <!-- Chips inside the field -->
+                <template v-slot:selection="{ item, index }">
+                  <v-chip :prepend-icon="item.icon" :key="index" closable :disabled="loading" :color="item.color"
+                    @click:close="remove(item)">
+                    {{ item.name }}
+                  </v-chip>
+                </template>
+
+                <!-- Dropdown item rendering -->
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon :icon="item.raw.icon"></v-icon>
+                    </template>
+                    <v-list-item-title>{{ item.name }}</v-list-item-title>
+                  </v-list-item>
+                </template>
+              </v-combobox>
+            </div>
           </v-card-text>
         </v-card>
 
@@ -215,7 +245,23 @@ import {
   GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
 import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
-
+const hobbies = [
+  { name: "Football", icon: "mdi-soccer", color: "green" },
+  { name: "Basketball", icon: "mdi-basketball", color: "deep-orange" },
+  { name: "Gaming", icon: "mdi-gamepad-variant", color: "purple" },
+  { name: "Music", icon: "mdi-music", color: "blue" },
+  { name: "Reading", icon: "mdi-book-open-page-variant", color: "indigo" },
+  { name: "Drawing", icon: "mdi-pencil", color: "pink" },
+  { name: "Cooking", icon: "mdi-silverware-fork-knife", color: "red" },
+  { name: "Traveling", icon: "mdi-airplane", color: "cyan" },
+  { name: "Movies", icon: "mdi-movie-open", color: "teal" },
+  { name: "Fitness", icon: "mdi-dumbbell", color: "orange" },
+  { name: "Photography", icon: "mdi-camera", color: "light-blue" },
+  { name: "Coding", icon: "mdi-laptop", color: "grey darken-1" },
+  { name: "Anime & Manga", icon: "mdi-drama-masks", color: "deep-purple" },
+  { name: "Collecting", icon: "mdi-cards-variant", color: "brown" },
+  { name: "Nature", icon: "mdi-tree", color: "green darken-2" }
+];
 const availableProviders = [
   {
     id: 'google.com', name: 'Google', icon: 'mdi-google', provider: new GoogleAuthProvider(),
@@ -237,6 +283,7 @@ const showDeleteDialog = ref(false);
 const editedUser = ref({
   nickname: '',
   age: null,
+  selectedHobbies: [],
 });
 const preferences = ref({
   notifications: true,
@@ -249,8 +296,15 @@ const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const selectedHobbies = ref([])
+const loading = ref(false)
 
 // computed
+const categories = computed(() =>
+  hobbies.filter(
+    (item) => !selectedHobbies.value.find((s) => s.name === item.name)
+  )
+)
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0);
 const joinedDate = computed(() => 'Dec 2024'); // TODO: fetch from user data
@@ -289,12 +343,18 @@ watch(isEditing, async (newVal) => {
   if (newVal === true) {
     editedUser.value.nickname = getCurrentUser.value?.nickname || '';
     editedUser.value.age = getCurrentUser.value?.age || null;
+    editedUser.value.selectedHobbies = getCurrentUser.value?.hobbies || [];
   } else {
     await saveProfile();
   }
 });
 
 // methods
+
+const remove = (item) => {
+  selectedHobbies.value = selectedHobbies.value.filter((s) => s.name !== item.raw.name)
+}
+
 
 const linkAccount = async (providerId) => {
   try {
@@ -340,7 +400,9 @@ const saveProfile = async () => {
       userStore.uploadUserPersonalAvatar(pendingAvatar.value.file);
       pendingAvatar.value = null;
     }
-    // TODO: update other fields like age
+    if (editedUser.value.selectedHobbies.length) {
+      await userStore.updateUserHobbies(editedUser.value.selectedHobbies);
+    }
     console.log('Profile updated successfully');
   } catch (error) {
     console.error('Error updating profile:', error);

@@ -73,7 +73,7 @@
               <v-card-text class="room-info">
                 <h4 class="room-name">{{ room.name }}</h4>
                 <div class="room-meta">
-                  <v-chip x-small outlined class="theme-chip">
+                  <v-chip x-small outlined color="primary">
                     {{ getThemeLabel(room.theme) }}
                   </v-chip>
                   <div class="room-users">
