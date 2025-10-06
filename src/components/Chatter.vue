@@ -13,6 +13,7 @@
       ['privateMessage']: () => invitePrivate(),
       ['showUserMessages']: () => toggleUserMessages(),
       ['blockUser']: () => toggleBlockUser(),
+      ['showLoginDialog']: () => showLoginDialogHandler(),
 
     }" ref="roundedmenu" />
     <RoundedMenuCurrent v-else :moving="mouseMoved" ref="roundedmenucurrent" v-on="{
@@ -21,6 +22,7 @@
       ['showAvatarList']: () => (showAvatarSelector = !showAvatarSelector),
       ['showMessages']: () => toggleMessages(),
       ['showProfile']: () => showProfile(),
+      ['showLoginDialog']: () => showLoginDialogHandler(),
     }" />
     <TypeBox :ref="`keyboard_${actualUserId}`" :id="`keyboard_${actualUserId}`" v-if="isCurrentUser"
       :moving="mouseMoved" />

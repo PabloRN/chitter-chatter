@@ -9,7 +9,7 @@
       <template v-if="!showWelcomeForm">
         <v-card-title>Naniii!?You are not logged in?</v-card-title>
         <v-card-text>
-          <div class="my-4 text-subtitle-1">Hey, you need to log in to use this feature.</div>
+          <div class="text-subtitle-1 no-scroll">Hey, you need to log in to use this feature.</div>
         </v-card-text>
         <div id="firebaseui-auth-container"></div>
         <div id="loader">Loading...</div>
@@ -107,5 +107,17 @@ watch(showWelcomeForm, (newVal) => {
 
 ul.firebaseui-idp-list {
   padding: 1px !important;
+}
+
+.no-scroll {
+  overflow-y: visible !important;
+  padding: 0 !important;
+}
+
+.v-dialog--scrollable>.v-overlay__content>.v-card>.v-card-text,
+.v-dialog--scrollable>.v-overlay__content>form>.v-card>.v-card-text {
+  backface-visibility: hidden;
+  overflow-y: visible !important;
+  padding: 0px 18px;
 }
 </style>

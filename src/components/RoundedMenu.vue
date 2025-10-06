@@ -12,7 +12,7 @@
       <div class="icon-caption" style="opacity: 0.3;">Buffer</div>
     </v-btn>
     <v-btn :disabled="isBlockedBy" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
+      @click.prevent="handleEmit('addFriend')" @touchstart.native.prevent="handleEmit('addFriend')">
       <div>
         <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-account-plus </v-icon>
       </div>
@@ -26,9 +26,8 @@
       </div>
       <div :disabled="isBlockedBy" class="icon-caption">Talk privately</div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
-
+    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="handleEmit('userInfo')" @touchstart.native.prevent="handleEmit('userInfo')">
       <div>
         <v-icon class="manga-icon"> mdi-information </v-icon>
       </div>
@@ -44,12 +43,12 @@
       </div>
       <div class="icon-caption"> {{ isBlocked ? 'Unblock' : 'Block' }} </div>
     </v-btn>
-    <v-btn disabled :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
+    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="handleEmit('reportUser')" @touchstart.native.prevent="handleEmit('reportUser')">
       <div>
-        <v-icon disabled class="manga-icon"> mdi-car-emergency </v-icon>
+        <v-icon class="manga-icon"> mdi-car-emergency </v-icon>
       </div>
-      <div disabled class="icon-caption">Report</div>
+      <div class="icon-caption">Report</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
       @click.prevent.stop="handleEmit('showUserMessages')" @touchstart.native.prevent="handleEmit('showUserMessages')">
@@ -80,6 +79,7 @@
 import useUserStore from '@/stores/user';
 import {
   ref, computed, nextTick, onMounted,
+  h,
 } from 'vue';
 
 const props = defineProps({
@@ -118,6 +118,10 @@ const handleEmit = (item) => {
     case 'privateMessage':
       if (movingTouch.value === false) {
         toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
         // emit event to parent
         emit('privateMessage');
       }
@@ -125,6 +129,10 @@ const handleEmit = (item) => {
     case 'showUserMessages':
       if (movingTouch.value === false) {
         toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
         // emit event to parent
         emit('showUserMessages');
       }
@@ -132,11 +140,36 @@ const handleEmit = (item) => {
     case 'blockUser':
       if (movingTouch.value === false) {
         toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
         // emit event to parent
         emit('blockUser');
       }
       break;
-
+    case 'addFriend':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
+        // emit event to parent
+        emit('addFriend');
+      }
+      break;
+    case 'userInfo':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
+        // emit event to parent
+        emit('userInfo');
+      }
+      break;
     default:
       break;
   }
