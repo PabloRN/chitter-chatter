@@ -697,20 +697,23 @@ const useUserStore = defineStore('user', {
           signInSuccessWithAuthResult: (authResult) => {
             const { user } = authResult;
 
-            // Queue upgrade to happen asynchronously AFTER popup closes
-            setTimeout(() => {
-              this.handleAnonymousUserUpgrade(anonymousUser, user, roomId).then(() => {
-                if (authResult && !authResult.user.isAnonymous) {
-                  this.userUpgraded({
-                    verifiedUser: authResult.user.uid,
-                    unverifiedUser: anonymousUser.uid,
-                    isCurrent: true,
-                  });
-                }
-              }).catch((error) => {
-                console.error('Error during anonymous user upgrade:', error);
-              });
-            }, 0);
+            // Only upgrade if the previous user was anonymous
+            if (anonymousUser && anonymousUser.isAnonymous && user.uid !== anonymousUser.uid) {
+              // Queue upgrade to happen asynchronously AFTER popup closes
+              setTimeout(() => {
+                this.handleAnonymousUserUpgrade(anonymousUser, user, roomId).then(() => {
+                  if (authResult && !authResult.user.isAnonymous) {
+                    this.userUpgraded({
+                      verifiedUser: authResult.user.uid,
+                      unverifiedUser: anonymousUser.uid,
+                      isCurrent: true,
+                    });
+                  }
+                }).catch((error) => {
+                  console.error('Error during anonymous user upgrade:', error);
+                });
+              }, 0);
+            }
 
             return false; // prevent redirect - popup will close immediately
           },
