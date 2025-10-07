@@ -109,7 +109,7 @@
             </div>
             <div class="info-row">
               <span class="info-label">Hobbies:</span>
-              <div v-if="!isEditing" class=" d-flex justify-start flex-wrap">
+              <div v-if="!isEditing" class="d-flex justify-start flex-wrap">
                 <v-chip v-for="chip in getCurrentUser?.hobbies" class="ma-2" :color="chip.color"
                   :prepend-icon="chip.icon">
                   {{ chip.name }}
@@ -312,7 +312,7 @@ const linkedProviders = computed(() => userStore.linkedProviders);
 const nicknameCooldownMessage = computed(() => {
   console.log(getCurrentUser.value);
   const updatedAt = getCurrentUser.value?.nickNameUpdatedAt;
-  if (!updatedAt) return ''; // never updated, no cooldown
+  if (!updatedAt || getCurrentUser.value?.nickname === '') return ''; // never updated, no cooldown
 
   const now = Date.now();
   const cooldown = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
