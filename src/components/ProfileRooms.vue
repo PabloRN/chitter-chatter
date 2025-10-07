@@ -73,9 +73,11 @@
               <v-card-text class="room-info">
                 <h4 class="room-name">{{ room.name }}</h4>
                 <div class="room-meta">
-                  <v-chip x-small outlined color="primary">
-                    {{ getThemeLabel(room.theme) }}
-                  </v-chip>
+                  <div class="d-flex align-center">
+                    <v-avatar v-for="topic in room.topics" :key="topic" size="24" class="mr-1" :color="topic.color">
+                      <v-icon size="16" color="white">{{ topic.icon }}</v-icon>
+                    </v-avatar>
+                  </div>
                   <div class="room-users">
                     <v-icon small>mdi-account-group</v-icon>
                     {{ room.maxUsers }}
@@ -198,7 +200,7 @@ import {
 import { useRouter, useRoute } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
-import { ROOM_THEMES, USER_ROOM_LIMITS } from '@/utils/roomTypes';
+import { ROOM_TOPICS, USER_ROOM_LIMITS } from '@/utils/roomTypes';
 
 const router = useRouter();
 const route = useRoute();
@@ -254,10 +256,6 @@ const editRoom = (roomId) => {
   router.push(`/profile/room/${roomId}/edit`);
 };
 
-const getThemeLabel = (themeValue) => {
-  const theme = ROOM_THEMES.find((t) => t.value === themeValue);
-  return theme ? theme.label : themeValue;
-};
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown';

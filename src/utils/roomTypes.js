@@ -1,20 +1,22 @@
 // Room themes/topics
-export const ROOM_THEMES = [
-  { value: 'general', label: 'General Discussion' },
-  { value: 'gaming', label: 'Gaming' },
-  { value: 'music', label: 'Music' },
-  { value: 'movies', label: 'Movies & TV' },
-  { value: 'tech', label: 'Technology' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'art', label: 'Art & Design' },
-  { value: 'education', label: 'Education' },
-  { value: 'business', label: 'Business' },
-  { value: 'lifestyle', label: 'Lifestyle' },
-  { value: 'science', label: 'Science' },
-  { value: 'food', label: 'Food & Cooking' },
-  { value: 'travel', label: 'Travel' },
-  { value: 'books', label: 'Books & Literature' },
-  { value: 'health', label: 'Health & Fitness' },
+export const ROOM_TOPICS = [
+
+  { name: 'Gaming', icon: 'mdi-gamepad-variant', color: 'purple' },
+  { name: 'Music', icon: 'mdi-music', color: 'blue' },
+  { name: 'Reading', icon: 'mdi-book-open-page-variant', color: 'indigo' },
+  { name: 'Design', icon: 'mdi-pencil', color: 'pink' },
+  { name: 'Cooking', icon: 'mdi-silverware-fork-knife', color: 'red' },
+  { name: 'Traveling', icon: 'mdi-airplane', color: 'cyan' },
+  { name: 'Movies', icon: 'mdi-movie-open', color: 'teal' },
+  { name: 'Fitness', icon: 'mdi-dumbbell', color: 'orange' },
+  { name: 'Photography', icon: 'mdi-camera', color: 'light-blue' },
+  { name: 'Coding', icon: 'mdi-laptop', color: 'grey darken-1' },
+  { name: 'Anime & Manga', icon: 'mdi-drama-masks', color: 'deep-purple' },
+  { name: 'Collecting', icon: 'mdi-cards-variant', color: 'brown' },
+  { name: 'Nature', icon: 'mdi-tree', color: 'green darken-2' },
+  { name: 'Pets', icon: 'mdi-paw', color: 'amber' },
+  { name: 'Sports', icon: 'mdi-soccer', color: 'green' },
+  { name: 'General topics', icon: 'mdi-forum', color: 'blue' },
 ];
 
 // Room validation constraints
@@ -35,7 +37,7 @@ export const ROOM_CONSTRAINTS = {
 // Default room values
 export const DEFAULT_ROOM_VALUES = {
   name: '',
-  theme: 'general',
+  topics: [{ name: 'General topics', icon: 'mdi-forum', color: 'blue' }],
   description: '',
   maxUsers: 20,
   minAge: 13,
@@ -58,7 +60,7 @@ export function createRoom(data = {}) {
     id: data.id || null,
     ownerId: data.ownerId || null,
     name: data.name || DEFAULT_ROOM_VALUES.name,
-    theme: data.theme || DEFAULT_ROOM_VALUES.theme,
+    topics: data.topics || DEFAULT_ROOM_VALUES.topics,
     description: data.description || DEFAULT_ROOM_VALUES.description,
     maxUsers: data.maxUsers || DEFAULT_ROOM_VALUES.maxUsers,
     minAge: data.minAge || DEFAULT_ROOM_VALUES.minAge,
@@ -91,11 +93,6 @@ export function validateRoom(roomData) {
   // Max users validation
   if (roomData.maxUsers < ROOM_CONSTRAINTS.maxUsers.min || roomData.maxUsers > ROOM_CONSTRAINTS.maxUsers.max) {
     errors.push(`Maximum users must be between ${ROOM_CONSTRAINTS.maxUsers.min} and ${ROOM_CONSTRAINTS.maxUsers.max}`);
-  }
-  // Theme validation
-  const validThemes = ROOM_THEMES.map((t) => t.value);
-  if (!validThemes.includes(roomData.theme)) {
-    errors.push('Invalid room theme selected');
   }
 
   return {

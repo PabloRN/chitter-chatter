@@ -15,8 +15,27 @@
             persistent-hint outlined dense :counter="50" class="mb-4" required />
 
           <!-- Theme Selection -->
-          <v-select v-model="formData.theme" :items="themeOptions" item-title="text" item-value="value" label="Theme"
-            hint="Choose a theme that best describes your room" persistent-hint outlined dense class="mb-4" required />
+          <v-combobox class="mb-5" closable-chips v-model="formData.topics" :items="categories" item-title="name"
+            item-value="name" multiple chips clearable :disabled="loading" label="Topic" hide-selectedHobbies
+            hint="Choose the topic(s) that best describes your room" persistent-hint>
+            <!-- Chips inside the field -->
+            <template v-slot:selection="{ item, index }">
+              <v-chip :prepend-icon="item.icon" :key="index" closable :disabled="loading" :color="item.color"
+                @click:close="remove(item)">
+                {{ item.name }}
+              </v-chip>
+            </template>
+
+            <!-- Dropdown item rendering -->
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template #prepend>
+                  <v-icon :icon="item.raw.icon"></v-icon>
+                </template>
+                <v-list-item-title>{{ item.name }}</v-list-item-title>
+              </v-list-item>
+            </template>
+          </v-combobox>
 
           <!-- Description -->
           <v-textarea v-model="formData.description" :rules="descriptionRules" label="Description"
@@ -106,10 +125,11 @@ import { useRouter, useRoute } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 import {
-  ROOM_THEMES, ROOM_CONSTRAINTS, DEFAULT_ROOM_VALUES, validateRoom,
+  ROOM_TOPICS, ROOM_CONSTRAINTS, DEFAULT_ROOM_VALUES, validateRoom,
 } from '@/utils/roomTypes';
 import AvatarManager from '@/components/AvatarManager.vue';
 import BackgroundSelector from '@/components/BackgroundSelector.vue';
+import lodash from 'lodash';
 
 const props = defineProps({
   roomId: {
@@ -141,11 +161,14 @@ const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const selectedHobbies = ref([])
+const loading = ref(false)
+
 
 // Form data
 const formData = reactive({
   name: DEFAULT_ROOM_VALUES.name,
-  theme: DEFAULT_ROOM_VALUES.theme,
+  topics: DEFAULT_ROOM_VALUES.topics,
   description: DEFAULT_ROOM_VALUES.description,
   maxUsers: DEFAULT_ROOM_VALUES.maxUsers,
   minAge: DEFAULT_ROOM_VALUES.minAge,
@@ -157,11 +180,14 @@ const formData = reactive({
 // Original data for change detection (only for edit mode)
 const originalData = ref({});
 
-// Computed
-const themeOptions = computed(() => ROOM_THEMES.map((theme) => ({
-  text: theme.label,
-  value: theme.value,
-})));
+
+// computed
+const categories = computed(() =>
+  ROOM_TOPICS.filter(
+    (item) => !selectedHobbies.value.find((s) => s.name === item.name)
+  )
+)
+
 
 const hasMinimumRequirements = computed(() => {
   const hasBackground = !!selectedBackground.value || !!formData.backgroundImage;
@@ -179,7 +205,7 @@ const hasChanges = computed(() => {
   // Check for basic form field changes
   const basicFieldsChanged = (
     formData.name !== originalData.value.name
-    || formData.theme !== originalData.value.theme
+    || !same(formData.topics, originalData.value.topics)
     || formData.description !== originalData.value.description
     || formData.maxUsers !== originalData.value.maxUsers
     || formData.minAge !== originalData.value.minAge
@@ -212,6 +238,11 @@ const maxUsersRules = [
 ];
 
 // Methods
+
+const same = (arr1, arr2) => lodash.isEqual(
+  lodash.sortBy(arr1, 'name'),
+  lodash.sortBy(arr2, 'name')
+);
 const loadRoomData = async () => {
   if (!props.isEdit || !props.roomId) return;
 
@@ -237,7 +268,7 @@ const loadRoomData = async () => {
       // Store original data for change detection
       originalData.value = {
         name: room.name,
-        theme: room.theme,
+        topics: room.topics,
         description: room.description,
         maxUsers: room.maxUsers,
         minAge: room.minAge,
@@ -249,7 +280,7 @@ const loadRoomData = async () => {
       // Update form data
       Object.assign(formData, {
         name: room.name,
-        theme: room.theme,
+        topics: room.topics,
         description: room.description,
         maxUsers: room.maxUsers,
         minAge: room.minAge,
