@@ -304,8 +304,11 @@ const useRoomsStore = defineStore('rooms', {
       this.userAdded = { roomId, ...userId };
       userStore.roomIn = { roomId, roomUsersKey };
 
-      // Track room entry
-      analyticsService.trackRoomEntered(roomId);
+      // Track room entry with room name and user ID
+      const roomName = this.currentRoom?.name || this.roomList[roomId]?.name || 'unknown';
+      const currentUserId = userStore.currentUser?.userId || 'unknown';
+      const userType = userStore.currentUser?.isAnonymous ? 'anonymous' : 'registered';
+      analyticsService.trackRoomEntered(roomId, roomName, currentUserId, userType);
     },
 
     exitRoom({ roomId, userId, roomUsersKey }) {

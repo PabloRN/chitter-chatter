@@ -123,8 +123,13 @@ class AnalyticsService {
   /**
    * Track room entry
    */
-  trackRoomEntered(roomId) {
-    this.logEvent('room_entered', { room_id: roomId });
+  trackRoomEntered(roomId, roomName, userId, userType) {
+    this.logEvent('room_entered', {
+      room_id: roomId,
+      room_name: roomName,
+      user_id: userId,
+      user_type: userType,
+    });
   }
 
   /**
