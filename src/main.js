@@ -15,14 +15,14 @@ import './assets/scss/main.scss';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
-  authDomain: 'toonstalk.com',
-  databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
-  projectId: 'chitter-chatter-f762a',
-  storageBucket: 'chitter-chatter-f762a.appspot.com',
-  messagingSenderId: '63563490823',
-  appId: '1:63563490823:web:a6b6dc9011861f6d0d2ca2',
-  measurementId: 'G-JCDBMEBPZZ',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase (modular v10+)
