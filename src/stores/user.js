@@ -24,6 +24,7 @@ import authService from '@/services/authService';
 import tabCommunicationService from '@/services/tabCommunicationService';
 import avatarService from '@/services/avatarService';
 import profileService from '@/services/profileService';
+import analyticsService from '@/services/analyticsService';
 import useMainStore from './main';
 
 const useUserStore = defineStore('user', {
@@ -834,6 +835,11 @@ const useUserStore = defineStore('user', {
 
     userUpgraded({ verifiedUser, unverifiedUser, isCurrent }) {
       console.log('🔄 userUpgraded called:', { verifiedUser, unverifiedUser, isCurrent });
+
+      // Track user registration/upgrade
+      if (isCurrent) {
+        analyticsService.trackUserRegistered('anonymous_upgrade');
+      }
 
       // Broadcast auth success to other tabs
       if (isCurrent) {

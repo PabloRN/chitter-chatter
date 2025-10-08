@@ -9,6 +9,7 @@ import pinia from './stores';
 import useMainStore from './stores/main';
 import vuetify from './plugins/vuetify';
 import i18n from './i18n';
+import analyticsService from './services/analyticsService';
 // import './utils/vee-validate' // Removed for now
 import './assets/scss/main.scss';
 
@@ -25,8 +26,13 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase (modular v10+)
-// Note: Firebase is now initialized via src/config/firebase.js to avoid conflicts
 initializeApp(firebaseConfig);
+
+// Initialize Analytics
+analyticsService.initialize().then(() => {
+  analyticsService.logEvent('app_start');
+  analyticsService.trackFirstVisit();
+});
 
 // Initialize Firebase compat for FirebaseUI
 // Wait for Firebase compat to load, then initialize

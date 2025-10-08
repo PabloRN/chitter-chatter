@@ -6,6 +6,7 @@ import {
   getStorage, ref as storageRef, getDownloadURL, listAll, uploadBytes, deleteObject,
 } from 'firebase/storage';
 import { createRoom, validateRoom, USER_ROOM_LIMITS } from '@/utils/roomTypes';
+import analyticsService from '@/services/analyticsService';
 import useUserStore from './user';
 
 const useRoomsStore = defineStore('rooms', {
@@ -302,6 +303,9 @@ const useRoomsStore = defineStore('rooms', {
 
       this.userAdded = { roomId, ...userId };
       userStore.roomIn = { roomId, roomUsersKey };
+
+      // Track room entry
+      analyticsService.trackRoomEntered(roomId);
     },
 
     exitRoom({ roomId, userId, roomUsersKey }) {
@@ -446,6 +450,9 @@ const useRoomsStore = defineStore('rooms', {
 
         // Add to room list
         this.roomList[roomId] = newRoom;
+
+        // Track room creation
+        analyticsService.trackRoomCreated(roomId, roomData.name, currentUser.userId);
 
         return { success: true, roomId, room: newRoom };
       } catch (error) {

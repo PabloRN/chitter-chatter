@@ -10,6 +10,7 @@
       </router-view>
     </v-main>
     <snack-bar />
+    <cookie-consent />
 
     <!-- Connection overlay -->
     <div v-if="!mainStore.isConnected && mainStore.connectionChecked" class="connection-overlay">
@@ -38,6 +39,7 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue';
 import SnackBar from './components/Snackbar';
+import CookieConsent from './components/CookieConsent';
 import useLanguageSwitcherStore from './stores/languageswitcher';
 import useUserStore from './stores/user';
 import useMainStore from './stores/main';
