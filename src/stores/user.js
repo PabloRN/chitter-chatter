@@ -775,8 +775,8 @@ const useUserStore = defineStore('user', {
         ],
         credentialHelper: window.firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
         autoUpgradeAnonymousUsers: true,
-        tosUrl: '<your-tos-url>',
-        privacyPolicyUrl: '<your-privacy-policy-url>',
+        tosUrl: 'https://toonstalk.com/terms',
+        privacyPolicyUrl: 'https://toonstalk.com/privacy',
       };
 
       ui.start('#firebaseui-auth-container', uiConfig);

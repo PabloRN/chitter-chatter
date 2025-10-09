@@ -142,8 +142,20 @@
       <v-card flat tile width="100%" class="text-center">
         <v-divider></v-divider>
         <v-card-text>
-          Copyright © {{ new Date().getFullYear() }} —
-          <strong>toonstalk</strong>
+          <div class="footer-content">
+            <div class="footer-copyright">
+              Copyright © {{ new Date().getFullYear() }} — <strong>toonstalk</strong>
+            </div>
+            <div class="footer-links">
+              <router-link to="/privacy" class="footer-link">Privacy Policy</router-link>
+              <span class="footer-separator">•</span>
+              <router-link to="/terms" class="footer-link">Terms of Service</router-link>
+              <span class="footer-separator">•</span>
+              <router-link to="/cookies" class="footer-link">Cookie Policy</router-link>
+              <span class="footer-separator">•</span>
+              <router-link to="/acceptable-use" class="footer-link">Community Guidelines</router-link>
+            </div>
+          </div>
         </v-card-text>
       </v-card>
     </v-footer>
@@ -596,5 +608,52 @@ div#default_avatar_character_12345 .avatar-image {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.footer-copyright {
+  font-size: 14px;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.footer-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.footer-separator {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .footer-links {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .footer-separator {
+    display: none;
+  }
 }
 </style>

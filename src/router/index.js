@@ -7,6 +7,7 @@ import Profile from '@/views/Profile';
 import RoomForm from '@/components/RoomForm';
 import AuthAction from '@/views/AuthAction';
 import ServicesTest from '@/views/ServicesTest';
+import LegalDocument from '@/views/LegalDocument';
 import { adminGuard } from '@/utils/adminAuth';
 
 const routes = [
@@ -24,6 +25,36 @@ const routes = [
     path: '/acctmgmt/__/auth/action',
     name: 'auth-action',
     component: AuthAction,
+  },
+  {
+    path: '/privacy',
+    name: 'privacy-policy',
+    component: LegalDocument,
+    meta: { docType: 'privacy' },
+  },
+  {
+    path: '/terms',
+    name: 'terms-of-service',
+    component: LegalDocument,
+    meta: { docType: 'terms' },
+  },
+  {
+    path: '/cookies',
+    name: 'cookie-policy',
+    component: LegalDocument,
+    meta: { docType: 'cookies' },
+  },
+  {
+    path: '/acceptable-use',
+    name: 'acceptable-use-policy',
+    component: LegalDocument,
+    meta: { docType: 'acceptable-use' },
+  },
+  {
+    path: '/data-deletion',
+    name: 'data-deletion-request',
+    component: LegalDocument,
+    meta: { docType: 'data-deletion' },
   },
   {
     path: '/test/services',

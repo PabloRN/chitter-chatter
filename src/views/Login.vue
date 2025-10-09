@@ -12,12 +12,25 @@
       </v-col>
       <v-col cols="12" class="footer">
         <v-footer absolute bottom padless>
-          <v-row class="d-flex" gutter="0">
-            <v-col class="text-start pl-3" sm="9" md="9" lg="11">
-              <strong>© TOONSTALK {{ new Date().getFullYear() }}</strong>
+          <v-row class="d-flex flex-column" gutter="0">
+            <v-col cols="12" class="text-center py-2">
+              <div class="footer-links">
+                <router-link to="/privacy" class="footer-link">Privacy</router-link>
+                <span class="footer-separator">•</span>
+                <router-link to="/terms" class="footer-link">Terms</router-link>
+                <span class="footer-separator">•</span>
+                <router-link to="/cookies" class="footer-link">Cookies</router-link>
+              </div>
             </v-col>
-            <v-col class="text-end pr-3" sm="3" md="3" lg="1">
-              <language-switcher />
+            <v-col cols="12">
+              <v-row class="d-flex" gutter="0">
+                <v-col class="text-start pl-3" sm="9" md="9" lg="11">
+                  <strong>© TOONSTALK {{ new Date().getFullYear() }}</strong>
+                </v-col>
+                <v-col class="text-end pr-3" sm="3" md="3" lg="1">
+                  <language-switcher />
+                </v-col>
+              </v-row>
             </v-col>
           </v-row>
         </v-footer>
@@ -60,7 +73,42 @@ const display = useDisplay(); // reactive breakpoint object
 
 .v-footer {
   background-color: #575757;
-  height: 48px;
+  height: auto;
+  min-height: 72px;
   color: #e6e6e6;
+}
+
+.footer-links {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px;
+}
+
+.footer-link {
+  color: #e6e6e6;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.footer-separator {
+  color: #e6e6e6;
+}
+
+@media (max-width: 600px) {
+  .footer-links {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .footer-separator {
+    display: none;
+  }
 }
 </style>
