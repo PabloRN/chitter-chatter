@@ -1,36 +1,21 @@
-
-## [0.20.5] - 2025-10-01
-
-### 🐛 Bug Fixes
-
-- serviceworker intercepting oauth redirection ([8549828])
+## [0.20.6] - 2025-10-09
 
 ### 📦 Other Changes
 
-- Merge branch 'hotfix/fix-background-image-missing' into development ([b458524])
-- update release notes ([a34c14a])
-
-## [0.20.4] - 2025-10-01
-
-### 🐛 Bug Fixes
-
-- background image missing ([7703b4c])
-
-### 📦 Other Changes
-
-- Merge pull request #45 from PabloRN/development ([4c05376])
-- Update release.yml to node 20 ([5469aa4])
-- Merge pull request #44 from PabloRN/development ([842f3cc])
-- Merge pull request #43 from PabloRN/development ([f7a1cfe])
-- Merge pull request #42 from PabloRN/development ([3e2586a])
-- Merge pull request #41 from PabloRN/development ([a10c710])
-- Merge pull request #40 from PabloRN/development ([42201c5])
-- Merge pull request #39 from PabloRN/development ([80fff30])
-- Merge pull request #38 from PabloRN/development ([8d22f96])
-- Merge pull request #37 from PabloRN/development ([719fbcd])
-- Merge pull request #36 from PabloRN/development ([60918fb])
-- Merge pull request #35 from PabloRN/development ([ace97e8])
-- Merge pull request #34 from PabloRN/development ([e04ce69])
-- Merge pull request #33 from PabloRN/development ([3ddc27a])
-- Merge pull request #32 from PabloRN/development ([73d6c3a])
-
+- add basic legal documentation for starting ([65cf9ab])
+- improve user analytics ([466cf10])
+- add environment variables for security ([dce1d3b])
+- add events tracking for analytics ([fa95dc9])
+- fix use can't update nickname after save ([a746280])
+- Improve selection of room topics ([acd3ffa])
+- fix upgrade user after login with credentials ([9c40aa0])
+- add hobbies selector in profile ([a807bcb])
+- add login option for some actions ([039f412])
+- improve signing signup process and ui ([ebcb721])
+- room creator by nickname ([c713f57])
+- admin user has no rooms number limits ([8d07b47])
+- Merge branch 'development' of https://github.com/PabloRN/chitter-chatter into development ([4259dc4])
+- Cleaning console logs ([3383f90])
+- Merge branch 'master' into development ([68ac10b])
+- release notes 0.20.5 ([1a6ccea])
+- update release notes ([85b9650])
