@@ -8,7 +8,7 @@
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
       <div class="nickname">{{ nickname }}</div>
     </div>
-    <v-img fill :id="`img-${actualUserId}`" class="avatar-image" :src="avatar"></v-img>
+    <v-img fill :id="`img-${actualUserId}`" class="avatar-image" :class="{ 'avatar-dragging': isActuallyMoving }" :src="avatar"></v-img>
     <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" v-on="{
       ['privateMessage']: () => invitePrivate(),
       ['showUserMessages']: () => toggleUserMessages(),
@@ -107,7 +107,9 @@ const isDown = ref(false);
 const keyboardClicked = ref(false);
 const message = ref('');
 const mouseMoved = ref(false);
+const isActuallyMoving = ref(false);
 const touchMove = ref(false);
+let movementTimeout = null;
 const openMenu = ref(false);
 const touchend = ref('');
 const touchstart = ref('');
@@ -123,6 +125,7 @@ const windowHeight = ref(0);
 const windowWidth = ref(0);
 const showAvatarSelector = ref(false);
 const actualUserId = ref('');
+const lastPosition = ref({ left: '', top: '' });
 
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const roomMessages = computed(() => messagesStore.roomMessages);
@@ -339,6 +342,14 @@ const addEventListeners = () => {
       e.stopPropagation();
       if (isDown.value && actualUserId.value === getCurrentUser.value.userId) {
         mouseMoved.value = true;
+        isActuallyMoving.value = true;
+
+        // Clear existing timeout and set new one
+        if (movementTimeout) clearTimeout(movementTimeout);
+        movementTimeout = setTimeout(() => {
+          isActuallyMoving.value = false;
+        }, 50);
+
         const mousePosition = {
           x: e.clientX,
           y: e.clientY,
@@ -372,6 +383,9 @@ const addEventListeners = () => {
       e.preventDefault();
       e.stopPropagation();
       isDown.value = false;
+      setTimeout(() => {
+        mouseMoved.value = false;
+      }, 100);
     },
     true,
   );
@@ -394,6 +408,14 @@ const addEventListeners = () => {
     e.stopImmediatePropagation();
     if (isDown.value && actualUserId.value === getCurrentUser.value.userId) {
       mouseMoved.value = true;
+      isActuallyMoving.value = true;
+
+      // Clear existing timeout and set new one
+      if (movementTimeout) clearTimeout(movementTimeout);
+      movementTimeout = setTimeout(() => {
+        isActuallyMoving.value = false;
+      }, 50);
+
       const mousePosition = {
         x: e.changedTouches[0].clientX,
         y: e.changedTouches[0].clientY,
@@ -419,6 +441,9 @@ const addEventListeners = () => {
     'touchend',
     () => {
       isDown.value = false;
+      setTimeout(() => {
+        mouseMoved.value = false;
+      }, 100);
     },
     true,
   );
@@ -480,6 +505,22 @@ watch(roomMessages, (newVal) => {
 watch(userPositionModified, () => {
   if (usersPosition.value[actualUserId.value] && usersPosition.value[actualUserId.value].position) {
     const { left, top } = usersPosition.value[actualUserId.value].position;
+
+    // Check if position actually changed
+    if (left !== lastPosition.value.left || top !== lastPosition.value.top) {
+      // Position changed, trigger wobble animation
+      isActuallyMoving.value = true;
+
+      // Clear existing timeout and set new one
+      if (movementTimeout) clearTimeout(movementTimeout);
+      movementTimeout = setTimeout(() => {
+        isActuallyMoving.value = false;
+      }, 50);
+
+      // Update last position
+      lastPosition.value = { left, top };
+    }
+
     chatterManager.value.style.left = left;
     chatterManager.value.style.top = top;
     dialogSide.value = actualUserId.value !== 'default_avatar_character_12345'
@@ -490,6 +531,24 @@ watch(userPositionModified, () => {
 </script>
 
 <style scoped>
+@keyframes southpark-wobble {
+  0% {
+    transform: rotate(-3deg) scale(1.01);
+  }
+  25% {
+    transform: rotate(3deg) scale(0.99);
+  }
+  50% {
+    transform: rotate(-3deg) scale(1.01);
+  }
+  75% {
+    transform: rotate(3deg) scale(0.99);
+  }
+  100% {
+    transform: rotate(-3deg) scale(1.01);
+  }
+}
+
 .avatar-image {
   filter: drop-shadow(1px 2px 1px #424242);
   position: relative;
@@ -502,6 +561,10 @@ watch(userPositionModified, () => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.avatar-image.avatar-dragging {
+  animation: southpark-wobble 0.4s ease-in-out infinite;
 }
 
 /* .v-image--cover {
