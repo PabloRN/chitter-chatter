@@ -69,6 +69,14 @@ const useUserStore = defineStore('user', {
       blockedBy: {},
       isActive: true,
       isCreator: false,
+      privacySettings: {
+        showAvatar: true,
+        showNickname: true,
+        showLevel: true,
+        showAge: false,
+        showHobbies: true,
+        showDescription: true,
+      },
     },
   }),
 
@@ -177,6 +185,25 @@ const useUserStore = defineStore('user', {
         ref(db, `users/${this.currentUser.userId}`),
         { hobbies },
       );
+    },
+    async updateUserDescription(description) {
+      const db = getDatabase();
+      await update(
+        ref(db, `users/${this.currentUser.userId}`),
+        { description },
+      );
+    },
+    async updatePrivacySettings(privacySettings) {
+      const db = getDatabase();
+      await update(
+        ref(db, `users/${this.currentUser.userId}`),
+        { privacySettings },
+      );
+      // Update local state
+      this.currentUser.privacySettings = privacySettings;
+      if (this.userData[this.currentUser.userId]) {
+        this.userData[this.currentUser.userId].privacySettings = privacySettings;
+      }
     },
     async toggleFavorite(roomId) {
       try {
