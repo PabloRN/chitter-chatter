@@ -14,7 +14,7 @@
       ['showUserMessages']: () => toggleUserMessages(),
       ['blockUser']: () => toggleBlockUser(),
       ['showLoginDialog']: () => showLoginDialogHandler(),
-
+      ['userInfo']: () => showUserInfo(),
     }" ref="roundedmenu" />
     <RoundedMenuCurrent v-else :moving="mouseMoved" ref="roundedmenucurrent" v-on="{
       ['exitRoom']: leaveRoom,
@@ -33,6 +33,7 @@
       class="pa-5 ma-5 private-dialog">
       <LoginDialogBubble @onCloseLoginDialog="closeLoggingDialog" @onSavedNickName="updateNickName" />
     </v-dialog>
+    <UserInfoCard v-model="showUserInfoDialog" :userId="props.userId" />
   </div>
 </template>
 
@@ -47,6 +48,7 @@ import RoundedMenu from '@/components/RoundedMenu';
 import RoundedMenuCurrent from '@/components/RoundedMenuCurrent';
 import AvatarSelector from '@/components/AvatarSelector';
 import LoginDialogBubble from '@/components/LoginDialogBubble';
+import UserInfoCard from '@/components/UserInfoCard';
 import useUserStore from '@/stores/user';
 import useMessagesStore from '@/stores/messages';
 import useRoomsStore from '@/stores/rooms';
@@ -65,6 +67,7 @@ const messagesStore = useMessagesStore();
 const roomsStore = useRoomsStore();
 
 const showLoginDialog = ref(false);
+const showUserInfoDialog = ref(false);
 const chatterManager = ref({});
 const dialogs = ref('');
 const expresion = reactive({
@@ -145,6 +148,10 @@ const closeAvatarSelector = () => {
 
 const showLoginDialogHandler = () => {
   showLoginDialog.value = true;
+};
+
+const showUserInfo = () => {
+  showUserInfoDialog.value = true;
 };
 
 const handleSpaceKey = (e) => {
