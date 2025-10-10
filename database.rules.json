@@ -34,6 +34,13 @@
         "$avatarId": {
           ".validate": "newData.hasChildren(['id', 'originalPath', 'miniPath', 'uploadedAt', 'uploadedBy'])"
         }
+      },
+      "feedback": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "auth != null",
+        "$feedbackId": {
+          ".validate": "newData.hasChildren(['fullName', 'email', 'title', 'description', 'createdAt'])"
+        }
       }
     }
   }

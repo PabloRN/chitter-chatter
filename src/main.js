@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { initializeApp } from 'firebase/app';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
+import { VueReCaptcha } from 'vue-recaptcha-v3';
 import App from './App';
 import './registerServiceWorker';
 import router from './router';
@@ -81,6 +82,15 @@ app.use(router);
 app.use(vuetify);
 app.use(i18n);
 app.use(Storage, storageOptions);
+
+// Configure reCAPTCHA v3
+// Note: Replace with your actual reCAPTCHA site key from Google reCAPTCHA admin console
+app.use(VueReCaptcha, {
+  siteKey: import.meta.env.VITE_RECAPTCHA_SITE_KEY || 'YOUR_RECAPTCHA_SITE_KEY',
+  loaderOptions: {
+    autoHideBadge: true,
+  },
+});
 
 app.config.globalProperties._ = lodash;
 

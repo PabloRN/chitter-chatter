@@ -8,6 +8,12 @@
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
+
+      <!-- Feedback button -->
+      <v-btn icon class="mr-2" @click="showFeedbackDialog = true" title="Send Feedback">
+        <v-icon>mdi-message-alert-outline</v-icon>
+      </v-btn>
+
       <!-- TODO: create component -->
       <!-- Authentication buttons for non-authenticated users -->
       <div v-if="!isUserAuthenticated" class="auth-buttons mr-3">
@@ -17,7 +23,7 @@
       </div>
 
       <!-- Profile menu for authenticated users -->
-      <div v-else class="profile-section mr-5">
+      <div v-else class="profile-section mr-3">
         <v-menu offset-y z-index="99999">
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props" class="profile-menu-btn">
@@ -183,6 +189,13 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Feedback Dialog -->
+    <FeedbackDialog
+      v-model="showFeedbackDialog"
+      @success="handleFeedbackSuccess"
+      @error="handleFeedbackError"
+    />
   </div>
 </template>
 
@@ -194,6 +207,7 @@ import { useRouter } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 import RoomThumbnail from '@/components/RoomThumbnail';
+import FeedbackDialog from '@/components/FeedbackDialog';
 
 // ✅ stores
 const roomsStore = useRoomsStore();
@@ -203,6 +217,7 @@ const router = useRouter();
 // ✅ state (was data)
 const showWelcomeDialog = ref(false);
 const showAuthDialog = ref(false);
+const showFeedbackDialog = ref(false);
 const usersOnline = ref(0);
 const flexBasisValues = ref(['25%']);
 const variant = ref('absolute');
@@ -289,6 +304,16 @@ function checkAuthenticationStatus() {
   if (isUserAuthenticated.value && showAuthDialog.value) {
     showAuthDialog.value = false;
   }
+}
+
+function handleFeedbackSuccess() {
+  console.log('Feedback submitted successfully');
+  // You can add a success snackbar notification here
+}
+
+function handleFeedbackError(error) {
+  console.error('Feedback submission error:', error);
+  // You can add an error snackbar notification here
 }
 
 // ✅ lifecycle

@@ -9,6 +9,12 @@
         Profile
       </v-toolbar-title>
       <v-spacer></v-spacer>
+
+      <!-- Feedback button -->
+      <v-btn icon class="mr-2" @click="showFeedbackDialog = true" title="Send Feedback">
+        <v-icon>mdi-message-alert-outline</v-icon>
+      </v-btn>
+
       <v-btn v-if="!isEditing" @click="isEditing = !isEditing" class="edit-btn">
         <v-icon>mdi-pencil</v-icon>
         Edit
@@ -325,6 +331,13 @@
     <v-snackbar v-model="showError" color="error" timeout="5000">
       {{ errorMessage }}
     </v-snackbar>
+
+    <!-- Feedback Dialog -->
+    <FeedbackDialog
+      v-model="showFeedbackDialog"
+      @success="handleFeedbackSuccess"
+      @error="handleFeedbackError"
+    />
   </div>
 </template>
 
@@ -336,6 +349,7 @@ import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
 import ProfileRooms from '@/components/ProfileRooms.vue';
 import AdminPanel from '@/components/AdminPanel.vue';
+import FeedbackDialog from '@/components/FeedbackDialog';
 import {
   GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
@@ -403,6 +417,7 @@ const successMessage = ref('');
 const errorMessage = ref('');
 const selectedHobbies = ref([])
 const loading = ref(false)
+const showFeedbackDialog = ref(false);
 
 // computed
 const categories = computed(() =>
@@ -595,6 +610,16 @@ const deleteAccount = async () => {
   } catch (error) {
     console.error('Error deleting account:', error);
   }
+};
+
+const handleFeedbackSuccess = () => {
+  successMessage.value = 'Thank you for your feedback!';
+  showSuccess.value = true;
+};
+
+const handleFeedbackError = (error) => {
+  errorMessage.value = `Error submitting feedback: ${error}`;
+  showError.value = true;
 };
 </script>
 <style scoped lang="scss">
