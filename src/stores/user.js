@@ -777,12 +777,12 @@ const useUserStore = defineStore('user', {
         },
         signInFlow: 'popup',
         signInOptions: [
-          window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
           {
             provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            requireDisplayName: false,
-            signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD,
+            signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD,
+            forceSameDevice: true,
           },
+          window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
           {
             provider: 'yahoo.com',
             scopes: ['mail-r', 'sdps-r'],
@@ -794,11 +794,7 @@ const useUserStore = defineStore('user', {
             provider: window.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
             scopes: ['email', 'public_profile'],
           },
-          {
-            provider: window.firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            signInMethod: window.firebase.auth.EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD,
-            forceSameDevice: true,
-          },
+
         ],
         credentialHelper: window.firebaseui.auth.CredentialHelper.GOOGLE_YOLO,
         autoUpgradeAnonymousUsers: true,

@@ -1,13 +1,14 @@
-const { onValueCreated } = require('firebase-functions/v2/database');
+const { onValueCreated, onValueUpdated } = require('firebase-functions/v2/database');
 const { defineString } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
+const { getWelcomeEmailConfig, getSurveyEmailConfig } = require('./templates/email-helpers');
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
 // Define parameters (environment variables)
-const gmailEmail = defineString('GMAIL_EMAIL', { default: 'pablo.reyes.mail+toonstalk-feedback@gmail.com' });
+const gmailEmail = defineString('GMAIL_EMAIL', { default: 'toonstalk.contact@gmail.com' });
 const gmailPassword = defineString('GMAIL_PASSWORD');
 
 // Create SMTP transporter
@@ -50,7 +51,7 @@ exports.sendFeedbackEmail = onValueCreated(
       const mailOptions = {
         from: `ToonsTalk Feedback <${gmailEmail.value()}>`,
         // to: 'contact+feedback@toonstalk.com',
-        to: 'pablo.reyes.mail+toonstalk-feedback@gmail.com',
+        to: 'toonstalk.contact+feedback@gmail.com',
         subject: `Feedback: ${feedbackData.title}`,
         html: `
           <h2>New Feedback Received</h2>
@@ -94,6 +95,141 @@ exports.sendFeedbackEmail = onValueCreated(
       }
 
       // Don't throw error - we've logged it and updated the database
+      return { success: false, error: error.message };
+    }
+  },
+);
+
+// Cloud Function to send welcome email when user registers/upgrades
+exports.sendWelcomeEmail = onValueCreated(
+  {
+    ref: '/users/{userId}',
+    region: 'us-central1',
+  },
+  async (event) => {
+    const { userId } = event.params;
+    const userData = event.data.val();
+
+    // Only send welcome email to non-anonymous users who haven't received it yet
+    if (userData.isAnonymous || userData.welcomeEmailSent) {
+      console.log('Skipping welcome email - user is anonymous or already received email');
+      return { success: false, reason: 'Not applicable' };
+    }
+
+    // Get user email from Firebase Auth
+    try {
+      const userRecord = await admin.auth().getUser(userId);
+      const userEmail = userRecord.email;
+
+      if (!userEmail) {
+        console.log('No email found for user:', userId);
+        return { success: false, error: 'No email available' };
+      }
+
+      // Create email transporter
+      const transporter = createTransporter();
+
+      // Get welcome email configuration
+      const mailOptions = getWelcomeEmailConfig({
+        to: userEmail,
+        nickname: userData.nickname || 'Friend',
+        fromEmail: gmailEmail.value(),
+      });
+
+      // Send email
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Welcome email sent successfully:', info.messageId);
+
+      // Update user record with welcome email status
+      await admin.database().ref(`users/${userId}`).update({
+        welcomeEmailSent: true,
+        welcomeEmailSentAt: admin.database.ServerValue.TIMESTAMP,
+        welcomeEmailMessageId: info.messageId,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+
+      // Update user record with error
+      try {
+        await admin.database().ref(`users/${userId}`).update({
+          welcomeEmailSent: false,
+          welcomeEmailError: error.message,
+          welcomeEmailAttemptedAt: admin.database.ServerValue.TIMESTAMP,
+        });
+      } catch (updateError) {
+        console.error('Error updating user record:', updateError);
+      }
+
+      return { success: false, error: error.message };
+    }
+  },
+);
+
+// Cloud Function to send email when survey is submitted
+exports.sendSurveyEmail = onValueCreated(
+  {
+    ref: '/surveys/{surveyId}',
+    region: 'us-central1',
+  },
+  async (event) => {
+    const { surveyId } = event.params;
+    const surveyData = event.data.val();
+
+    // Validate survey data
+    if (!surveyData || !surveyData.rating || !surveyData.userId) {
+      console.error('Invalid survey data:', surveyData);
+      return { success: false, error: 'Invalid survey data' };
+    }
+
+    try {
+      // Create email transporter
+      const transporter = createTransporter();
+
+      // Get user nickname from database
+      const userSnapshot = await admin.database().ref(`users/${surveyData.userId}`).once('value');
+      const userData = userSnapshot.val();
+      const nickname = userData?.nickname || 'Anonymous';
+
+      // Get survey email configuration
+      const mailOptions = getSurveyEmailConfig({
+        to: 'toonstalk.contact+survey-feedback@gmail.com',
+        nickname,
+        rating: surveyData.rating,
+        feedback: surveyData.feedback || 'No additional feedback provided.',
+        userId: surveyData.userId,
+        fromEmail: gmailEmail.value(),
+      });
+
+      // Send email
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Survey email sent successfully:', info.messageId);
+
+      // Update survey entry with delivery status
+      await admin.database().ref(`surveys/${surveyId}`).update({
+        emailSent: true,
+        emailSentAt: admin.database.ServerValue.TIMESTAMP,
+        emailMessageId: info.messageId,
+        processed: true,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending survey email:', error);
+
+      // Update survey entry with error
+      try {
+        await admin.database().ref(`surveys/${surveyId}`).update({
+          emailSent: false,
+          emailError: error.message,
+          emailAttemptedAt: admin.database.ServerValue.TIMESTAMP,
+          processed: true,
+        });
+      } catch (updateError) {
+        console.error('Error updating survey entry:', updateError);
+      }
+
       return { success: false, error: error.message };
     }
   },

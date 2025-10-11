@@ -127,23 +127,6 @@
         </div>
       </div>
     </div>
-
-    <div style="width: 100%;display: flex; justify-content: center;align-items: center;margin-top: 20px;">
-      <v-card style="width: 40%" class="themed-card">
-        <v-card-text class="text-subtitle-1" style="height: 20vh">
-          <p>
-            This is a temporary url created especially for you, our beloved
-            early tester. Please note that it will expire soon.
-          </p>
-          <p>
-            If you find this product amazing and you want to hear more from us
-            and share your experience join us on our Discord channel
-            <a href="https://discord.gg/Hspt8B2u" target="_blank">discord channel</a>. We'd love to hear from you!
-          </p>
-        </v-card-text>
-      </v-card>
-    </div>
-
     <v-footer padless absolute class="footer">
       <v-card flat tile width="100%" class="text-center">
         <v-divider></v-divider>
@@ -165,37 +148,8 @@
         </v-card-text>
       </v-card>
     </v-footer>
-
-    <v-dialog v-if="showWelcomeDialog" v-model="showWelcomeDialog" persistent width="600"
-      class="pa-5 ma-5 progress-dialog">
-      <v-card style="width: 100%" class="themed-card">
-        <v-card-title class="text-h6">Welcome, Early Tester! </v-card-title>
-        <v-card-text class="text-subtitle-1" style="height: 20vh">
-          <p>
-            Thank you for being one of the selected few to try out our beta
-            version. Your feedback is incredibly valuable in helping us shape
-            the final product.
-          </p>
-          <p>
-            Please remember that this is a beta version, so you may encounter
-            some bugs or incomplete features. Also is only working on PC and
-            tablet. We’d love to hear your thoughts on how we can improve!
-          </p>
-        </v-card-text>
-        <v-card-actions class="text-body-2 pa-2 d-flex justify-end align-end">
-          <v-btn small class="px-10" color="primary darken-1" tile @click="showWelcomeDialog = false">
-            Close
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
     <!-- Feedback Dialog -->
-    <FeedbackDialog
-      v-model="showFeedbackDialog"
-      @success="handleFeedbackSuccess"
-      @error="handleFeedbackError"
-    />
+    <FeedbackDialog v-model="showFeedbackDialog" @success="handleFeedbackSuccess" @error="handleFeedbackError" />
   </div>
 </template>
 
@@ -393,11 +347,11 @@ watch(isUserAuthenticated, (newVal) => {
 /* Netflix-style Room Sections */
 .rooms-sections-container {
   max-width: 1400px;
-  margin: 0 auto;
+  margin: 0px auto 20px;
 }
 
 .room-section {
-  margin-bottom: 40px;
+  margin-bottom: 60px;
 }
 
 .section-title {

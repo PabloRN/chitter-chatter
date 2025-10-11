@@ -3,7 +3,7 @@
     <v-card class="user-info-card">
       <!-- Close button -->
       <v-btn icon class="close-btn" @click="close">
-        <v-icon>mdi-close</v-icon>
+        <v-icon color="black">mdi-close</v-icon>
       </v-btn>
 
       <!-- Loading state -->
@@ -17,10 +17,8 @@
         <!-- Avatar Section -->
         <div v-if="userInfo.privacySettings?.showAvatar !== false" class="avatar-section">
           <v-avatar size="120" class="user-avatar">
-            <v-img
-              v-if="userInfo.avatar || userInfo.personalAvatar || userInfo.miniAvatar"
-              :src="userInfo.personalAvatar || userInfo.avatar || userInfo.miniAvatar"
-            />
+            <v-img v-if="userInfo.avatar || userInfo.personalAvatar || userInfo.miniAvatar"
+              :src="userInfo.personalAvatar || userInfo.avatar || userInfo.miniAvatar" />
             <v-icon v-else size="60">mdi-account-circle</v-icon>
           </v-avatar>
         </div>
@@ -36,13 +34,8 @@
           <!-- Nickname -->
           <div v-if="userInfo.privacySettings?.showNickname !== false" class="user-name-section">
             <h2 class="user-name">{{ userInfo.nickname || 'Unknown User' }}</h2>
-            <v-chip
-              v-if="userInfo.privacySettings?.showLevel !== false && userInfo.level"
-              color="primary"
-              variant="flat"
-              size="small"
-              class="level-chip"
-            >
+            <v-chip v-if="userInfo.privacySettings?.showLevel !== false && userInfo.level" color="primary"
+              variant="flat" size="small" class="level-chip">
               <v-icon start size="small">mdi-star</v-icon>
               {{ userInfo.level }}
             </v-chip>
@@ -70,19 +63,14 @@
               <span class="section-title">Hobbies</span>
             </div>
             <div class="hobbies-chips">
-              <v-chip
-                v-for="hobby in userInfo.hobbies"
-                :key="hobby.name"
-                :color="hobby.color"
-                :prepend-icon="hobby.icon"
-                size="small"
-                class="hobby-chip"
-              >
+              <v-chip v-for="hobby in userInfo.hobbies" :key="hobby.name" :color="hobby.color"
+                :prepend-icon="hobby.icon" size="small" class="hobby-chip">
                 {{ hobby.name }}
               </v-chip>
             </div>
           </div>
-          <div v-else-if="!userInfo.privacySettings?.showHobbies && userInfo.hobbies?.length" class="info-item private-item">
+          <div v-else-if="!userInfo.privacySettings?.showHobbies && userInfo.hobbies?.length"
+            class="info-item private-item">
             <v-icon class="info-icon" size="small" color="grey">mdi-eye-off</v-icon>
             <span class="info-label private-text">Hobbies are private</span>
           </div>
@@ -95,7 +83,8 @@
             </div>
             <p class="description-text">{{ userInfo.description }}</p>
           </div>
-          <div v-else-if="!userInfo.privacySettings?.showDescription && userInfo.description" class="info-item private-item">
+          <div v-else-if="!userInfo.privacySettings?.showDescription && userInfo.description"
+            class="info-item private-item">
             <v-icon class="info-icon" size="small" color="grey">mdi-eye-off</v-icon>
             <span class="info-label private-text">Description is private</span>
           </div>
@@ -140,7 +129,7 @@ const isAllPrivate = computed(() => {
   if (!userInfo.value?.privacySettings) return false;
   const settings = userInfo.value.privacySettings;
   return !settings.showNickname && !settings.showAvatar && !settings.showAge
-         && !settings.showHobbies && !settings.showDescription;
+    && !settings.showHobbies && !settings.showDescription;
 });
 
 const close = () => {

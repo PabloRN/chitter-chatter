@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Survey Response - ToonsTalk</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .survey-box {
+      background-color: #f9f9ff;
+      border: 2px solid #667eea;
+      border-radius: 12px;
+      padding: 30px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .rating-display {
+      font-size: 48px;
+      margin: 20px 0;
+      letter-spacing: 5px;
+    }
+    .rating-number {
+      font-size: 36px;
+      font-weight: 700;
+      color: #667eea;
+      margin: 10px 0;
+    }
+    .user-info {
+      background-color: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .user-info h3 {
+      margin-top: 0;
+      color: #667eea;
+      font-size: 18px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    .info-label {
+      font-weight: 600;
+      color: #555;
+    }
+    .info-value {
+      color: #777;
+      text-align: right;
+    }
+    .feedback-box {
+      background-color: #fff9e6;
+      border-left: 4px solid #ffd966;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .feedback-box h3 {
+      margin-top: 0;
+      color: #e67e22;
+      font-size: 18px;
+    }
+    .feedback-text {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #555;
+      font-style: italic;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .footer {
+      background-color: #f5f5f5;
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #e0e0e0;
+    }
+    .footer p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #777;
+    }
+    @media only screen and (max-width: 600px) {
+      .content {
+        padding: 30px 20px;
+      }
+      .survey-box {
+        padding: 20px;
+      }
+      .rating-display {
+        font-size: 36px;
+      }
+      .rating-number {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="icon">📊</div>
+      <h1>New Survey Response Received</h1>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Survey Rating Box -->
+      <div class="survey-box">
+        <h2 style="margin-top: 0; color: #667eea;">Recommendation Rating</h2>
+        <div class="rating-display">{{stars}}</div>
+        <div class="rating-number">{{rating}} / 5</div>
+        <p style="color: #777; margin-bottom: 0;">How likely to recommend ToonsTalk to a friend</p>
+      </div>
+
+      <!-- User Information -->
+      <div class="user-info">
+        <h3>📋 Response Details</h3>
+        <div class="info-row">
+          <span class="info-label">User:</span>
+          <span class="info-value">{{nickname}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">User ID:</span>
+          <span class="info-value">{{userId}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Submitted:</span>
+          <span class="info-value">{{timestamp}}</span>
+        </div>
+      </div>
+
+      <!-- Feedback Section -->
+      <div class="feedback-box">
+        <h3>💬 Additional Feedback</h3>
+        <div class="feedback-text">{{feedback}}</div>
+      </div>
+
+      <p style="text-align: center; color: #999; font-size: 14px; margin-top: 30px;">
+        This survey response was submitted through the ToonsTalk in-app survey popup.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>© ToonsTalk Survey System</p>
+      <p style="font-size: 12px; margin-top: 10px;">
+        Automated notification - Do not reply to this email
+      </p>
+    </div>
+  </div>
+</body>
+</html>

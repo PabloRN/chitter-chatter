@@ -2,7 +2,7 @@
   <v-scroll-y-reverse-transition>
     <div class="private-dialog text-body-2 pa-4" style="width:100%; height:80vh;">
       <v-btn @click="closedialogprivate" class="closedialog" color="grey lighten-2" fab small>
-        <v-icon>mdi-close</v-icon>
+        <v-icon color="black">mdi-close</v-icon>
       </v-btn>
       <v-card id="dialogPrivate" class="pa-4" style="width:100%; height:65vh; overflow-y: scroll">
         <v-card-title class="text-body-2">

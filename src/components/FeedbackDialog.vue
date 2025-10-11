@@ -7,7 +7,7 @@
         Send Feedback
         <v-spacer></v-spacer>
         <v-btn icon size="small" @click="close" :disabled="loading">
-          <v-icon>mdi-close</v-icon>
+          <v-icon color="black">mdi-close</v-icon>
         </v-btn>
       </v-card-title>
 
@@ -19,54 +19,23 @@
 
         <v-form ref="formRef" v-model="formValid" @submit.prevent="submitFeedback">
           <!-- Full Name -->
-          <v-text-field
-            v-model="formData.fullName"
-            label="Full Name *"
-            prepend-inner-icon="mdi-account"
-            :rules="[rules.required]"
-            variant="outlined"
-            :disabled="loading"
-            class="mb-2"
-          ></v-text-field>
+          <v-text-field v-model="formData.fullName" label="Full Name *" prepend-inner-icon="mdi-account"
+            :rules="[rules.required]" variant="outlined" :disabled="loading" class="mb-2"></v-text-field>
 
           <!-- Email -->
-          <v-text-field
-            v-model="formData.email"
-            label="Email *"
-            prepend-inner-icon="mdi-email"
-            type="email"
-            :rules="[rules.required, rules.email]"
-            variant="outlined"
-            :disabled="isUserAuthenticated || loading"
-            :hint="isUserAuthenticated ? 'Email from your account' : ''"
-            persistent-hint
-            class="mb-2"
-          ></v-text-field>
+          <v-text-field v-model="formData.email" label="Email *" prepend-inner-icon="mdi-email" type="email"
+            :rules="[rules.required, rules.email]" variant="outlined" :disabled="isUserAuthenticated || loading"
+            :hint="isUserAuthenticated ? 'Email from your account' : ''" persistent-hint class="mb-2"></v-text-field>
 
           <!-- Title -->
-          <v-text-field
-            v-model="formData.title"
-            label="Title *"
-            prepend-inner-icon="mdi-format-title"
-            :rules="[rules.required, rules.maxLength(100)]"
-            counter="100"
-            variant="outlined"
-            :disabled="loading"
-            class="mb-2"
-          ></v-text-field>
+          <v-text-field v-model="formData.title" label="Title *" prepend-inner-icon="mdi-format-title"
+            :rules="[rules.required, rules.maxLength(100)]" counter="100" variant="outlined" :disabled="loading"
+            class="mb-2"></v-text-field>
 
           <!-- Description -->
-          <v-textarea
-            v-model="formData.description"
-            label="Description *"
-            prepend-inner-icon="mdi-text"
-            :rules="[rules.required, rules.maxLength(500)]"
-            counter="500"
-            rows="5"
-            variant="outlined"
-            :disabled="loading"
-            class="mb-2"
-          ></v-textarea>
+          <v-textarea v-model="formData.description" label="Description *" prepend-inner-icon="mdi-text"
+            :rules="[rules.required, rules.maxLength(500)]" counter="500" rows="5" variant="outlined"
+            :disabled="loading" class="mb-2"></v-textarea>
 
           <!-- reCAPTCHA Notice -->
           <div class="recaptcha-notice mb-4">
@@ -83,20 +52,11 @@
       <!-- Actions -->
       <v-card-actions class="pa-4">
         <v-spacer></v-spacer>
-        <v-btn
-          text
-          @click="close"
-          :disabled="loading"
-        >
+        <v-btn text @click="close" :disabled="loading">
           Cancel
         </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="submitFeedback"
-          :loading="loading"
-          :disabled="!formValid || loading"
-        >
+        <v-btn color="primary" variant="flat" @click="submitFeedback" :loading="loading"
+          :disabled="!formValid || loading">
           <v-icon start>mdi-send</v-icon>
           Send Feedback
         </v-btn>

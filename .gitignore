@@ -24,3 +24,5 @@ pnpm-debug.log*
 *.sw?
 node_modules
 .firebase/hosting.ZGlzdA.cache
+functions/.env.chitter-chatter-f762a
+database.rules.json
