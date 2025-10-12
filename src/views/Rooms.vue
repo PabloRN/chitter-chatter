@@ -3,8 +3,7 @@
   <div class="home">
     <v-app-bar dense elevation="4" rounded shaped>
       <v-toolbar-title style="display: flex; justify-content: flex-start">
-        <v-img src="/logotype_landing_page.png" class="my-3" contain width="6em" height="35"
-          style="background-position: left!important;" />
+        <v-img src="/logo-206-70.png" class="my-3" contain width="6em" height="40" />
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
@@ -160,12 +159,14 @@ import {
 import { useRouter } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
+import useMainStore from '@/stores/main';
 import RoomThumbnail from '@/components/RoomThumbnail';
 import FeedbackDialog from '@/components/FeedbackDialog';
 
 // ✅ stores
 const roomsStore = useRoomsStore();
 const userStore = useUserStore();
+const mainStore = useMainStore();
 const router = useRouter();
 
 // ✅ state (was data)
@@ -218,7 +219,6 @@ const popularRoomIds = computed(() => {
 const allRoomIds = computed(() => {
   const rooms = getAllRooms.value;
   if (!rooms) return [];
-  console.log('rooms', rooms);
   return Object.entries(rooms).filter(([id, room]) => !room.isPrivate).map(([id, room]) => id);
 });
 
@@ -262,12 +262,18 @@ function checkAuthenticationStatus() {
 
 function handleFeedbackSuccess() {
   console.log('Feedback submitted successfully');
-  // You can add a success snackbar notification here
+  mainStore.setSnackbar({
+    type: 'success',
+    msg: 'Thank you for your feedback! We appreciate your input. 🙏',
+  });
 }
 
 function handleFeedbackError(error) {
   console.error('Feedback submission error:', error);
-  // You can add an error snackbar notification here
+  mainStore.setSnackbar({
+    type: 'error',
+    msg: `Failed to submit feedback: ${error}`,
+  });
 }
 
 // ✅ lifecycle

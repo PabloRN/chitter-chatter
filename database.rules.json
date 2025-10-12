@@ -41,6 +41,35 @@
         "$feedbackId": {
           ".validate": "newData.hasChildren(['fullName', 'email', 'title', 'description', 'createdAt'])"
         }
+      },
+      "surveys": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "auth != null",
+        "$surveyId": {
+          ".validate": "newData.hasChildren(['rating', 'userId', 'createdAt'])"
+        }
+      },
+      "reports": {
+        "users": {
+          ".read": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+          ".write": "auth != null",
+          "$reportId": {
+            ".validate": "newData.hasChildren(['reportedUserId', 'reportedBy', 'reason', 'description', 'createdAt'])"
+          }
+        },
+        "rooms": {
+          ".read": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+          ".write": "auth != null",
+          "$reportId": {
+            ".validate": "newData.hasChildren(['reportedRoomId', 'reportedBy', 'reason', 'description', 'createdAt'])"
+          }
+        }
+      },
+      "userReports": {
+        "$userId": {
+          ".read": "$userId === auth.uid || (auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true)",
+          ".write": "$userId === auth.uid"
+        }
       }
     }
   }

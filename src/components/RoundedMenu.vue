@@ -73,23 +73,30 @@
       <div class="icon-caption">toggle</div>
     </v-btn>
   </div>
+  <ReportUserDialog v-model="showReportDialog" :target-user-id="reportTargetUserId"
+    :target-user-nickname="reportTargetNickname" @success="handleReportSuccess"
+    @already-reported="handleAlreadyReported" @limit-reached="handleLimitReached" />
 </template>
 
 <script setup>
 import useUserStore from '@/stores/user';
 import {
   ref, computed, nextTick, onMounted,
-  h,
 } from 'vue';
+import ReportUserDialog from '@/components/ReportUserDialog.vue';
 
 const props = defineProps({
   userId: String,
+  nickname: String,
 });
 const userStore = useUserStore();
 // emits
-const emit = defineEmits(['showUserMessages', 'privateMessage']);
+const emit = defineEmits(['showUserMessages', 'privateMessage', 'blockUser', 'showLoginDialog', 'userInfo']);
 const hideMenu = ref(true);
 const movingTouch = ref(false);
+const showReportDialog = ref(false);
+const reportTargetUserId = ref('');
+const reportTargetNickname = ref('');
 
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const otherIsAnonymous = computed(() => userStore.userData[props.userId]?.isAnonymous);
@@ -172,10 +179,48 @@ const handleEmit = (item) => {
         emit('userInfo');
       }
       break;
+    case 'reportUser':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
+        // emit event to parent
+        handleReportUser(props.userId);
+      }
+      break;
     default:
       break;
   }
 };
+function handleReportUser(userId) {
+  const nickname = userStore.userData[userId]?.nickname;
+  reportTargetUserId.value = userId;
+  reportTargetNickname.value = nickname;
+  showReportDialog.value = true;
+}
+
+function handleReportSuccess() {
+  mainStore.setSnackbar({
+    type: 'success',
+    msg: 'Report submitted successfully. Our team will review it.',
+  });
+}
+
+function handleAlreadyReported() {
+  mainStore.setSnackbar({
+    type: 'warning',
+    msg: 'You have already reported this user. The report is under review.',
+  });
+}
+
+function handleLimitReached() {
+  mainStore.setSnackbar({
+    type: 'error',
+    msg: 'You have reached the daily report limit (3 reports/day).',
+  });
+}
 </script>
 <style lang="scss" scoped>
 @import '@/styles/rounded-menu.scss';

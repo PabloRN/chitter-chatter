@@ -8,8 +8,9 @@
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
       <div class="nickname">{{ nickname }}</div>
     </div>
-    <v-img fill :id="`img-${actualUserId}`" class="avatar-image" :class="{ 'avatar-dragging': isActuallyMoving }" :src="avatar"></v-img>
-    <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" v-on="{
+    <v-img fill :id="`img-${actualUserId}`" class="avatar-image" :class="{ 'avatar-dragging': isActuallyMoving }"
+      :src="avatar"></v-img>
+    <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" :nickname="props.nickname" v-on="{
       ['privateMessage']: () => invitePrivate(),
       ['showUserMessages']: () => toggleUserMessages(),
       ['blockUser']: () => toggleBlockUser(),
@@ -535,15 +536,19 @@ watch(userPositionModified, () => {
   0% {
     transform: rotate(-3deg) scale(1.01);
   }
+
   25% {
     transform: rotate(3deg) scale(0.99);
   }
+
   50% {
     transform: rotate(-3deg) scale(1.01);
   }
+
   75% {
     transform: rotate(3deg) scale(0.99);
   }
+
   100% {
     transform: rotate(-3deg) scale(1.01);
   }

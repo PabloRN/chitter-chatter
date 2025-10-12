@@ -63,7 +63,7 @@ let surveyTimer = null;
 function lockLandscapeOrientation() {
   if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
     window.screen.orientation.lock('landscape').catch(() => {
-      console.log('Screen orientation lock not supported or failed');
+      // Screen orientation lock not supported or failed
     });
   }
 }
@@ -84,33 +84,25 @@ function initSurveyTimer() {
   const surveyDismissed = localStorage.getItem(SURVEY_DISMISSED_KEY);
 
   if (surveyCompleted || surveyDismissed) {
-    console.log('Survey already completed or dismissed - skipping');
     return;
   }
 
   // Check if user is authenticated (not anonymous)
   const currentUser = userStore.getCurrentUser;
   if (!currentUser || currentUser.isAnonymous) {
-    console.log('User is anonymous - skipping survey timer');
     return;
   }
 
   // Set timer to show survey after delay
-  console.log(`Survey will appear in ${SURVEY_DELAY / 1000 / 60} minutes`);
   surveyTimer = setTimeout(() => {
-    console.log('Survey timer fired! Checking user...');
     const user = userStore.getCurrentUser;
     if (user && !user.isAnonymous) {
-      console.log('Showing survey popup now!');
       showSurveyPopup.value = true;
-    } else {
-      console.log('User became anonymous - not showing survey');
     }
   }, SURVEY_DELAY);
 }
 
 function handleSurveySuccess() {
-  console.log('Survey submitted successfully');
   localStorage.setItem(SURVEY_STORAGE_KEY, 'true');
   mainStore.setSnackbar({
     type: 'success',
@@ -119,7 +111,6 @@ function handleSurveySuccess() {
 }
 
 function handleSurveyDismissed() {
-  console.log('Survey dismissed by user');
   localStorage.setItem(SURVEY_DISMISSED_KEY, 'true');
 }
 

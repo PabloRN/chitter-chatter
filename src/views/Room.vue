@@ -1,100 +1,112 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div class="home" @dragover.prevent @dragenter.prevent>
-    <v-card>
-      <v-img v-if="background !== ''" :src="background !== '' ? background : ''" class="white--text align-end"
-        height="100vh" cover>
-        <chatter-component v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
-          :avatar="avatar" :nickname="nickname" :room="roomId" v-show="true" />
-      </v-img>
-      {{ $route.params.id }}
-    </v-card>
-    <v-dialog v-if="privateRequestDialog" v-model="privateRequestDialog" persistent width="600"
-      class="pa-5 ma-5 progress-dialog">
-      <v-card style="width: 100%">
-        <v-card-title class="text-body-2"> </v-card-title>
-        <v-card-text style="height: 10vh">
-          {{ `User ${privateRequestUser.nickname} wants to start a private chat with you` }}
-        </v-card-text>
-        <v-card-actions class="text-body-2 pa-2 d-flex justify-center align-center">
-          <v-btn small class="px-10" color="primary darken-1" tile @click="
-            confirmPrivateRequest();
-          privateRequestDialog = false;
-          ">
-            Confirm</v-btn>
-          <v-btn small class="px-10" color="primary darken-1" tile outlined @click="
-            rejectPrivateRequest();
-          privateRequestDialog = false;
-          ">
-            Reject</v-btn>
-          <v-btn small class="px-10" color="primary darken-1" tile outlined
-            @click="rejectPrivateAndBlockUserRequest(); privateRequestDialog = false;">
-            Reject and block</v-btn>
-        </v-card-actions>
+  <div class="room-wrapper">
+    <div class="home" @dragover.prevent @dragenter.prevent>
+      <v-card>
+        <v-img v-if="background !== ''" :src="background !== '' ? background : ''" class="white--text align-end"
+          height="100vh" cover>
+          <chatter-component v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
+            :avatar="avatar" :nickname="nickname" :room="roomId" v-show="true" />
+        </v-img>
+        {{ $route.params.id }}
       </v-card>
-    </v-dialog>
-    <v-dialog persistent scrollable v-if="showDialog" v-model="showDialog" width="600" min-height="80vh"
-      class="pa-5 ma-5 private-dialog">
-      <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
-    </v-dialog>
-    <TimeMachine style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
-    <div class="room-menu-container">
-      <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
-        <template v-slot:activator="{ props: activatorProps }">
-          <v-fab v-bind="activatorProps" size="large" icon="mdi-dots-vertical"></v-fab>
-        </template>
-        <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('exitRoom')"
-          @touchstart.native.prevent="handleEmit('exitRoom')">
-          <div>
-            <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
-          </div>
-        </v-btn>
-        <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('reportRoom')"
-          @touchstart.native.prevent="handleEmit('reportRoom')">
-          <div>
-            <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
-          </div>
-        </v-btn>
-        <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('roomInfo')"
-          @touchstart.native.prevent="handleEmit('roomInfo')">
-          <div>
-            <v-icon class="manga-icon"> mdi-information </v-icon>
-          </div>
-        </v-btn>
-
-        <v-btn key="1" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('showMessages')"
-          @touchstart.native.prevent="handleEmit('showMessages')">
-          <div>
-            <v-icon class="manga-icon"> mdi-message-text-fast-outline </v-icon>
-          </div>
-        </v-btn>
-
-        <v-btn :disabled="!isUserAuthenticated" key="2" class="mx-2 speed-dial-menu-item" fab dark small
-          @click.prevent.stop="handleEmit('toggleFavorite')" @touchstart.native.prevent="handleEmit('toggleFavorite')">
-          <div>
-            <v-icon v-if="isFavorite" class="manga-icon"> mdi-heart-minus </v-icon>
-            <v-icon v-else class="manga-icon">
-              mdi-heart-plus </v-icon>
-          </div>
-        </v-btn>
-      </v-speed-dial>
-      <!-- <v-btn icon size="small" @click="showThemeSelector = !showThemeSelector" class="theme-toggle-btn">
-        <v-icon>mdi-palette</v-icon>
-      </v-btn>
-      <v-menu v-model="showThemeSelector" :close-on-content-click="false" location="top">
-        <template v-slot:activator="{ }">
-        </template>
-        <v-card min-width="200">
-          <v-card-title class="text-body-2">Theme</v-card-title>
-          <v-card-text>
-            <v-radio-group v-model="currentTheme" @update:modelValue="setTheme">
-              <v-radio v-for="theme in availableThemes" :key="theme.name" :label="theme.label" :value="theme.name"
-                density="compact" />
-            </v-radio-group>
+      <v-dialog v-if="privateRequestDialog" v-model="privateRequestDialog" persistent width="600"
+        class="pa-5 ma-5 progress-dialog">
+        <v-card style="width: 100%">
+          <v-card-title class="text-body-2"> </v-card-title>
+          <v-card-text style="height: 10vh">
+            {{ `User ${privateRequestUser.nickname} wants to start a private chat with you` }}
           </v-card-text>
+          <v-card-actions class="text-body-2 pa-2 d-flex justify-center align-center">
+            <v-btn small class="px-10" color="primary darken-1" tile @click="
+              confirmPrivateRequest();
+            privateRequestDialog = false;
+            ">
+              Confirm</v-btn>
+            <v-btn small class="px-10" color="primary darken-1" tile outlined @click="
+              rejectPrivateRequest();
+            privateRequestDialog = false;
+            ">
+              Reject</v-btn>
+            <v-btn small class="px-10" color="primary darken-1" tile outlined
+              @click="rejectPrivateAndBlockUserRequest(); privateRequestDialog = false;">
+              Reject and block</v-btn>
+          </v-card-actions>
         </v-card>
-      </v-menu> -->
+      </v-dialog>
+      <v-dialog persistent scrollable v-if="showDialog" v-model="showDialog" width="600" min-height="80vh"
+        class="pa-5 ma-5 private-dialog">
+        <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
+      </v-dialog>
+      <TimeMachine style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
+      <div class="room-menu-container">
+        <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
+          <template v-slot:activator="{ props: activatorProps }">
+            <v-fab v-bind="activatorProps" size="large" icon="mdi-dots-vertical"></v-fab>
+          </template>
+          <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('exitRoom')"
+            @touchstart.native.prevent="handleEmit('exitRoom')">
+            <div>
+              <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
+            </div>
+          </v-btn>
+          <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('reportRoom')"
+            @touchstart.native.prevent="handleEmit('reportRoom')">
+            <div>
+              <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
+            </div>
+          </v-btn>
+          <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('roomInfo')"
+            @touchstart.native.prevent="handleEmit('roomInfo')">
+            <div>
+              <v-icon class="manga-icon"> mdi-information </v-icon>
+            </div>
+          </v-btn>
+
+          <v-btn key="1" class="mx-2 speed-dial-menu-item" fab dark small
+            @click.prevent.stop="handleEmit('showMessages')" @touchstart.native.prevent="handleEmit('showMessages')">
+            <div>
+              <v-icon class="manga-icon"> mdi-message-text-fast-outline </v-icon>
+            </div>
+          </v-btn>
+
+          <v-btn key="2" class="mx-2 speed-dial-menu-item" fab dark small
+            @click.prevent.stop="handleEmit('toggleFavorite')"
+            @touchstart.native.prevent="handleEmit('toggleFavorite')">
+            <div>
+              <v-icon v-if="isFavorite" class="manga-icon"> mdi-heart-minus </v-icon>
+              <v-icon v-else class="manga-icon">
+                mdi-heart-plus </v-icon>
+            </div>
+          </v-btn>
+        </v-speed-dial>
+        <!-- <v-btn icon size="small" @click="showThemeSelector = !showThemeSelector" class="theme-toggle-btn">
+          <v-icon>mdi-palette</v-icon>
+        </v-btn>
+        <v-menu v-model="showThemeSelector" :close-on-content-click="false" location="top">
+          <template v-slot:activator="{ }">
+          </template>
+          <v-card min-width="200">
+            <v-card-title class="text-body-2">Theme</v-card-title>
+            <v-card-text>
+              <v-radio-group v-model="currentTheme" @update:modelValue="setTheme">
+                <v-radio v-for="theme in availableThemes" :key="theme.name" :label="theme.label" :value="theme.name"
+                  density="compact" />
+              </v-radio-group>
+            </v-card-text>
+          </v-card>
+        </v-menu> -->
+      </div>
     </div>
+    <ReportRoomDialog v-model="showReportDialog" :target-room-id="reportTargetRoomId"
+      :target-room-name="reportTargetRoomName" @success="handleReportSuccess" @already-reported="handleAlreadyReported"
+      @limit-reached="handleLimitReached" />
+
+    <!-- Auth Dialog for Login/Signup -->
+    <v-dialog persistent scrollable v-model="showAuthDialog" width="600" min-height="80vh"
+      class="pa-5 ma-5 private-dialog">
+      <LoginDialogBubble @onCloseLoginDialog="closeAuthDialog" />
+    </v-dialog>
   </div>
 </template>
 
@@ -110,11 +122,15 @@ import PrivateDialogBubble from '@/components/PrivateDialogBubble';
 import useUserStore from '@/stores/user';
 import useRoomsStore from '@/stores/rooms';
 import useMessagesStore from '@/stores/messages';
+import useMainStore from '@/stores/main';
 import useTheme from '@/composables/useTheme';
+import ReportRoomDialog from '@/components/ReportRoomDialog.vue';
+import LoginDialogBubble from '@/components/LoginDialogBubble';
 
 // Props
 const props = defineProps({
   roomId: String,
+  roomName: String,
 });
 
 // Composables
@@ -123,6 +139,7 @@ const router = useRouter();
 const userStore = useUserStore();
 const roomsStore = useRoomsStore();
 const messagesStore = useMessagesStore();
+const mainStore = useMainStore();
 const { currentTheme, availableThemes, setTheme } = useTheme();
 
 // Reactive data
@@ -138,6 +155,10 @@ const chattersCounter = ref(0);
 const showThemeSelector = ref(false);
 const userInitialized = ref(false);
 const isOpen = ref(false);
+const showReportDialog = ref(false);
+const reportTargetRoomId = ref('');
+const reportTargetRoomName = ref('');
+const showAuthDialog = ref(false);
 
 // Computed properties
 const userAdded = computed(() => roomsStore.userAdded);
@@ -165,7 +186,32 @@ const chattersArray = computed(() => {
 });
 const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms?.some((room) => room === props.roomId));
 // Methods
+function handleReportRoom(roomId, roomName) {
+  reportTargetRoomId.value = roomId;
+  reportTargetRoomName.value = roomName;
+  showReportDialog.value = true;
+}
 
+function handleReportSuccess() {
+  mainStore.setSnackbar({
+    type: 'success',
+    msg: 'Report submitted successfully. Our team will review it.',
+  });
+}
+
+function handleAlreadyReported() {
+  mainStore.setSnackbar({
+    type: 'warning',
+    msg: 'You have already reported this Room. The report is under review.',
+  });
+}
+
+function handleLimitReached() {
+  mainStore.setSnackbar({
+    type: 'error',
+    msg: 'You have reached the daily report limit (3 reports/day).',
+  });
+}
 const toggleMessages = () => {
   const currentStatus = messagesStore.showMessagesStatus;
   messagesStore.showMessages(!currentStatus);
@@ -248,22 +294,38 @@ const updateWindowSize = () => {
 
 const handleEmit = (item) => {
   switch (item) {
-    case 'privateMessage':
-      emit('privateMessage');
-      break;
     case 'exitRoom':
       leaveRoom();
       break;
     case 'toggleFavorite':
-
-      toggleFavorite();
+      if (isUserAuthenticated.value) {
+        toggleFavorite();
+      } else {
+        showAuthDialog.value = true;
+      }
       isOpen.value = false;
       break;
     case 'reportRoom':
-      console.log('Report room');
+      if (isUserAuthenticated.value) {
+        handleReportRoom(props.roomId, currentRoom.value?.name || 'Unknown Room');
+      } else {
+        showAuthDialog.value = true;
+      }
+      isOpen.value = false;
+      break;
+    case 'roomInfo':
+      if (isUserAuthenticated.value) {
+        // TODO: Show room info dialog
+        mainStore.setSnackbar({
+          type: 'info',
+          msg: 'Room info coming soon!',
+        });
+      } else {
+        showAuthDialog.value = true;
+      }
+      isOpen.value = false;
       break;
     case 'showMessages':
-
       toggleMessages();
       isOpen.value = false;
       break;
@@ -296,6 +358,16 @@ const isRoomAtCapacity = () => {
     return currentUserCount >= currentRoom.value.maxUsers;
   }
   return false;
+};
+
+const closeAuthDialog = () => {
+  showAuthDialog.value = false;
+};
+
+const checkAuthenticationStatus = () => {
+  if (isUserAuthenticated.value && showAuthDialog.value) {
+    showAuthDialog.value = false;
+  }
 };
 
 // Lifecycle hooks
@@ -479,6 +551,42 @@ watch(currentRoom, (newRoom) => {
     });
   }
 });
+
+// Auth dialog watchers
+watch(showAuthDialog, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      userStore.setFirebaseUiInstance('room');
+    });
+  }
+});
+
+watch(
+  () => userStore.currentUser?.isAnonymous,
+  (newVal, oldVal) => {
+    if (oldVal === true && newVal === false) {
+      showAuthDialog.value = false;
+    }
+  },
+);
+
+watch(
+  () => userStore.currentUser?.userId,
+  (newVal, oldVal) => {
+    if (!oldVal && newVal && !userStore.currentUser?.isAnonymous) {
+      showAuthDialog.value = false;
+    }
+  },
+);
+
+watch(
+  () => userStore.signingInUpgraded,
+  (newVal) => {
+    if (newVal) {
+      showAuthDialog.value = false;
+    }
+  },
+);
 </script>
 
 <style scoped>
@@ -542,5 +650,27 @@ watch(currentRoom, (newRoom) => {
   &:hover {
     background: var(--button-background-hover) !important;
   }
+}
+
+/* Auth Dialog Styles */
+.auth-dialog {
+  border-radius: 16px !important;
+  background: var(--card-background) !important;
+  color: var(--text-primary) !important;
+}
+
+.auth-dialog .v-card-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-dialog .v-card-text p {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 </style>

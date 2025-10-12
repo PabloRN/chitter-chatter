@@ -182,8 +182,13 @@ const submitFeedback = async () => {
     // Add to Realtime Database - Cloud Function will trigger and send email
     await push(feedbackRef, feedbackData);
 
+    // Emit success and close dialog
     emit('success');
-    close();
+
+    // Small delay to ensure success event is processed
+    setTimeout(() => {
+      close();
+    }, 100);
   } catch (error) {
     console.error('Error submitting feedback:', error);
     emit('error', error.message);

@@ -31,7 +31,7 @@ class AnalyticsService {
         this.enableBasicTracking();
       }
 
-      console.log('📊 Analytics initialized');
+      // Analytics initialized
     } catch (error) {
       console.warn('⚠️ Analytics not supported:', error);
       this.isSupported = false;

@@ -346,11 +346,7 @@ const useRoomsStore = defineStore('rooms', {
         const userOwnedSnapshot = await get(userOwnedRef);
         const ownedRoomIds = userOwnedSnapshot.val() || [];
 
-        console.log('Fetching owned rooms for user:', userId);
-        console.log('Owned room IDs:', ownedRoomIds);
-
         if (ownedRoomIds.length === 0) {
-          console.log('User has no owned rooms');
           return [];
         }
 
@@ -374,13 +370,11 @@ const useRoomsStore = defineStore('rooms', {
                     roomData.picture = backgroundURL;
                     roomData.backgroundImage = backgroundURL;
                     roomData.thumbnail = backgroundURL;
-                    console.log(`Loaded background for room ${roomId}:`, backgroundURL);
                   } catch (error) {
-                    console.log(`No background image found for room ${roomId}`);
+                    // No background image found for room
                   }
                 }
                 ownedRooms.push({ id: roomId, ...roomData });
-                console.log(`Loaded room: ${roomId}`);
               } else {
                 console.warn(`Room ${roomId} not found, removing from user's ownedRooms`);
                 // Room doesn't exist anymore, remove it from user's ownedRooms
@@ -393,7 +387,6 @@ const useRoomsStore = defineStore('rooms', {
           }),
         );
 
-        console.log('Found owned rooms:', ownedRooms.length);
         this.ownedRooms = ownedRooms;
         return ownedRooms;
       } catch (error) {

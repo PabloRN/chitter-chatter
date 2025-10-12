@@ -75,8 +75,70 @@ function getSurveyEmailConfig(params) {
   };
 }
 
+/**
+ * Get email configuration for user report
+ * @param {Object} params - Email parameters
+ * @returns {Object} Email configuration for nodemailer
+ */
+function getReportUserEmailConfig(params) {
+  const {
+    to, reportedUserId, reportedUserNickname, reporterId, reporterNickname,
+    reason, description, reportId, fromEmail,
+  } = params;
+
+  const html = loadEmailTemplate('report-user-email', {
+    reportedUserId: reportedUserId || 'Unknown',
+    reportedUserNickname: reportedUserNickname || 'Unknown',
+    reporterId: reporterId || 'Anonymous',
+    reporterNickname: reporterNickname || 'Anonymous',
+    reason: reason || 'Not specified',
+    description: description || 'No description provided.',
+    reportId: reportId || 'Unknown',
+    timestamp: new Date().toISOString(),
+  });
+
+  return {
+    from: `ToonsTalk Reports <${fromEmail}>`,
+    to,
+    subject: `User Report: ${reportedUserNickname} - ${reason}`,
+    html,
+  };
+}
+
+/**
+ * Get email configuration for room report
+ * @param {Object} params - Email parameters
+ * @returns {Object} Email configuration for nodemailer
+ */
+function getReportRoomEmailConfig(params) {
+  const {
+    to, reportedRoomId, reportedRoomName, reporterId, reporterNickname,
+    reason, description, reportId, fromEmail,
+  } = params;
+
+  const html = loadEmailTemplate('report-room-email', {
+    reportedRoomId: reportedRoomId || 'Unknown',
+    reportedRoomName: reportedRoomName || 'Unknown',
+    reporterId: reporterId || 'Anonymous',
+    reporterNickname: reporterNickname || 'Anonymous',
+    reason: reason || 'Not specified',
+    description: description || 'No description provided.',
+    reportId: reportId || 'Unknown',
+    timestamp: new Date().toISOString(),
+  });
+
+  return {
+    from: `ToonsTalk Reports <${fromEmail}>`,
+    to,
+    subject: `Room Report: ${reportedRoomName} - ${reason}`,
+    html,
+  };
+}
+
 module.exports = {
   loadEmailTemplate,
   getWelcomeEmailConfig,
   getSurveyEmailConfig,
+  getReportUserEmailConfig,
+  getReportRoomEmailConfig,
 };

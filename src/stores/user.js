@@ -144,7 +144,6 @@ const useUserStore = defineStore('user', {
     cleanupExpiredEmailData() {
       // Email is now stored simply in localStorage without expiration
       // No cleanup needed since localStorage persists until manually cleared
-      console.log('📧 Email cleanup skipped - using persistent localStorage');
     },
 
     initBlockListeners(userId) {
@@ -309,8 +308,6 @@ const useUserStore = defineStore('user', {
       onAuthStateChanged(auth, async (user) => {
         if (user) {
           const userRef = ref(db, `users/${user.uid}`);
-          console.log(' 🔍 onAuthStateChanged triggered', user);
-          console.log('this.currentUser', this.currentUser);
           if (user.isAnonymous) {
             // 🟢 Always seed anon with fresh data
             const uidSnippet = user.uid.substring(0, 4);

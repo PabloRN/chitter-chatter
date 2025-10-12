@@ -45,7 +45,6 @@ const initFirebaseCompat = () => {
       // Check if already initialized
       if (!windowAny.firebase.apps.length) {
         windowAny.firebase.initializeApp(firebaseConfig);
-        console.log('🔥 Firebase compat initialized for FirebaseUI');
       }
     } catch (error) {
       console.warn('Firebase compat initialization error:', error);
