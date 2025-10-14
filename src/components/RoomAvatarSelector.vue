@@ -43,7 +43,7 @@
                           <v-icon>mdi-star</v-icon>
                         </v-btn>
                         <v-btn x-small icon color="error" class="action-btn" @click.stop="removeUploadedAvatar(index)">
-                          <v-icon>mdi-close</v-icon>
+                          <v-icon color="black">mdi-close</v-icon>
                         </v-btn>
                       </div>
                     </div>

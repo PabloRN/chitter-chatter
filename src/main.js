@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { initializeApp } from 'firebase/app';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
+import { VueReCaptcha } from 'vue-recaptcha-v3';
 import App from './App';
 import './registerServiceWorker';
 import router from './router';
@@ -9,24 +10,30 @@ import pinia from './stores';
 import useMainStore from './stores/main';
 import vuetify from './plugins/vuetify';
 import i18n from './i18n';
+import analyticsService from './services/analyticsService';
 // import './utils/vee-validate' // Removed for now
 import './assets/scss/main.scss';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: 'AIzaSyAcSF4KWLbqqfc3EJDOBgJrHBbUR4D-5hg',
-  authDomain: 'toonstalk.com',
-  databaseURL: 'https://chitter-chatter-f762a.firebaseio.com',
-  projectId: 'chitter-chatter-f762a',
-  storageBucket: 'chitter-chatter-f762a.appspot.com',
-  messagingSenderId: '63563490823',
-  appId: '1:63563490823:web:a6b6dc9011861f6d0d2ca2',
-  measurementId: 'G-JCDBMEBPZZ',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase (modular v10+)
-// Note: Firebase is now initialized via src/config/firebase.js to avoid conflicts
 initializeApp(firebaseConfig);
+
+// Initialize Analytics
+analyticsService.initialize().then(() => {
+  analyticsService.logEvent('app_start');
+  analyticsService.trackFirstVisit();
+});
 
 // Initialize Firebase compat for FirebaseUI
 // Wait for Firebase compat to load, then initialize
@@ -38,7 +45,6 @@ const initFirebaseCompat = () => {
       // Check if already initialized
       if (!windowAny.firebase.apps.length) {
         windowAny.firebase.initializeApp(firebaseConfig);
-        console.log('🔥 Firebase compat initialized for FirebaseUI');
       }
     } catch (error) {
       console.warn('Firebase compat initialization error:', error);
@@ -75,6 +81,15 @@ app.use(router);
 app.use(vuetify);
 app.use(i18n);
 app.use(Storage, storageOptions);
+
+// Configure reCAPTCHA v3
+// Note: Replace with your actual reCAPTCHA site key from Google reCAPTCHA admin console
+app.use(VueReCaptcha, {
+  siteKey: import.meta.env.VITE_RECAPTCHA_SITE_KEY || 'YOUR_RECAPTCHA_SITE_KEY',
+  loaderOptions: {
+    autoHideBadge: true,
+  },
+});
 
 app.config.globalProperties._ = lodash;
 

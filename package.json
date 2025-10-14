@@ -1,6 +1,6 @@
 {
   "name": "toonstalk",
-  "version": "0.20.5",
+  "version": "0.20.6",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -24,6 +24,7 @@
     "vue": "^3.3.11",
     "vue-i18n": "^9.8.0",
     "vue-ls": "^4.2.0",
+    "vue-recaptcha-v3": "^2.0.1",
     "vue-router": "^4.2.5",
     "vuetify": "^3.4.6",
     "yup": "^1.7.0"

@@ -1,11 +1,6 @@
 <template>
   <div style="display: flex; justify-content: center;align-items: center;height: 100vh">
-    <v-img
-          src="../assets/logotype_landing_page.png"
-          class="my-3"
-          contain
-          height="60" style="left: -20px;"
-        />
+    <v-img src="logo-206-70.png" class="my-3" contain height="80" style="left: -20px;" />
   </div>
 </template>
 

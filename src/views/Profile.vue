@@ -9,6 +9,12 @@
         Profile
       </v-toolbar-title>
       <v-spacer></v-spacer>
+
+      <!-- Feedback button -->
+      <v-btn icon class="mr-2" @click="showFeedbackDialog = true" title="Send Feedback">
+        <v-icon>mdi-message-alert-outline</v-icon>
+      </v-btn>
+
       <v-btn v-if="!isEditing" @click="isEditing = !isEditing" class="edit-btn">
         <v-icon>mdi-pencil</v-icon>
         Edit
@@ -49,14 +55,17 @@
                 label="Display Name" class="edit-name-field" outlined dense
                 :hint="nicknameCooldownMessage || 'Choose wisely! Nickname can only be changed once a week'"
                 persistent-hint />
+              <v-chip :color="getCurrentUser?.onlineState ? 'success' : 'grey'" small class="status-chip">
+                <v-icon small class="mr-1">
+                  {{ getCurrentUser?.onlineState ? 'mdi-circle' : 'mdi-circle-outline' }}
+                </v-icon>
+                {{ getCurrentUser?.onlineState ? 'Online' : 'Offline' }}
+              </v-chip>
             </div>
 
             <div class="user-stats">
-              <div class="stat-item">
-                <span class="stat-number">{{ favoriteRoomsCount }}</span>
-                <span class="stat-label">Favorites</span>
-              </div>
-              <div class="stat-divider"></div>
+
+
               <div class="stat-item">
                 <span class="stat-number">{{ getCurrentUser?.level || 'L1' }}</span>
                 <span class="stat-label">Level</span>
@@ -66,15 +75,15 @@
                 <span class="stat-number">{{ joinedDate }}</span>
                 <span class="stat-label">Joined</span>
               </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-number"> {{ getCurrentUser?.client ? 'Client' : 'Registered' }}</span>
+                <span class="stat-label">Account Type</span>
+              </div>
             </div>
 
             <div class="user-status">
-              <v-chip :color="getCurrentUser?.onlineState ? 'success' : 'grey'" small class="status-chip">
-                <v-icon small class="mr-1">
-                  {{ getCurrentUser?.onlineState ? 'mdi-circle' : 'mdi-circle-outline' }}
-                </v-icon>
-                {{ getCurrentUser?.onlineState ? 'Online' : 'Offline' }}
-              </v-chip>
+
             </div>
           </div>
         </div>
@@ -83,20 +92,52 @@
       <!-- Profile Content -->
       <div class="profile-content">
         <!-- About Section -->
-        <v-card class="profile-section themed-card" elevation="2">
+        <v-card class="profile-section themed-card d-block" elevation="2">
           <v-card-title class="section-title">
             <v-icon class="mr-2">mdi-account-details</v-icon>
-            About
+            About Me
           </v-card-title>
           <v-card-text>
             <div class="info-row">
-              <span class="info-label">User ID:</span>
-              <span class="info-value">{{ getCurrentUser?.userId?.substring(0, 8) }}...</span>
+              <span class="info-label">Hobbies:</span>
+              <div v-if="!isEditing" class="d-flex justify-end flex-wrap">
+                <v-chip v-for="chip in getCurrentUser?.hobbies" class="ma-2" :color="chip.color"
+                  :prepend-icon="chip.icon">
+                  {{ chip.name }}
+                </v-chip>
+              </div>
+              <v-combobox v-if="isEditing" closable-chips v-model="editedUser.selectedHobbies" :items="categories"
+                item-title="name" item-value="name" multiple chips clearable :disabled="loading" label="Search & Select"
+                hide-selectedHobbies>
+                <!-- Chips inside the field -->
+                <template v-slot:selection="{ item, index }">
+                  <v-chip :prepend-icon="item.icon" :key="index" closable :disabled="loading" :color="item.color"
+                    @click:close="remove(item)">
+                    {{ item.name }}
+                  </v-chip>
+                </template>
+
+                <!-- Dropdown item rendering -->
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon :icon="item.raw.icon"></v-icon>
+                    </template>
+                    <v-list-item-title>{{ item.name }}</v-list-item-title>
+                  </v-list-item>
+                </template>
+              </v-combobox>
             </div>
             <div class="info-row">
-              <span class="info-label">Account Type:</span>
-              <span class="info-value">
-                {{ getCurrentUser?.client ? 'Client' : 'Registered' }}
+              <span class="info-label">Description:</span>
+              <span class="info-value description">
+                <!-- Description -->
+                <div v-if="!isEditing" class="d-flex justify-end flex-wrap">
+                  {{ getCurrentUser?.description || 'Not specified' }}
+                </div>
+                <v-textarea v-else v-model="editedUser.description" :rules="descriptionRules" label="Description"
+                  :disabled="!isEditing" hint="Let people know more about you" persistent-hint outlined dense
+                  :counter="200" rows="3" class="mb-4" />
               </span>
             </div>
             <div class="info-row">
@@ -107,11 +148,101 @@
               <v-text-field :disabled="getCurrentUser?.age" v-else v-model="editedUser.age" label="Age" type="number"
                 class="edit-field" outlined dense hint="Age can only be set one time" persistent-hint />
             </div>
+
+          </v-card-text>
+        </v-card>
+
+        <!-- Privacy Settings Section -->
+        <v-card class="profile-section themed-card d-block" elevation="2">
+          <v-card-title class="section-title">
+            <v-icon class="mr-2">mdi-shield-account</v-icon>
+            Privacy Settings
+          </v-card-title>
+          <v-card-text>
+            <p class="privacy-subtitle mb-4">Control what information is visible to other users</p>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <v-icon class="mr-2" :color="privacySettings.showAvatar ? 'success' : 'grey'">
+                  {{ privacySettings.showAvatar ? 'mdi-eye' : 'mdi-eye-off' }}
+                </v-icon>
+                <div>
+                  <h4>Show Avatar</h4>
+                  <p>Allow others to see your profile picture</p>
+                </div>
+              </div>
+              <v-switch v-model="privacySettings.showAvatar" :disabled="!isEditing" color="primary" hide-details />
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <v-icon class="mr-2" :color="privacySettings.showNickname ? 'success' : 'grey'">
+                  {{ privacySettings.showNickname ? 'mdi-eye' : 'mdi-eye-off' }}
+                </v-icon>
+                <div>
+                  <h4>Show Nickname</h4>
+                  <p>Display your username to other users</p>
+                </div>
+              </div>
+              <v-switch v-model="privacySettings.showNickname" :disabled="!isEditing" color="primary" hide-details />
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <v-icon class="mr-2" :color="privacySettings.showLevel ? 'success' : 'grey'">
+                  {{ privacySettings.showLevel ? 'mdi-eye' : 'mdi-eye-off' }}
+                </v-icon>
+                <div>
+                  <h4>Show Level</h4>
+                  <p>Let others see your experience level</p>
+                </div>
+              </div>
+              <v-switch v-model="privacySettings.showLevel" :disabled="!isEditing" color="primary" hide-details />
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <v-icon class="mr-2" :color="privacySettings.showAge ? 'success' : 'grey'">
+                  {{ privacySettings.showAge ? 'mdi-eye' : 'mdi-eye-off' }}
+                </v-icon>
+                <div>
+                  <h4>Show Age</h4>
+                  <p>Display your age on your profile</p>
+                </div>
+              </div>
+              <v-switch v-model="privacySettings.showAge" :disabled="!isEditing" color="primary" hide-details />
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <v-icon class="mr-2" :color="privacySettings.showHobbies ? 'success' : 'grey'">
+                  {{ privacySettings.showHobbies ? 'mdi-eye' : 'mdi-eye-off' }}
+                </v-icon>
+                <div>
+                  <h4>Show Hobbies</h4>
+                  <p>Share your interests with others</p>
+                </div>
+              </div>
+              <v-switch v-model="privacySettings.showHobbies" :disabled="!isEditing" color="primary" hide-details />
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <v-icon class="mr-2" :color="privacySettings.showDescription ? 'success' : 'grey'">
+                  {{ privacySettings.showDescription ? 'mdi-eye' : 'mdi-eye-off' }}
+                </v-icon>
+                <div>
+                  <h4>Show Description</h4>
+                  <p>Allow others to read your profile description</p>
+                </div>
+              </div>
+              <v-switch v-model="privacySettings.showDescription" :disabled="!isEditing" color="primary" hide-details />
+            </div>
           </v-card-text>
         </v-card>
 
         <!-- Preferences Section -->
-        <v-card class="profile-section themed-card" elevation="2">
+        <v-card class="profile-section themed-card d-block" elevation="2">
           <v-card-title class="section-title">
             <v-icon class="mr-2">mdi-cog</v-icon>
             Preferences
@@ -200,6 +331,13 @@
     <v-snackbar v-model="showError" color="error" timeout="5000">
       {{ errorMessage }}
     </v-snackbar>
+
+    <!-- Feedback Dialog -->
+    <FeedbackDialog
+      v-model="showFeedbackDialog"
+      @success="handleFeedbackSuccess"
+      @error="handleFeedbackError"
+    />
   </div>
 </template>
 
@@ -211,11 +349,29 @@ import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
 import ProfileRooms from '@/components/ProfileRooms.vue';
 import AdminPanel from '@/components/AdminPanel.vue';
+import FeedbackDialog from '@/components/FeedbackDialog';
 import {
   GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
 import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
-
+//TODO: Move to a separate file
+const hobbies = [
+  { name: "Football", icon: "mdi-soccer", color: "green" },
+  { name: "Basketball", icon: "mdi-basketball", color: "deep-orange" },
+  { name: "Gaming", icon: "mdi-gamepad-variant", color: "purple" },
+  { name: "Music", icon: "mdi-music", color: "blue" },
+  { name: "Reading", icon: "mdi-book-open-page-variant", color: "indigo" },
+  { name: "Drawing", icon: "mdi-pencil", color: "pink" },
+  { name: "Cooking", icon: "mdi-silverware-fork-knife", color: "red" },
+  { name: "Traveling", icon: "mdi-airplane", color: "cyan" },
+  { name: "Movies", icon: "mdi-movie-open", color: "teal" },
+  { name: "Fitness", icon: "mdi-dumbbell", color: "orange" },
+  { name: "Photography", icon: "mdi-camera", color: "light-blue" },
+  { name: "Coding", icon: "mdi-laptop", color: "grey darken-1" },
+  { name: "Anime & Manga", icon: "mdi-drama-masks", color: "deep-purple" },
+  { name: "Collecting", icon: "mdi-cards-variant", color: "brown" },
+  { name: "Nature", icon: "mdi-tree", color: "green darken-2" }
+];
 const availableProviders = [
   {
     id: 'google.com', name: 'Google', icon: 'mdi-google', provider: new GoogleAuthProvider(),
@@ -237,10 +393,20 @@ const showDeleteDialog = ref(false);
 const editedUser = ref({
   nickname: '',
   age: null,
+  selectedHobbies: [],
+  description: '',
 });
 const preferences = ref({
   notifications: true,
   autoJoinFavorites: false,
+});
+const privacySettings = ref({
+  showAvatar: true,
+  showNickname: true,
+  showLevel: true,
+  showAge: false,
+  showHobbies: true,
+  showDescription: true,
 });
 const mainAvatar = ref(null);
 const pendingAvatar = ref(null);
@@ -249,8 +415,16 @@ const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const selectedHobbies = ref([])
+const loading = ref(false)
+const showFeedbackDialog = ref(false);
 
 // computed
+const categories = computed(() =>
+  hobbies.filter(
+    (item) => !selectedHobbies.value.find((s) => s.name === item.name)
+  )
+)
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0);
 const joinedDate = computed(() => 'Dec 2024'); // TODO: fetch from user data
@@ -258,7 +432,7 @@ const linkedProviders = computed(() => userStore.linkedProviders);
 const nicknameCooldownMessage = computed(() => {
   console.log(getCurrentUser.value);
   const updatedAt = getCurrentUser.value?.nickNameUpdatedAt;
-  if (!updatedAt) return ''; // never updated, no cooldown
+  if (!updatedAt || getCurrentUser.value?.nickname === '') return ''; // never updated, no cooldown
 
   const now = Date.now();
   const cooldown = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
@@ -279,22 +453,52 @@ const nicknameCooldownMessage = computed(() => {
 });
 // redirect if not authenticated
 onMounted(() => {
-  if (getCurrentUser.value?.isAnonymous) {
+
+  if (getCurrentUser.value && getCurrentUser.value?.isAnonymous) {
+    console.log('Profile mounted', getCurrentUser.value.isAnonymous);
     router.push({ name: 'rooms' });
+  }
+
+  // Load privacy settings from current user
+  if (getCurrentUser.value?.privacySettings) {
+    privacySettings.value = { ...getCurrentUser.value.privacySettings };
   }
 });
 
 // watchers
 watch(isEditing, async (newVal) => {
   if (newVal === true) {
+    // Entering edit mode - load current values
     editedUser.value.nickname = getCurrentUser.value?.nickname || '';
     editedUser.value.age = getCurrentUser.value?.age || null;
+    editedUser.value.selectedHobbies = getCurrentUser.value?.hobbies || [];
+    editedUser.value.description = getCurrentUser.value?.description || '';
+
+    // Load current privacy settings
+    if (getCurrentUser.value?.privacySettings) {
+      privacySettings.value = { ...getCurrentUser.value.privacySettings };
+    }
   } else {
+    // Exiting edit mode - save all changes
     await saveProfile();
   }
 });
+watch(getCurrentUser.value, (newVal) => {
+  if (newVal && newVal.isAnonymous) {
+    router.push({ name: 'rooms' });
+  }
+});
+//rules 
+const descriptionRules = [
+  (v) => !v || v.length <= 200 || `Description must be less than ${200} characters`,
+];
 
 // methods
+
+const remove = (item) => {
+  selectedHobbies.value = selectedHobbies.value.filter((s) => s.name !== item.raw.name)
+}
+
 
 const linkAccount = async (providerId) => {
   try {
@@ -340,7 +544,15 @@ const saveProfile = async () => {
       userStore.uploadUserPersonalAvatar(pendingAvatar.value.file);
       pendingAvatar.value = null;
     }
-    // TODO: update other fields like age
+    if (editedUser.value.selectedHobbies.length) {
+      await userStore.updateUserHobbies(editedUser.value.selectedHobbies);
+    }
+
+    await userStore.updateUserDescription(editedUser.value.description);
+
+    // Save privacy settings
+    await userStore.updatePrivacySettings(privacySettings.value);
+
     console.log('Profile updated successfully');
   } catch (error) {
     console.error('Error updating profile:', error);
@@ -399,8 +611,18 @@ const deleteAccount = async () => {
     console.error('Error deleting account:', error);
   }
 };
+
+const handleFeedbackSuccess = () => {
+  successMessage.value = 'Thank you for your feedback!';
+  showSuccess.value = true;
+};
+
+const handleFeedbackError = (error) => {
+  errorMessage.value = `Error submitting feedback: ${error}`;
+  showError.value = true;
+};
 </script>
-<style scoped>
+<style scoped lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .profile-page {
@@ -468,6 +690,20 @@ const deleteAccount = async () => {
 
 .user-info {
   flex: 1;
+
+  .user-name-section {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+
+}
+
+.description {
+  width: 70%;
+  font-size: 0.875rem;
+  color: var(--text-secondary) !important;
 }
 
 .user-name {
@@ -533,6 +769,8 @@ const deleteAccount = async () => {
   font-weight: 600 !important;
   color: var(--text-primary) !important;
   font-size: 1.1rem !important;
+  margin-bottom: 20px !important;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .info-row {
@@ -549,11 +787,11 @@ const deleteAccount = async () => {
 
 .info-label {
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .info-value {
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -672,5 +910,34 @@ const deleteAccount = async () => {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Privacy Settings */
+.privacy-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.preference-item .preference-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preference-item .preference-info > div {
+  flex: 1;
+}
+
+.preference-item h4 {
+  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.preference-item p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
 }
 </style>

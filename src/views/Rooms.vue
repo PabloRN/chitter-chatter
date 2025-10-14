@@ -3,11 +3,16 @@
   <div class="home">
     <v-app-bar dense elevation="4" rounded shaped>
       <v-toolbar-title style="display: flex; justify-content: flex-start">
-        <v-img src="/logotype_landing_page.png" class="my-3" contain width="6em" height="35"
-          style="background-position: left!important;" />
+        <v-img src="/logo-206-70.png" class="my-3" contain width="6em" height="40" />
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
+
+      <!-- Feedback button -->
+      <v-btn icon class="mr-2" @click="showFeedbackDialog = true" title="Send Feedback">
+        <v-icon>mdi-message-alert-outline</v-icon>
+      </v-btn>
+
       <!-- TODO: create component -->
       <!-- Authentication buttons for non-authenticated users -->
       <div v-if="!isUserAuthenticated" class="auth-buttons mr-3">
@@ -17,7 +22,7 @@
       </div>
 
       <!-- Profile menu for authenticated users -->
-      <div v-else class="profile-section mr-5">
+      <div v-else class="profile-section mr-3">
         <v-menu offset-y z-index="99999">
           <template v-slot:activator="{ props }">
             <v-btn icon v-bind="props" class="profile-menu-btn">
@@ -121,56 +126,29 @@
         </div>
       </div>
     </div>
-
-    <div style="width: 100%;display: flex; justify-content: center;align-items: center;margin-top: 20px;">
-      <v-card style="width: 40%" class="themed-card">
-        <v-card-text class="text-subtitle-1" style="height: 20vh">
-          <p>
-            This is a temporary url created especially for you, our beloved
-            early tester. Please note that it will expire soon.
-          </p>
-          <p>
-            If you find this product amazing and you want to hear more from us
-            and share your experience join us on our Discord channel
-            <a href="https://discord.gg/Hspt8B2u" target="_blank">discord channel</a>. We'd love to hear from you!
-          </p>
-        </v-card-text>
-      </v-card>
-    </div>
-
     <v-footer padless absolute class="footer">
       <v-card flat tile width="100%" class="text-center">
         <v-divider></v-divider>
         <v-card-text>
-          Copyright © {{ new Date().getFullYear() }} —
-          <strong>toonstalk</strong>
+          <div class="footer-content">
+            <div class="footer-copyright">
+              Copyright © {{ new Date().getFullYear() }} — <strong>toonstalk</strong>
+            </div>
+            <div class="footer-links">
+              <router-link to="/privacy" class="footer-link">Privacy Policy</router-link>
+              <span class="footer-separator">•</span>
+              <router-link to="/terms" class="footer-link">Terms of Service</router-link>
+              <span class="footer-separator">•</span>
+              <router-link to="/cookies" class="footer-link">Cookie Policy</router-link>
+              <span class="footer-separator">•</span>
+              <router-link to="/acceptable-use" class="footer-link">Community Guidelines</router-link>
+            </div>
+          </div>
         </v-card-text>
       </v-card>
     </v-footer>
-
-    <v-dialog v-if="showWelcomeDialog" v-model="showWelcomeDialog" persistent width="600"
-      class="pa-5 ma-5 progress-dialog">
-      <v-card style="width: 100%" class="themed-card">
-        <v-card-title class="text-h6">Welcome, Early Tester! </v-card-title>
-        <v-card-text class="text-subtitle-1" style="height: 20vh">
-          <p>
-            Thank you for being one of the selected few to try out our beta
-            version. Your feedback is incredibly valuable in helping us shape
-            the final product.
-          </p>
-          <p>
-            Please remember that this is a beta version, so you may encounter
-            some bugs or incomplete features. Also is only working on PC and
-            tablet. We’d love to hear your thoughts on how we can improve!
-          </p>
-        </v-card-text>
-        <v-card-actions class="text-body-2 pa-2 d-flex justify-end align-end">
-          <v-btn small class="px-10" color="primary darken-1" tile @click="showWelcomeDialog = false">
-            Close
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- Feedback Dialog -->
+    <FeedbackDialog v-model="showFeedbackDialog" @success="handleFeedbackSuccess" @error="handleFeedbackError" />
   </div>
 </template>
 
@@ -181,16 +159,20 @@ import {
 import { useRouter } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
+import useMainStore from '@/stores/main';
 import RoomThumbnail from '@/components/RoomThumbnail';
+import FeedbackDialog from '@/components/FeedbackDialog';
 
 // ✅ stores
 const roomsStore = useRoomsStore();
 const userStore = useUserStore();
+const mainStore = useMainStore();
 const router = useRouter();
 
 // ✅ state (was data)
 const showWelcomeDialog = ref(false);
 const showAuthDialog = ref(false);
+const showFeedbackDialog = ref(false);
 const usersOnline = ref(0);
 const flexBasisValues = ref(['25%']);
 const variant = ref('absolute');
@@ -237,7 +219,6 @@ const popularRoomIds = computed(() => {
 const allRoomIds = computed(() => {
   const rooms = getAllRooms.value;
   if (!rooms) return [];
-  console.log('rooms', rooms);
   return Object.entries(rooms).filter(([id, room]) => !room.isPrivate).map(([id, room]) => id);
 });
 
@@ -277,6 +258,22 @@ function checkAuthenticationStatus() {
   if (isUserAuthenticated.value && showAuthDialog.value) {
     showAuthDialog.value = false;
   }
+}
+
+function handleFeedbackSuccess() {
+  console.log('Feedback submitted successfully');
+  mainStore.setSnackbar({
+    type: 'success',
+    msg: 'Thank you for your feedback! We appreciate your input. 🙏',
+  });
+}
+
+function handleFeedbackError(error) {
+  console.error('Feedback submission error:', error);
+  mainStore.setSnackbar({
+    type: 'error',
+    msg: `Failed to submit feedback: ${error}`,
+  });
 }
 
 // ✅ lifecycle
@@ -356,11 +353,11 @@ watch(isUserAuthenticated, (newVal) => {
 /* Netflix-style Room Sections */
 .rooms-sections-container {
   max-width: 1400px;
-  margin: 0 auto;
+  margin: 0px auto 20px;
 }
 
 .room-section {
-  margin-bottom: 40px;
+  margin-bottom: 60px;
 }
 
 .section-title {
@@ -596,5 +593,52 @@ div#default_avatar_character_12345 .avatar-image {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.footer-copyright {
+  font-size: 14px;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.footer-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.footer-separator {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .footer-links {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .footer-separator {
+    display: none;
+  }
 }
 </style>

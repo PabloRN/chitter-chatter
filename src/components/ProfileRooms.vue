@@ -54,9 +54,8 @@
               @click="goToRoom(room.id)">
               <!-- Room Background -->
               <div class="room-background">
-                <v-img v-if="room.thumbnail || room.backgroundImage"
-                  :src="room.thumbnail || room.backgroundImage" height="120" cover
-                  class="room-bg-image" />
+                <v-img v-if="room.thumbnail || room.backgroundImage" :src="room.thumbnail || room.backgroundImage"
+                  height="120" cover class="room-bg-image" />
                 <div v-else class="room-bg-placeholder">
                   <v-icon size="40" color="grey">mdi-image-off</v-icon>
                 </div>
@@ -74,9 +73,11 @@
               <v-card-text class="room-info">
                 <h4 class="room-name">{{ room.name }}</h4>
                 <div class="room-meta">
-                  <v-chip x-small outlined class="theme-chip">
-                    {{ getThemeLabel(room.theme) }}
-                  </v-chip>
+                  <div class="d-flex align-center">
+                    <v-avatar v-for="topic in room.topics" :key="topic" size="24" class="mr-1" :color="topic.color">
+                      <v-icon size="16" color="white">{{ topic.icon }}</v-icon>
+                    </v-avatar>
+                  </div>
                   <div class="room-users">
                     <v-icon small>mdi-account-group</v-icon>
                     {{ room.maxUsers }}
@@ -199,7 +200,7 @@ import {
 import { useRouter, useRoute } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
-import { ROOM_THEMES, USER_ROOM_LIMITS } from '@/utils/roomTypes';
+import { ROOM_TOPICS, USER_ROOM_LIMITS } from '@/utils/roomTypes';
 
 const router = useRouter();
 const route = useRoute();
@@ -218,9 +219,14 @@ const errorMessage = ref('');
 // Computed
 const ownedRooms = computed(() => roomsStore.getOwnedRooms);
 const canCreateRoom = computed(() => roomsStore.canCreateRoom);
-const roomLimit = computed(() =>
+const roomLimit = computed(() => {
   // TODO: Check if user is paid when payment system is implemented
-  USER_ROOM_LIMITS.free);
+  const currentUser = userStore.getCurrentUser;
+  if (currentUser?.isPaid) return USER_ROOM_LIMITS.paid;
+  if (currentUser?.isAdmin) return USER_ROOM_LIMITS.admin;
+  return USER_ROOM_LIMITS.free;
+});
+
 
 // Methods
 const loadOwnedRooms = async (forceRefresh = false) => {
@@ -250,10 +256,6 @@ const editRoom = (roomId) => {
   router.push(`/profile/room/${roomId}/edit`);
 };
 
-const getThemeLabel = (themeValue) => {
-  const theme = ROOM_THEMES.find((t) => t.value === themeValue);
-  return theme ? theme.label : themeValue;
-};
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown';

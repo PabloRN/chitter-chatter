@@ -11,24 +11,23 @@
       </div>
       <div class="icon-caption" style="opacity: 0.3;">Buffer</div>
     </v-btn>
-    <v-btn :disabled="isBlockedBy" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
+    <v-btn :disabled="isBlockedBy || otherIsAnonymous" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item"
+      fab dark small @click.prevent="handleEmit('addFriend')" @touchstart.native.prevent="handleEmit('addFriend')">
       <div>
-        <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-account-plus </v-icon>
+        <v-icon :disabled="isBlockedBy || otherIsAnonymous" class="manga-icon">
+          mdi-account-plus </v-icon>
       </div>
       <div :disabled="isBlockedBy" class="icon-caption">Add friend</div>
     </v-btn>
     <v-btn :disabled="isBlockedBy" class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
       @click.prevent.stop="handleEmit('privateMessage')" @touchstart.native.prevent.stop="handleEmit('privateMessage')">
-
       <div>
         <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-forum-outline </v-icon>
       </div>
       <div :disabled="isBlockedBy" class="icon-caption">Talk privately</div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent="toggleMenu"
-      @touchstart.native.prevent="toggleMenu">
-
+    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="handleEmit('userInfo')" @touchstart.native.prevent="handleEmit('userInfo')">
       <div>
         <v-icon class="manga-icon"> mdi-information </v-icon>
       </div>
@@ -44,12 +43,12 @@
       </div>
       <div class="icon-caption"> {{ isBlocked ? 'Unblock' : 'Block' }} </div>
     </v-btn>
-    <v-btn disabled :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="toggleMenu" @touchstart.native.prevent="toggleMenu">
+    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="handleEmit('reportUser')" @touchstart.native.prevent="handleEmit('reportUser')">
       <div>
-        <v-icon disabled class="manga-icon"> mdi-car-emergency </v-icon>
+        <v-icon class="manga-icon"> mdi-car-emergency </v-icon>
       </div>
-      <div disabled class="icon-caption">Report</div>
+      <div class="icon-caption">Report</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
       @click.prevent.stop="handleEmit('showUserMessages')" @touchstart.native.prevent="handleEmit('showUserMessages')">
@@ -74,6 +73,9 @@
       <div class="icon-caption">toggle</div>
     </v-btn>
   </div>
+  <ReportUserDialog v-model="showReportDialog" :target-user-id="reportTargetUserId"
+    :target-user-nickname="reportTargetNickname" @success="handleReportSuccess"
+    @already-reported="handleAlreadyReported" @limit-reached="handleLimitReached" />
 </template>
 
 <script setup>
@@ -81,17 +83,24 @@ import useUserStore from '@/stores/user';
 import {
   ref, computed, nextTick, onMounted,
 } from 'vue';
+import ReportUserDialog from '@/components/ReportUserDialog.vue';
 
 const props = defineProps({
   userId: String,
+  nickname: String,
 });
 const userStore = useUserStore();
 // emits
-const emit = defineEmits(['showUserMessages', 'privateMessage']);
+const emit = defineEmits(['showUserMessages', 'privateMessage', 'blockUser', 'showLoginDialog', 'userInfo']);
 const hideMenu = ref(true);
 const movingTouch = ref(false);
+const showReportDialog = ref(false);
+const reportTargetUserId = ref('');
+const reportTargetNickname = ref('');
 
 const getCurrentUser = computed(() => userStore.getCurrentUser);
+const otherIsAnonymous = computed(() => userStore.userData[props.userId]?.isAnonymous);
+const currentUserIsAnonymous = computed(() => userStore.getCurrentUser?.isAnonymous);
 const isBlocked = computed(() => userStore.isBlocked(props.userId));
 const isBlockedBy = computed(() => userStore.isBlockedBy(props.userId));
 
@@ -118,6 +127,10 @@ const handleEmit = (item) => {
     case 'privateMessage':
       if (movingTouch.value === false) {
         toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
         // emit event to parent
         emit('privateMessage');
       }
@@ -125,6 +138,10 @@ const handleEmit = (item) => {
     case 'showUserMessages':
       if (movingTouch.value === false) {
         toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
         // emit event to parent
         emit('showUserMessages');
       }
@@ -132,15 +149,78 @@ const handleEmit = (item) => {
     case 'blockUser':
       if (movingTouch.value === false) {
         toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
         // emit event to parent
         emit('blockUser');
       }
       break;
-
+    case 'addFriend':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
+        // emit event to parent
+        emit('addFriend');
+      }
+      break;
+    case 'userInfo':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
+        // emit event to parent
+        emit('userInfo');
+      }
+      break;
+    case 'reportUser':
+      if (movingTouch.value === false) {
+        toggleMenu();
+        if (getCurrentUser.value?.isAnonymous) {
+          emit('showLoginDialog');
+          return;
+        }
+        // emit event to parent
+        handleReportUser(props.userId);
+      }
+      break;
     default:
       break;
   }
 };
+function handleReportUser(userId) {
+  const nickname = userStore.userData[userId]?.nickname;
+  reportTargetUserId.value = userId;
+  reportTargetNickname.value = nickname;
+  showReportDialog.value = true;
+}
+
+function handleReportSuccess() {
+  mainStore.setSnackbar({
+    type: 'success',
+    msg: 'Report submitted successfully. Our team will review it.',
+  });
+}
+
+function handleAlreadyReported() {
+  mainStore.setSnackbar({
+    type: 'warning',
+    msg: 'You have already reported this user. The report is under review.',
+  });
+}
+
+function handleLimitReached() {
+  mainStore.setSnackbar({
+    type: 'error',
+    msg: 'You have reached the daily report limit (3 reports/day).',
+  });
+}
 </script>
 <style lang="scss" scoped>
 @import '@/styles/rounded-menu.scss';

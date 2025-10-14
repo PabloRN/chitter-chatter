@@ -155,6 +155,8 @@ const handleEmit = (item) => {
       toggleMenu();
       if (!getCurrentUser.value.isAnonymous) {
         emit('showProfile');
+      } else {
+        emit('showLoginDialog');
       }
       break;
     case 'showMessages':

@@ -6,6 +6,7 @@ import {
   getStorage, ref as storageRef, getDownloadURL, listAll, uploadBytes, deleteObject,
 } from 'firebase/storage';
 import { createRoom, validateRoom, USER_ROOM_LIMITS } from '@/utils/roomTypes';
+import analyticsService from '@/services/analyticsService';
 import useUserStore from './user';
 
 const useRoomsStore = defineStore('rooms', {
@@ -39,9 +40,9 @@ const useRoomsStore = defineStore('rooms', {
       if (!user || user.isAnonymous) return false;
 
       // TODO: Add paid user check when payment system is implemented
-      const isPaid = false; // user.isPaid || false;
 
-      if (isPaid) return true;
+      if (user.isPaid) return true;
+      if (user.isAdmin) return true;
 
       // Free users can create only 1 room
       // Use the rooms store as the authoritative source for owned rooms count
@@ -302,6 +303,12 @@ const useRoomsStore = defineStore('rooms', {
 
       this.userAdded = { roomId, ...userId };
       userStore.roomIn = { roomId, roomUsersKey };
+
+      // Track room entry with room name and user ID
+      const roomName = this.currentRoom?.name || this.roomList[roomId]?.name || 'unknown';
+      const currentUserId = userStore.currentUser?.userId || 'unknown';
+      const userType = userStore.currentUser?.isAnonymous ? 'anonymous' : 'registered';
+      analyticsService.trackRoomEntered(roomId, roomName, currentUserId, userType);
     },
 
     exitRoom({ roomId, userId, roomUsersKey }) {
@@ -339,11 +346,7 @@ const useRoomsStore = defineStore('rooms', {
         const userOwnedSnapshot = await get(userOwnedRef);
         const ownedRoomIds = userOwnedSnapshot.val() || [];
 
-        console.log('Fetching owned rooms for user:', userId);
-        console.log('Owned room IDs:', ownedRoomIds);
-
         if (ownedRoomIds.length === 0) {
-          console.log('User has no owned rooms');
           return [];
         }
 
@@ -367,13 +370,11 @@ const useRoomsStore = defineStore('rooms', {
                     roomData.picture = backgroundURL;
                     roomData.backgroundImage = backgroundURL;
                     roomData.thumbnail = backgroundURL;
-                    console.log(`Loaded background for room ${roomId}:`, backgroundURL);
                   } catch (error) {
-                    console.log(`No background image found for room ${roomId}`);
+                    // No background image found for room
                   }
                 }
                 ownedRooms.push({ id: roomId, ...roomData });
-                console.log(`Loaded room: ${roomId}`);
               } else {
                 console.warn(`Room ${roomId} not found, removing from user's ownedRooms`);
                 // Room doesn't exist anymore, remove it from user's ownedRooms
@@ -386,7 +387,6 @@ const useRoomsStore = defineStore('rooms', {
           }),
         );
 
-        console.log('Found owned rooms:', ownedRooms.length);
         this.ownedRooms = ownedRooms;
         return ownedRooms;
       } catch (error) {
@@ -446,6 +446,9 @@ const useRoomsStore = defineStore('rooms', {
 
         // Add to room list
         this.roomList[roomId] = newRoom;
+
+        // Track room creation
+        analyticsService.trackRoomCreated(roomId, roomData.name, currentUser.userId);
 
         return { success: true, roomId, room: newRoom };
       } catch (error) {
