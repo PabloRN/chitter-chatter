@@ -25,6 +25,7 @@
 
 <script setup>
 import { ref, nextTick } from 'vue';
+import isMobile from '@/utils/mobileDetection';
 import useUserStore from '@/stores/user';
 import useMessagesStore from '@/stores/messages';
 
@@ -52,6 +53,18 @@ function talk() {
     userId: getCurrentUser.userId,
   });
   message.value = '';
+
+  // Hide keyboard on mobile/tablet after sending message
+  if (isMobile()) {
+    nextTick(() => {
+      if (refDialog.value && refDialog.value.$el) {
+        const textarea = refDialog.value.$el.querySelector('textarea');
+        if (textarea) {
+          textarea.blur();
+        }
+      }
+    });
+  }
 }
 
 function toggleKeyBoard(e) {

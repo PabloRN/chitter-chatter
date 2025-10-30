@@ -65,7 +65,7 @@
               </div>
 
               <!-- Add Avatar Card -->
-              <div class="avatar-item add-avatar-card" @click="triggerFileUpload">
+              <div class="avatar-item add-avatar-card" @click="triggerFileUpload" :disabled="true">
                 <div class="add-avatar-content">
                   <v-icon size="48" color="primary" class="mb-2">mdi-plus</v-icon>
                   <div class="add-avatar-text">Add Avatar</div>
@@ -184,7 +184,7 @@ const emit = defineEmits(['update:modelValue']);
 const roomsStore = useRoomsStore();
 
 // State
-const activeTab = ref(0);
+const activeTab = ref(1);
 const fileInput = ref(null);
 const roomAvatars = ref([]);
 const preloadedAvatars = ref([]);
