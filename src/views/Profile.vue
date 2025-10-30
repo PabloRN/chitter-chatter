@@ -152,6 +152,87 @@
           </v-card-text>
         </v-card>
 
+        <!-- Subscription Section -->
+        <v-card class="profile-section themed-card d-block" elevation="2">
+          <v-card-title class="section-title">
+            <v-icon class="mr-2">mdi-crown</v-icon>
+            Subscription
+          </v-card-title>
+          <v-card-text>
+            <div class="subscription-info">
+              <!-- Current Tier -->
+              <div class="subscription-tier-display">
+                <div class="tier-badge-container">
+                  <v-chip
+                    :color="subscriptionTierColor"
+                    size="large"
+                    class="tier-badge"
+                    prepend-icon="mdi-star-circle"
+                  >
+                    {{ subscriptionTierName }}
+                  </v-chip>
+                </div>
+                <p v-if="subscriptionData.status" class="subscription-status">
+                  Status: <strong>{{ subscriptionData.status }}</strong>
+                  <span v-if="subscriptionData.cancelAtPeriodEnd" class="cancel-warning">
+                    (Cancels on {{ formatDate(subscriptionData.currentPeriodEnd) }})
+                  </span>
+                </p>
+                <p v-if="subscriptionData.currentPeriodEnd && !subscriptionData.cancelAtPeriodEnd" class="subscription-renewal">
+                  Renews on {{ formatDate(subscriptionData.currentPeriodEnd) }}
+                </p>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="subscription-actions">
+                <!-- Manage Subscription (for paid tiers) -->
+                <v-btn
+                  v-if="subscriptionData.tier !== 'free' && subscriptionData.stripeCustomerId"
+                  color="primary"
+                  variant="flat"
+                  size="large"
+                  prepend-icon="mdi-cog"
+                  @click="manageSubscription"
+                  :loading="loadingPortal"
+                  block
+                  class="mb-3"
+                >
+                  Manage Subscription
+                </v-btn>
+
+                <!-- Upgrade Button (for free or landlord) -->
+                <v-btn
+                  v-if="subscriptionData.tier === 'free' || subscriptionData.tier === 'landlord'"
+                  :color="subscriptionData.tier === 'free' ? 'success' : 'purple'"
+                  variant="outlined"
+                  size="large"
+                  :prepend-icon="subscriptionData.tier === 'free' ? 'mdi-rocket-launch' : 'mdi-arrow-up-bold'"
+                  @click="goToSubscription"
+                  block
+                >
+                  {{ subscriptionData.tier === 'free' ? 'Upgrade to Premium' : 'Upgrade to Creator' }}
+                </v-btn>
+              </div>
+
+              <!-- Feature Summary -->
+              <div class="feature-summary">
+                <div class="feature-item-inline" v-if="subscriptionData.tier === 'free'">
+                  <v-icon size="small" color="grey">mdi-home</v-icon>
+                  <span>1 room</span>
+                </div>
+                <div class="feature-item-inline" v-else-if="subscriptionData.tier === 'landlord'">
+                  <v-icon size="small" color="primary">mdi-home-group</v-icon>
+                  <span>5 rooms, custom backgrounds</span>
+                </div>
+                <div class="feature-item-inline" v-else-if="subscriptionData.tier === 'creator'">
+                  <v-icon size="small" color="purple">mdi-infinity</v-icon>
+                  <span>Unlimited rooms, creator badge</span>
+                </div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+
         <!-- Privacy Settings Section -->
         <v-card class="profile-section themed-card d-block" elevation="2">
           <v-card-title class="section-title">
@@ -347,11 +428,13 @@ import {
 } from 'vue';
 import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
+import useMainStore from '@/stores/main';
+import subscriptionService from '@/services/subscriptionService';
 import ProfileRooms from '@/components/ProfileRooms.vue';
 import AdminPanel from '@/components/AdminPanel.vue';
 import FeedbackDialog from '@/components/FeedbackDialog';
 import {
-  GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
+  getAuth, GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
 import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
 //TODO: Move to a separate file
@@ -386,9 +469,11 @@ const availableProviders = [
 
 const router = useRouter();
 const userStore = useUserStore();
+const mainStore = useMainStore();
 
 // state
 const isEditing = ref(false);
+const loadingPortal = ref(false);
 const showDeleteDialog = ref(false);
 const editedUser = ref({
   nickname: '',
@@ -451,6 +536,31 @@ const nicknameCooldownMessage = computed(() => {
   }
   return 'You can change your nickname again very soon';
 });
+
+// Subscription computed properties
+const subscriptionData = computed(() => {
+  const user = getCurrentUser.value;
+  return {
+    tier: user?.subscription?.tier || user?.subscriptionTier || 'free',
+    status: user?.subscription?.status || 'active',
+    stripeCustomerId: user?.subscription?.stripeCustomerId || null,
+    currentPeriodEnd: user?.subscription?.currentPeriodEnd || null,
+    cancelAtPeriodEnd: user?.subscription?.cancelAtPeriodEnd || false,
+  };
+});
+
+const subscriptionTierName = computed(() => {
+  const tier = subscriptionData.value.tier;
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+});
+
+const subscriptionTierColor = computed(() => {
+  const tier = subscriptionData.value.tier;
+  if (tier === 'creator') return 'purple';
+  if (tier === 'landlord') return 'primary';
+  return 'grey';
+});
+
 // redirect if not authenticated
 onMounted(() => {
 
@@ -605,10 +715,76 @@ const exportData = () => {
 
 const deleteAccount = async () => {
   try {
-    console.log('Delete account clicked');
     showDeleteDialog.value = false;
+    loading.value = true;
+
+    const currentUser = getCurrentUser.value;
+    if (!currentUser) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get Firebase Auth token
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    const idToken = await user.getIdToken();
+
+    // Call deletion Cloud Function
+    const functionUrl = 'https://us-central1-chitter-chatter-f762a.cloudfunctions.net/requestAccountDeletion';
+
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        userId: user.uid,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete account');
+    }
+
+    const result = await response.json();
+
+    // Handle different deletion types
+    if (result.deletionType === 'instant') {
+      // Instant deletion - account deleted immediately
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: result.message || 'Your account has been deleted successfully.',
+      });
+
+      // Sign out and redirect to home
+      setTimeout(() => {
+        userStore.userSignOut();
+      }, 2000);
+    } else if (result.deletionType === 'pending_review') {
+      // Pending review - admin will process
+      mainStore.setSnackbar({
+        type: 'info',
+        msg: result.message || 'Your deletion request has been submitted for review.',
+      });
+
+      // Redirect to home
+      setTimeout(() => {
+        router.push({ name: 'rooms' });
+      }, 3000);
+    }
   } catch (error) {
     console.error('Error deleting account:', error);
+    mainStore.setSnackbar({
+      type: 'error',
+      msg: error.message || 'Failed to delete account. Please try again.',
+    });
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -620,6 +796,38 @@ const handleFeedbackSuccess = () => {
 const handleFeedbackError = (error) => {
   errorMessage.value = `Error submitting feedback: ${error}`;
   showError.value = true;
+};
+
+// Subscription methods
+const manageSubscription = async () => {
+  try {
+    loadingPortal.value = true;
+    mainStore.setSnackbar({
+      type: 'info',
+      msg: 'Opening Stripe Customer Portal...',
+    });
+
+    const portalUrl = await subscriptionService.createPortalSession();
+    window.location.href = portalUrl;
+  } catch (error) {
+    console.error('Error opening portal:', error);
+    mainStore.setSnackbar({
+      type: 'error',
+      msg: error.message || 'Failed to open subscription portal',
+    });
+  } finally {
+    loadingPortal.value = false;
+  }
+};
+
+const goToSubscription = () => {
+  router.push({ name: 'pricing' });
+};
+
+const formatDate = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 </script>
 <style scoped lang="scss">
@@ -939,5 +1147,69 @@ const handleFeedbackError = (error) => {
   font-size: 13px;
   color: var(--text-secondary);
   margin: 0;
+}
+
+/* Subscription Section */
+.subscription-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.subscription-tier-display {
+  text-align: center;
+  padding: 16px;
+  background: var(--background-secondary);
+  border-radius: 12px;
+}
+
+.tier-badge-container {
+  margin-bottom: 12px;
+}
+
+.tier-badge {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  padding: 8px 20px !important;
+  height: auto !important;
+}
+
+.subscription-status {
+  margin: 8px 0 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.cancel-warning {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.subscription-renewal {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.subscription-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feature-summary {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.feature-item-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 </style>
