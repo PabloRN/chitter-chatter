@@ -109,22 +109,17 @@
                       <v-icon>mdi-dots-vertical</v-icon>
                     </v-btn>
                   </template>
-                  <v-list dense>
-                    <v-list-item @click="copyRoomLink(room.id)">
-                      <v-list-item-icon>
-                        <v-icon small>mdi-link</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        <v-list-item-title>Copy Link</v-list-item-title>
-                      </v-list-item-content>
+                  <v-list density="compact">
+                    <v-list-item
+                      @click="copyRoomLink(room.id)"
+                      prepend-icon="mdi-link"
+                      title="Copy Link">
                     </v-list-item>
-                    <v-list-item @click="showDeleteDialog(room)">
-                      <v-list-item-icon>
-                        <v-icon small color="error">mdi-delete</v-icon>
-                      </v-list-item-icon>
-                      <v-list-item-content>
-                        <v-list-item-title class="error--text">Delete</v-list-item-title>
-                      </v-list-item-content>
+                    <v-list-item
+                      @click="showDeleteDialog(room)"
+                      prepend-icon="mdi-delete"
+                      title="Delete"
+                      class="error--text">
                     </v-list-item>
                   </v-list>
                 </v-menu>
@@ -139,16 +134,115 @@
               <v-icon left>mdi-plus</v-icon>
               Create New Room
             </v-btn>
-            <v-alert v-else color="info" class="mt-4">
-              <div class="d-flex align-center">
-                <v-icon class="mr-2">mdi-information</v-icon>
-                <div>
-                  <strong>Room Limit Reached</strong>
-                  <br>
-                  <small>Upgrade to premium to create unlimited rooms</small>
+
+            <!-- Room Limit Reached - Upgrade Options -->
+            <v-card v-else class="upgrade-card" elevation="3">
+              <v-card-title class="upgrade-header">
+                <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+                Room Limit Reached
+              </v-card-title>
+
+              <v-card-text>
+                <p class="text-body-2 mb-4">
+                  You've reached your limit of {{ roomLimit }} room{{ roomLimit === 1 ? '' : 's' }}.
+                  Choose an option below to create more rooms:
+                </p>
+
+                <div class="upgrade-options">
+                  <!-- Quick Purchase Option -->
+                  <v-card class="option-card one-time" elevation="2" @click="handleBuyRoomSlot">
+                    <div class="option-badge">Quick Purchase</div>
+                    <div class="option-content">
+                      <v-icon size="40" color="success" class="mb-2">mdi-home-plus</v-icon>
+                      <h3 class="option-title">Buy 1 Extra Room</h3>
+                      <div class="price">
+                        <span class="price-amount">${{ subscriptionService.ROOM_SLOT_PRICE }}</span>
+                        <span class="price-period">one-time</span>
+                      </div>
+                      <p class="option-description">
+                        Perfect if you just need one more room
+                      </p>
+                      <v-btn
+                        color="success"
+                        block
+                        :loading="purchasingRoomSlot"
+                        class="mt-3"
+                      >
+                        <v-icon left>mdi-cart</v-icon>
+                        Purchase Now
+                      </v-btn>
+                    </div>
+                  </v-card>
+
+                  <!-- Subscription Options -->
+                  <v-card
+                    v-if="userTier === 'free'"
+                    class="option-card subscription"
+                    elevation="2"
+                    @click="goToPricing"
+                  >
+                    <div class="option-badge popular">Most Popular</div>
+                    <div class="option-content">
+                      <v-icon size="40" class="mb-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        mdi-crown
+                      </v-icon>
+                      <h3 class="option-title">Upgrade to Landlord</h3>
+                      <div class="price">
+                        <span class="price-amount">$9.99</span>
+                        <span class="price-period">/month</span>
+                      </div>
+                      <ul class="feature-list">
+                        <li><v-icon small color="success">mdi-check</v-icon> Up to 10 rooms</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> Custom backgrounds</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> Moderation tools</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> No ads</li>
+                      </ul>
+                      <v-btn
+                        color="primary"
+                        block
+                        class="mt-3 gradient-btn"
+                      >
+                        <v-icon left>mdi-diamond-stone</v-icon>
+                        View Plans
+                      </v-btn>
+                    </div>
+                  </v-card>
+
+                  <v-card
+                    v-else-if="userTier === 'landlord'"
+                    class="option-card subscription"
+                    elevation="2"
+                    @click="goToPricing"
+                  >
+                    <div class="option-badge premium">Premium</div>
+                    <div class="option-content">
+                      <v-icon size="40" class="mb-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        mdi-star
+                      </v-icon>
+                      <h3 class="option-title">Upgrade to Creator</h3>
+                      <div class="price">
+                        <span class="price-amount">$29.99</span>
+                        <span class="price-period">/month</span>
+                      </div>
+                      <ul class="feature-list">
+                        <li><v-icon small color="success">mdi-check</v-icon> Unlimited rooms</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> Custom branding</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> API access</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> Revenue sharing</li>
+                      </ul>
+                      <v-btn
+                        color="primary"
+                        block
+                        class="mt-3 gradient-btn"
+                      >
+                        <v-icon left>mdi-diamond-stone</v-icon>
+                        View Plans
+                      </v-btn>
+                    </div>
+                  </v-card>
                 </div>
-              </div>
-            </v-alert>
+              </v-card-text>
+            </v-card>
           </div>
         </div>
       </div>
@@ -200,7 +294,8 @@ import {
 import { useRouter, useRoute } from 'vue-router';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
-import { ROOM_TOPICS, USER_ROOM_LIMITS } from '@/utils/roomTypes';
+import { ROOM_TOPICS, USER_ROOM_LIMITS, calculateTotalRoomLimit } from '@/utils/roomTypes';
+import subscriptionService from '@/services/subscriptionService';
 
 const router = useRouter();
 const route = useRoute();
@@ -215,16 +310,20 @@ const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const purchasingRoomSlot = ref(false);
 
 // Computed
 const ownedRooms = computed(() => roomsStore.getOwnedRooms);
 const canCreateRoom = computed(() => roomsStore.canCreateRoom);
 const roomLimit = computed(() => {
-  // TODO: Check if user is paid when payment system is implemented
   const currentUser = userStore.getCurrentUser;
-  if (currentUser?.isPaid) return USER_ROOM_LIMITS.paid;
-  if (currentUser?.isAdmin) return USER_ROOM_LIMITS.admin;
-  return USER_ROOM_LIMITS.free;
+  return calculateTotalRoomLimit(currentUser);
+});
+
+// Check user's subscription tier to show appropriate upgrade options
+const userTier = computed(() => {
+  const currentUser = userStore.getCurrentUser;
+  return currentUser?.subscriptionTier || 'free';
 });
 
 
@@ -297,6 +396,24 @@ const confirmDelete = async () => {
     showError.value = true;
     errorMessage.value = `Failed to delete room: ${error.message}`;
   }
+};
+
+const handleBuyRoomSlot = async () => {
+  purchasingRoomSlot.value = true;
+  try {
+    const currentUser = userStore.getCurrentUser;
+    const checkoutUrl = await subscriptionService.purchaseRoomSlot(currentUser.userId);
+    // Redirect to Stripe Checkout
+    window.location.href = checkoutUrl;
+  } catch (error) {
+    showError.value = true;
+    errorMessage.value = `Failed to start purchase: ${error.message}`;
+    purchasingRoomSlot.value = false;
+  }
+};
+
+const goToPricing = () => {
+  router.push('/pricing');
 };
 
 // Watchers
@@ -468,6 +585,126 @@ onMounted(() => {
   border-top: 1px solid var(--card-border);
 }
 
+/* Upgrade Card Styles */
+.upgrade-card {
+  border-radius: 12px !important;
+  background-color: var(--card-background) !important;
+  border: 1px solid var(--card-border) !important;
+}
+
+.upgrade-header {
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.upgrade-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.option-card {
+  position: relative;
+  border-radius: 12px !important;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: var(--card-background) !important;
+  border: 2px solid var(--card-border) !important;
+}
+
+.option-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.option-card.one-time:hover {
+  border-color: #4caf50 !important;
+}
+
+.option-card.subscription:hover {
+  border-color: #667eea !important;
+}
+
+.option-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #2196f3;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.option-badge.popular {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.option-badge.premium {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.option-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.option-title {
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.price {
+  margin: 16px 0;
+}
+
+.price-amount {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.price-period {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-left: 4px;
+}
+
+.option-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 12px 0;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  text-align: left;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.gradient-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .rooms-grid {
@@ -478,6 +715,14 @@ onMounted(() => {
     top: 4px;
     right: 4px;
     left: 4px;
+  }
+
+  .upgrade-options {
+    grid-template-columns: 1fr;
+  }
+
+  .option-card {
+    margin-bottom: 12px;
   }
 }
 

@@ -8,6 +8,7 @@ import RoomForm from '@/components/RoomForm';
 import AuthAction from '@/views/AuthAction';
 import ServicesTest from '@/views/ServicesTest';
 import LegalDocument from '@/views/LegalDocument';
+import Subscription from '@/views/Subscription';
 import { adminGuard } from '@/utils/adminAuth';
 
 const routes = [
@@ -20,6 +21,11 @@ const routes = [
     path: '/rooms',
     name: 'rooms',
     component: Rooms,
+  },
+  {
+    path: '/pricing',
+    name: 'pricing',
+    component: Subscription,
   },
   {
     path: '/acctmgmt/__/auth/action',

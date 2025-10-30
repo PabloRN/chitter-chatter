@@ -48,12 +48,59 @@ export const DEFAULT_ROOM_VALUES = {
   createdBy: '',
 };
 
-// Room creation limits
+// Room creation limits by tier
 export const USER_ROOM_LIMITS = {
   free: 1,
-  paid: 10, // -1 means unlimited
-  admin: 100, // -1 means unlimited
+  landlord: 10,
+  creator: -1, // -1 means unlimited
+  admin: 100,
 };
+
+// One-time room purchase pricing
+export const ROOM_SLOT_PRICE = 4.99;
+
+/**
+ * Calculate total room limit for a user
+ * @param {Object} user - User object from store
+ * @returns {number} Total allowed rooms (-1 for unlimited)
+ */
+export function calculateTotalRoomLimit(user) {
+  if (!user) return USER_ROOM_LIMITS.free;
+
+  // Admin gets admin limit
+  if (user.isAdmin) return USER_ROOM_LIMITS.admin;
+
+  // Get base limit from subscription tier
+  let baseLimit = USER_ROOM_LIMITS.free;
+
+  if (user.subscriptionTier === 'creator' || user.isCreator) {
+    return -1; // Unlimited for creator tier
+  }
+
+  if (user.subscriptionTier === 'landlord') {
+    baseLimit = USER_ROOM_LIMITS.landlord;
+  }
+
+  // Add purchased room slots
+  const purchasedSlots = user.purchasedRoomSlots || 0;
+
+  return baseLimit + purchasedSlots;
+}
+
+/**
+ * Check if user can create more rooms
+ * @param {Object} user - User object
+ * @param {number} currentRoomCount - Number of rooms user currently owns
+ * @returns {boolean} True if user can create more rooms
+ */
+export function canCreateRoom(user, currentRoomCount) {
+  const limit = calculateTotalRoomLimit(user);
+
+  // Unlimited rooms
+  if (limit === -1) return true;
+
+  return currentRoomCount < limit;
+}
 
 export function createRoom(data = {}) {
   return {

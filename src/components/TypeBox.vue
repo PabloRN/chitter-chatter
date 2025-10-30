@@ -85,6 +85,22 @@ export default {
       });
 
       this.message = '';
+
+      // Hide keyboard on mobile/tablet after sending message
+      if (isMobile()) {
+        // Blur the input to hide the keyboard
+        if (this.$refs.refDialog && this.$refs.refDialog.$el) {
+          const input = this.$refs.refDialog.$el.querySelector('input');
+          if (input) {
+            input.blur();
+          }
+        }
+
+        // Also hide the typebox on mobile
+        this.$nextTick(() => {
+          this.hideKeyboard = true;
+        });
+      }
     },
     toggleKeyBoard(e) {
       e.preventDefault();

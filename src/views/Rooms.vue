@@ -8,10 +8,17 @@
 
       <v-spacer></v-spacer>
 
-      <!-- Feedback button -->
-      <v-btn icon class="mr-2" @click="showFeedbackDialog = true" title="Send Feedback">
-        <v-icon>mdi-message-alert-outline</v-icon>
-      </v-btn>
+      <!-- Navigation Links -->
+      <div class="nav-links">
+        <v-btn text class="nav-link" @click="goToPricing">
+          <v-icon left size="small">mdi-diamond-stone</v-icon>
+          Pricing
+        </v-btn>
+        <v-btn text class="nav-link feedback-btn" @click="showFeedbackDialog = true">
+          <v-icon left size="small">mdi-message-text-outline</v-icon>
+          Feedback
+        </v-btn>
+      </div>
 
       <!-- TODO: create component -->
       <!-- Authentication buttons for non-authenticated users -->
@@ -157,6 +164,7 @@ import {
   ref, computed, watch, onMounted, onBeforeUnmount, nextTick,
 } from 'vue';
 import { useRouter } from 'vue-router';
+import { getAuth } from 'firebase/auth';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 import useMainStore from '@/stores/main';
@@ -187,9 +195,31 @@ const getAllRooms = computed(() => roomsStore.getAllRooms);
 const roomList = computed(() => roomsStore.roomList);
 const usersOnlineNow = computed(() => roomsStore.usersOnlineNow);
 const getCurrentUser = computed(() => userStore.getCurrentUser);
-const isUserAuthenticated = computed(
-  () => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous,
-);
+const isUserAuthenticated = computed(() => {
+  // Check 1: Store state (DB-derived)
+  const hasUserId = !!userStore.currentUser?.userId;
+  const isNotAnonymousInStore = !userStore.currentUser?.isAnonymous;
+
+  // Check 2: Firebase Auth state (direct check)
+  const auth = getAuth();
+  const authUser = auth.currentUser;
+  const isAuthenticatedInAuth = authUser && !authUser.isAnonymous;
+
+  // Return true only if BOTH checks pass
+  // This prevents edge cases where DB shows isAnonymous=true but Auth shows authenticated
+  const result = hasUserId && isNotAnonymousInStore && isAuthenticatedInAuth;
+
+  // Debug logging (can be removed after testing)
+  if (hasUserId && (isNotAnonymousInStore !== isAuthenticatedInAuth)) {
+    console.warn('⚠️ Auth state mismatch detected:', {
+      storeIsAnonymous: userStore.currentUser?.isAnonymous,
+      authIsAnonymous: authUser?.isAnonymous,
+      userId: userStore.currentUser?.userId,
+    });
+  }
+
+  return result;
+});
 
 // Netflix-style room sections - simplified approach with just IDs
 const myRoomIds = computed(() => {
@@ -232,6 +262,10 @@ function getRandomFlexBasis() {
 
 function goToProfile() {
   router.push({ name: 'profile' });
+}
+
+function goToPricing() {
+  router.push({ name: 'pricing' });
 }
 
 function goToNotifications() {
@@ -493,6 +527,37 @@ div#default_avatar_character_12345 .avatar-image {
   color: #fff;
   padding: 10px;
   text-align: center;
+}
+
+/* Navigation Links */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 16px;
+}
+
+.nav-link {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  transition: all 0.2s ease !important;
+  border-radius: 8px !important;
+}
+
+.nav-link:hover {
+  /* background: rgba(0, 0, 0, 0.05) !important;
+  transform: translateY(-1px); */
+  color: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.nav-link .v-icon {
+  margin-right: 4px;
+  color: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.feedback-btn {
+  color: var(--v-primary-base) !important;
 }
 
 /* Authentication and Profile Styles */
