@@ -13,7 +13,7 @@ import {
   // EmailAuthProvider,
 } from 'firebase/auth';
 import {
-  getDatabase, ref, set, update, onValue, off, get, onDisconnect,
+  getDatabase, ref, set, update, onValue, off, get, onDisconnect, serverTimestamp,
 } from 'firebase/database';
 // import {
 //   getStorage, ref as storageRef, getDownloadURL, uploadBytes,
@@ -63,12 +63,29 @@ const useUserStore = defineStore('user', {
       onlineState: true,
       status: 'online',
       isAnonymous: true,
+      createdAt: null, // Timestamp of user creation (for cleanup purposes)
+      lastOnlineAt: null, // Timestamp when user came online (session start)
+      lastOnline: null, // Timestamp when user went offline (for cleanup)
+      currentSessionStart: null, // Current session start timestamp
+      totalOnlineTime: 0, // Total seconds online (for awards/gamification)
       favoriteRooms: [],
       ownedRooms: [],
       blocked: {},
       blockedBy: {},
       isActive: true,
       isCreator: false,
+      subscriptionTier: 'free',
+      purchasedRoomSlots: 0, // Number of extra room slots purchased
+      roomSlotPurchases: {}, // History of room slot purchases
+      subscription: {
+        tier: 'free',
+        status: 'active',
+        stripeCustomerId: null,
+        stripePriceId: null,
+        stripeSubscriptionId: null,
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+      },
       privacySettings: {
         showAvatar: true,
         showNickname: true,
@@ -90,6 +107,21 @@ const useUserStore = defineStore('user', {
       const user = this.getCurrentUser;
       return user?.providerData?.map((p) => p.providerId) || [];
     },
+    subscriptionTier: (state) => state.currentUser?.subscriptionTier || 'free',
+    subscriptionStatus: (state) => state.currentUser?.subscription || {
+      tier: 'free',
+      status: 'active',
+      stripeCustomerId: null,
+      stripePriceId: null,
+      stripeSubscriptionId: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+    },
+    isPremiumUser: (state) => {
+      const tier = state.currentUser?.subscriptionTier || 'free';
+      return tier === 'landlord' || tier === 'creator';
+    },
+    isCreatorUser: (state) => state.currentUser?.subscriptionTier === 'creator',
   },
 
   actions: {
@@ -312,11 +344,23 @@ const useUserStore = defineStore('user', {
             // 🟢 Always seed anon with fresh data
             const uidSnippet = user.uid.substring(0, 4);
             const nickname = `anon_${uidSnippet}`;
+
+            // Exclude subscription-related fields for anonymous users
+            const {
+              subscriptionTier,
+              subscription,
+              purchasedRoomSlots,
+              roomSlotPurchases,
+              isCreator,
+              ...baseUserFields
+            } = this.initialUser;
+
             const anonUser = {
-              ...this.initialUser,
+              ...baseUserFields,
               nickname,
               userId: user.uid,
               isAnonymous: true,
+              createdAt: serverTimestamp(), // For cleanup purposes
             };
 
             await set(userRef, anonUser);
@@ -324,6 +368,7 @@ const useUserStore = defineStore('user', {
             onDisconnect(userRef).update({
               onlineState: false,
               status: 'offline',
+              lastOnline: serverTimestamp(),
             });
           } else {
             // 🧹 Step 1: clean up the old anon
@@ -346,14 +391,19 @@ const useUserStore = defineStore('user', {
                 isAnonymous: false,
                 status: 'online',
                 onlineState: true,
+                lastOnlineAt: serverTimestamp(),
+                currentSessionStart: serverTimestamp(),
               };
               await set(userRef, newUser);
+              console.log('✅ Created new authenticated user in database');
             } else {
               // 🔄 Existing real user → just update presence/status
               const updates = {
                 onlineState: true,
                 status: 'online',
                 isAnonymous: false,
+                lastOnlineAt: serverTimestamp(),
+                currentSessionStart: serverTimestamp(),
               };
 
               const existingUser = userSnapshot.val();
@@ -362,12 +412,27 @@ const useUserStore = defineStore('user', {
               }
 
               await update(userRef, updates);
+              console.log('✅ Updated existing authenticated user in database');
+
+              // 🔍 FORCE DB CHECK: Verify isAnonymous was actually updated
+              // This fixes race condition where DB might still show isAnonymous: true
+              const verifySnapshot = await get(userRef);
+              const verifiedData = verifySnapshot.val();
+
+              if (verifiedData?.isAnonymous === true) {
+                console.warn('⚠️ RACE CONDITION DETECTED: DB still shows isAnonymous=true, forcing update...');
+                await update(userRef, { isAnonymous: false });
+                console.log('✅ Force updated isAnonymous to false');
+              } else {
+                console.log('✅ Verified: isAnonymous correctly set to', verifiedData?.isAnonymous);
+              }
             }
 
             // Step 3: attach disconnect for real user
             onDisconnect(userRef).update({
               onlineState: false,
               status: 'offline',
+              lastOnline: serverTimestamp(),
             });
           }
 
@@ -663,12 +728,41 @@ const useUserStore = defineStore('user', {
 
         // Cleanup anonymous user data from database
         try {
-          await set(ref(db, `users/${anonymousUser.uid}`), null);
+          // IMPORTANT: Cancel onDisconnect handler BEFORE deleting user
+          // This prevents creating ghost users when disconnect fires after deletion
+          const anonymousUserRef = ref(db, `users/${anonymousUser.uid}`);
+          await onDisconnect(anonymousUserRef).cancel();
+          console.log('✅ Cancelled onDisconnect handler for anonymous user');
+
+          await set(anonymousUserRef, null);
+          console.log('✅ Deleted anonymous user from database');
         } catch (cleanupError) {
           console.warn('Anonymous user database cleanup failed, but upgrade completed:', cleanupError);
         }
 
         console.log('✅ Anonymous user upgrade completed successfully');
+
+        // 🔄 FORCE REFRESH: Re-read user data to ensure UI updates immediately
+        // This prevents race conditions where onValue listener might fire before upgrade completes
+        try {
+          const refreshSnapshot = await get(ref(db, `users/${loggedUser.uid}`));
+          const refreshedData = refreshSnapshot.val();
+
+          if (refreshedData) {
+            console.log('🔄 Force refreshing user data from database...');
+            console.log('   - isAnonymous:', refreshedData.isAnonymous);
+            console.log('   - userId:', refreshedData.userId);
+
+            // Force update store with refreshed data
+            this.setCurrentUser({ data: refreshedData, userId: loggedUser.uid });
+            console.log('✅ Store updated with refreshed user data');
+          } else {
+            console.warn('⚠️ Could not refresh user data - user not found in database');
+          }
+        } catch (refreshError) {
+          console.warn('⚠️ Error refreshing user data:', refreshError);
+          // Non-fatal error - upgrade still succeeded
+        }
       } catch (error) {
         console.error('❌ Error during anonymous user upgrade:', error);
         throw error;
@@ -719,25 +813,29 @@ const useUserStore = defineStore('user', {
 
       const uiConfig = {
         callbacks: {
-          signInSuccessWithAuthResult: (authResult) => {
+          signInSuccessWithAuthResult: async (authResult) => {
             const { user } = authResult;
 
             // Only upgrade if the previous user was anonymous
             if (anonymousUser && anonymousUser.isAnonymous && user.uid !== anonymousUser.uid) {
-              // Queue upgrade to happen asynchronously AFTER popup closes
-              setTimeout(() => {
-                this.handleAnonymousUserUpgrade(anonymousUser, user, roomId).then(() => {
-                  if (authResult && !authResult.user.isAnonymous) {
-                    this.userUpgraded({
-                      verifiedUser: authResult.user.uid,
-                      unverifiedUser: anonymousUser.uid,
-                      isCurrent: true,
-                    });
-                  }
-                }).catch((error) => {
-                  console.error('Error during anonymous user upgrade:', error);
-                });
-              }, 0);
+              try {
+                console.log('🔄 Starting anonymous user upgrade in FirebaseUI callback...');
+
+                // Wait for upgrade to complete (replaced setTimeout with await)
+                await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
+
+                if (authResult && !authResult.user.isAnonymous) {
+                  this.userUpgraded({
+                    verifiedUser: authResult.user.uid,
+                    unverifiedUser: anonymousUser.uid,
+                    isCurrent: true,
+                  });
+                }
+
+                console.log('✅ FirebaseUI callback: Upgrade completed successfully');
+              } catch (error) {
+                console.error('❌ Error during anonymous user upgrade in FirebaseUI callback:', error);
+              }
             }
 
             return false; // prevent redirect - popup will close immediately
