@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2025-10-30
+
+### ✨ Features
+
+- enhance room types and component features ([3fe9ff5])
+- add online time tracking and fix user upgrade issues ([261f90b])
+- implement self-service account deletion with admin review ([a16d14f])
+- add Stripe subscription system with tier management ([5c6e243])
+
+### 🐛 Bug Fixes
+
+- migrate ProfileRooms to Vuetify 3 syntax ([be2aa91])
+- improve anonymous user cleanup and ghost user detection ([dbf74e4])
+
+### 📝 Documentation
+
+- add comprehensive setup and testing guides ([01c7662])
+
+### 🔧 Chore
+
+- update favicon location ([73f8b84])
+
+### 📦 Other Changes
+
+- add release notes 0.21.0 ([3f46994])
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [0.21.0] - 2025-10-14
 
 ### 📦 Other Changes
