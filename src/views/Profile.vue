@@ -360,7 +360,7 @@
             Account Actions
           </v-card-title>
           <v-card-text>
-            <!-- <div class="linked-accounts">
+            <div class="linked-accounts">
               <template v-for="provider in availableProviders" :key="provider.id">
                 <v-btn small outlined :color="linkedProviders.includes(provider.id) ? 'success' : 'primary'"
                   class="mr-2 mb-2" :disabled="linkedProviders.includes(provider.id) && linkedProviders.length === 1"
@@ -370,11 +370,11 @@
                   <v-icon v-if="linkedProviders.includes(provider.id)" class="ml-1">mdi-check</v-icon>
                 </v-btn>
               </template>
-</div> -->
-            <!-- <small v-if="linkedProviders.length === 1 && getCurrentUser?.providerData?.length === 1"
+            </div>
+            <small v-if="linkedProviders.length === 1 && getCurrentUser?.providerData?.length === 1"
               class="text-caption">
               You must keep at least one linked account
-            </small> -->
+            </small>
             <v-btn outlined color="primary" class="action-btn" @click="exportData">
               <v-icon class="mr-2">mdi-download</v-icon>
               Export My Data
@@ -612,7 +612,7 @@ const remove = (item) => {
 
 const linkAccount = async (providerId) => {
   try {
-    const auth = userStore.getAuthInstance();
+    const auth = getAuth();
     const providerObj = availableProviders.find((p) => p.id === providerId)?.provider;
     if (!providerObj) throw new Error('Provider not configured');
 
@@ -627,7 +627,7 @@ const linkAccount = async (providerId) => {
 // Unlink provider
 const unlinkAccount = async (providerId) => {
   try {
-    const auth = userStore.getAuthInstance();
+    const auth = getAuth();
     if (linkedProviders.value.length <= 1) {
       console.warn('Cannot unlink the last provider');
       return;

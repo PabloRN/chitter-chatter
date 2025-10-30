@@ -40,6 +40,11 @@ const { cleanupArchivedUsers } = require('./src/deletion/cleanupArchivedUsers');
 const { approvePendingDeletion } = require('./src/deletion/approvePendingDeletion');
 
 // ============================================================================
+// ADMIN FUNCTIONS - Import from src/admin/
+// ============================================================================
+const { recreateUser } = require('./src/admin/recreateUser');
+
+// ============================================================================
 // EXPORTS - Export all functions
 // ============================================================================
 
@@ -68,3 +73,6 @@ exports.trackOnlineTime = trackOnlineTime;
 exports.requestAccountDeletion = requestAccountDeletion;
 exports.cleanupArchivedUsers = cleanupArchivedUsers;
 exports.approvePendingDeletion = approvePendingDeletion;
+
+// Admin Functions
+exports.recreateUser = recreateUser;
