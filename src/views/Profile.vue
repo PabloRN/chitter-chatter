@@ -350,8 +350,20 @@
         <!-- My Rooms Section -->
         <ProfileRooms />
 
-        <!-- Admin Panel (Only for Admin Users) -->
-        <AdminPanel v-if="getCurrentUser?.isAdmin" />
+        <!-- Admin Dashboard Link (Only for Admin Users) -->
+        <v-card v-if="getCurrentUser?.isAdmin" class="profile-section themed-card" elevation="2">
+          <v-card-title class="section-title">
+            <v-icon class="mr-2" color="error">mdi-shield-crown</v-icon>
+            Admin Dashboard
+          </v-card-title>
+          <v-card-text>
+            <p class="mb-4">Access the admin dashboard to manage assets, users, and system settings.</p>
+            <v-btn color="error" variant="outlined" size="large" @click="goToAdmin" block>
+              <v-icon class="mr-2">mdi-cog</v-icon>
+              Open Admin Dashboard
+            </v-btn>
+          </v-card-text>
+        </v-card>
 
         <!-- Actions Section -->
         <v-card v-if="!getCurrentUser?.isAnonymous" class="profile-section themed-card" elevation="2">
@@ -431,7 +443,6 @@ import useUserStore from '@/stores/user';
 import useMainStore from '@/stores/main';
 import subscriptionService from '@/services/subscriptionService';
 import ProfileRooms from '@/components/ProfileRooms.vue';
-import AdminPanel from '@/components/AdminPanel.vue';
 import FeedbackDialog from '@/components/FeedbackDialog';
 import {
   getAuth, GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
@@ -640,6 +651,10 @@ const unlinkAccount = async (providerId) => {
   }
 };
 const goBack = () => router.go(-1);
+
+const goToAdmin = () => {
+  router.push({ name: 'admin' });
+};
 
 const saveProfile = async () => {
   try {

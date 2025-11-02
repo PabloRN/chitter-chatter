@@ -43,6 +43,24 @@
 
           <v-list class="profile-dropdown">
             <v-list-item prepend-icon="mdi-account" title="Profile" @click="goToProfile" />
+
+            <!-- Admin Dashboard (Only for Admin Users) -->
+            <v-list-item
+              v-if="getCurrentUser?.isAdmin"
+              prepend-icon="mdi-shield-crown"
+              title="Admin Dashboard"
+              @click="goToAdmin"
+              class="admin-menu-item"
+            >
+              <template #prepend>
+                <v-icon color="error">mdi-shield-crown</v-icon>
+              </template>
+              <template #title>
+                <span class="text-error font-weight-medium">Admin Dashboard</span>
+              </template>
+            </v-list-item>
+            <v-divider v-if="getCurrentUser?.isAdmin"></v-divider>
+
             <v-list-item prepend-icon="mdi-bell" title="Notifications" @click="goToNotifications" />
             <v-list-item prepend-icon="mdi-heart" title="Favorites" @click="goToFavorites" />
             <v-divider></v-divider>
@@ -262,6 +280,10 @@ function getRandomFlexBasis() {
 
 function goToProfile() {
   router.push({ name: 'profile' });
+}
+
+function goToAdmin() {
+  router.push({ name: 'admin' });
 }
 
 function goToPricing() {
