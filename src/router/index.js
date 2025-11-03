@@ -6,7 +6,6 @@ import Room from '@/views/Room';
 import Profile from '@/views/Profile';
 import RoomForm from '@/components/RoomForm';
 import AuthAction from '@/views/AuthAction';
-import ServicesTest from '@/views/ServicesTest';
 import LegalDocument from '@/views/LegalDocument';
 import Subscription from '@/views/Subscription';
 import { adminGuard } from '@/utils/adminAuth';
@@ -63,18 +62,9 @@ const routes = [
     meta: { docType: 'data-deletion' },
   },
   {
-    path: '/test/services',
-    name: 'services-test',
-    component: ServicesTest,
-    beforeEnter: adminGuard,
-    meta: {
-      requiresAdmin: true,
-    },
-  },
-  {
-    path: '/admin/auth/test',
-    name: 'admin-auth-test',
-    component: AuthAction,
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/Admin'),
     beforeEnter: adminGuard,
     meta: {
       requiresAdmin: true,

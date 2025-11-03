@@ -427,10 +427,12 @@ export function useEmailManagement() {
    */
   const storeEmailForSignIn = (email) => {
     try {
+      // Normalize email to lowercase for better matching (Yahoo, Gmail, etc.)
+      const normalizedEmail = email.trim().toLowerCase();
       // Simple localStorage storage for cross-tab sharing
-      localStorage.setItem('emailForSignIn', email);
-      storedEmail.value = email;
-      console.log('📧 Email stored for cross-tab sign-in');
+      localStorage.setItem('emailForSignIn', normalizedEmail);
+      storedEmail.value = normalizedEmail;
+      console.log('📧 Email stored for cross-tab sign-in (normalized):', normalizedEmail);
     } catch (error) {
       console.error('Error storing email:', error);
     }
@@ -448,9 +450,11 @@ export function useEmailManagement() {
       console.log('📧 Checking emailForSignIn:', email);
 
       if (email) {
-        storedEmail.value = email;
-        console.log('✅ Email found in new format:', email);
-        return email;
+        // Normalize to lowercase for consistency
+        const normalizedEmail = email.trim().toLowerCase();
+        storedEmail.value = normalizedEmail;
+        console.log('✅ Email found in new format (normalized):', normalizedEmail);
+        return normalizedEmail;
       }
 
       // Fallback to old format for backward compatibility
@@ -467,9 +471,11 @@ export function useEmailManagement() {
             console.log('⚠️ Old format email expired, but using it anyway for better UX');
           }
 
-          storedEmail.value = parsedData.email;
-          console.log('✅ Email found in old format:', parsedData.email);
-          return parsedData.email;
+          // Normalize to lowercase for consistency
+          const normalizedEmail = parsedData.email.trim().toLowerCase();
+          storedEmail.value = normalizedEmail;
+          console.log('✅ Email found in old format (normalized):', normalizedEmail);
+          return normalizedEmail;
         }
       }
 

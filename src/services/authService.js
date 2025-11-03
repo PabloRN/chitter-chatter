@@ -305,11 +305,13 @@ class AuthService {
       'auth/expired-action-code': 'The link has expired. Please request a new one.',
       'auth/weak-password': 'Password is too weak. Please choose a stronger password.',
       'auth/email-already-in-use': 'An account with this email already exists.',
-      'auth/invalid-email': 'Please enter a valid email address.',
+      'auth/invalid-email': 'The email address provided does not match this sign-in link. Please enter the exact email address you used to request the link (case-insensitive).',
       'auth/user-disabled': 'This account has been disabled.',
       'auth/user-not-found': 'No account found with this email.',
       'auth/wrong-password': 'Incorrect password.',
       'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
+      'auth/argument-error': 'The email address does not match the link. Please double-check your email.',
+      'auth/invalid-credential': 'The sign-in credentials are invalid or have expired. Please request a new sign-in link.',
     };
 
     return {

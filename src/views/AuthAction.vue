@@ -307,11 +307,14 @@ const handleEmailSubmit = async () => {
   try {
     isProcessing.value = true;
 
-    // Store email for future use
-    storeEmailForSignIn(emailInput.value);
+    // Normalize email to lowercase for better matching (especially for Yahoo, Gmail, etc.)
+    const normalizedEmail = emailInput.value.trim().toLowerCase();
 
-    // Perform sign-in
-    const result = await handleEmailLink(emailInput.value, currentUrl.value);
+    // Store email for future use
+    storeEmailForSignIn(normalizedEmail);
+
+    // Perform sign-in with normalized email
+    const result = await handleEmailLink(normalizedEmail, currentUrl.value);
 
     // Handle success
     needsEmailInput.value = false;

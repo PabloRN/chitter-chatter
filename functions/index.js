@@ -43,6 +43,7 @@ const { approvePendingDeletion } = require('./src/deletion/approvePendingDeletio
 // ADMIN FUNCTIONS - Import from src/admin/
 // ============================================================================
 const { recreateUser } = require('./src/admin/recreateUser');
+const { getAllUsers } = require('./src/admin/getAllUsers');
 
 // ============================================================================
 // EXPORTS - Export all functions
@@ -76,3 +77,4 @@ exports.approvePendingDeletion = approvePendingDeletion;
 
 // Admin Functions
 exports.recreateUser = recreateUser;
+exports.getAllUsers = getAllUsers;
