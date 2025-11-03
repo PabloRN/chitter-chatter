@@ -285,6 +285,7 @@ class TabCommunicationService {
 
       chitterKeys.forEach((key) => {
         const stored = sessionStorage.getItem(key);
+        console.log('stored', stored);
         if (stored) {
           const storageData = JSON.parse(stored);
           if (Date.now() > storageData.expires) {

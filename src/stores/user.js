@@ -770,8 +770,13 @@ const useUserStore = defineStore('user', {
     },
 
     async setFirebaseUiInstance(roomId) {
+      console.log('🚀 [INIT] setFirebaseUiInstance called with roomId:', roomId);
+
       const auth = getAuth();
       const anonymousUser = auth.currentUser;
+
+      console.log('👤 [INIT] Current anonymous user:', anonymousUser?.uid);
+      console.log('🔒 [INIT] Is anonymous:', anonymousUser?.isAnonymous);
 
       // Reset the signingInUpgraded state to ensure watchers can detect the change
       this.signingInUpgraded = false;
@@ -779,9 +784,12 @@ const useUserStore = defineStore('user', {
       const ui = window.firebaseui.auth.AuthUI.getInstance()
         || new window.firebaseui.auth.AuthUI(window.firebase.auth());
 
+      console.log('🎨 [INIT] FirebaseUI instance created/retrieved');
+
       // Store anonymous user ID for potential cross-tab communication
       if (anonymousUser?.uid) {
         window.localStorage.setItem('anonymousUserForUpgrade', anonymousUser.uid);
+        console.log('💾 [INIT] Stored anonymous user ID for upgrade:', anonymousUser.uid);
       }
 
       // Store original tab context for return navigation
@@ -799,17 +807,36 @@ const useUserStore = defineStore('user', {
       window.sessionStorage.setItem('authOriginalTabContext', JSON.stringify(originalTabContext));
       console.log('🏠 Stored original tab context:', originalTabContext);
 
-      // Override sendSignInLinkToEmail to capture email for cross-tab communication
-      const firebaseAuth = window.firebase.auth();
-      const originalSendSignInLinkToEmail = firebaseAuth.sendSignInLinkToEmail.bind(firebaseAuth);
+      // Override sendSignInLinkToEmail on the Firebase Auth prototype
+      // This ensures ALL instances will use our override
+      const firebaseAuthPrototype = Object.getPrototypeOf(window.firebase.auth());
+      if (!firebaseAuthPrototype._originalSendSignInLinkToEmail) {
+        console.log('🔧 Installing sendSignInLinkToEmail prototype override...');
 
-      firebaseAuth.sendSignInLinkToEmail = function (email, actionCodeSettings) {
-        // Store email in localStorage for cross-tab access
-        window.localStorage.setItem('emailForSignIn', email);
+        // Store original method
+        firebaseAuthPrototype._originalSendSignInLinkToEmail = firebaseAuthPrototype.sendSignInLinkToEmail;
 
-        // Call the original method
-        return originalSendSignInLinkToEmail(email, actionCodeSettings);
-      };
+        // Override the method
+        firebaseAuthPrototype.sendSignInLinkToEmail = function (email, actionCodeSettings) {
+          console.log('🔐 [PROTOTYPE OVERRIDE] sendSignInLinkToEmail called with email:', email);
+
+          try {
+            // Store email in localStorage for cross-tab access
+            window.localStorage.setItem('emailForSignIn', email);
+            console.log('✅ [PROTOTYPE OVERRIDE] Email stored in localStorage:', window.localStorage.getItem('emailForSignIn'));
+          } catch (error) {
+            console.error('❌ [PROTOTYPE OVERRIDE] Error storing email in localStorage:', error);
+          }
+
+          // Call the original method
+          console.log('📤 [PROTOTYPE OVERRIDE] Calling original sendSignInLinkToEmail');
+          return firebaseAuthPrototype._originalSendSignInLinkToEmail.call(this, email, actionCodeSettings);
+        };
+
+        console.log('✅ sendSignInLinkToEmail prototype override installed');
+      } else {
+        console.log('ℹ️ sendSignInLinkToEmail prototype override already installed');
+      }
 
       const uiConfig = {
         callbacks: {
@@ -841,18 +868,32 @@ const useUserStore = defineStore('user', {
             return false; // prevent redirect - popup will close immediately
           },
           uiShown() {
+            console.log('👁️ [CALLBACK] FirebaseUI shown');
+            console.log('📦 [CALLBACK] Current localStorage emailForSignIn:', window.localStorage.getItem('emailForSignIn'));
+
             const loader = document.getElementById('loader');
-            if (loader) loader.style.display = 'none';
+            if (loader) {
+              loader.style.display = 'none';
+              console.log('🔄 [CALLBACK] Loader hidden');
+            }
           },
           signInFailure: async (error) => {
+            console.log('❌ [CALLBACK] signInFailure called');
+            console.log('🔍 [CALLBACK] Error code:', error.code);
+            console.log('🔍 [CALLBACK] Error message:', error.message);
+
             if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
               return Promise.resolve();
             }
+
+            console.log('🔄 [CALLBACK] Handling anonymous upgrade merge conflict...');
 
             const cred = error.credential;
             try {
               const userCredential = await signInWithCredential(auth, cred);
               const { user } = userCredential;
+
+              console.log('✅ [CALLBACK] Successfully signed in with credential:', user.uid);
 
               // Call handleAnonymousUserUpgrade with the user
               await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
@@ -863,9 +904,11 @@ const useUserStore = defineStore('user', {
                 isCurrent: true,
               });
 
+              console.log('✅ [CALLBACK] Merge conflict resolved successfully');
+
               return Promise.resolve();
             } catch (err) {
-              console.error('Error in signInFailure:', err);
+              console.error('❌ [CALLBACK] Error in signInFailure:', err);
               return Promise.reject(err);
             }
           },
@@ -897,7 +940,43 @@ const useUserStore = defineStore('user', {
         privacyPolicyUrl: 'https://toonstalk.com/privacy',
       };
 
+      console.log('🎬 [INIT] Starting FirebaseUI with config...');
       ui.start('#firebaseui-auth-container', uiConfig);
+      console.log('✅ [INIT] FirebaseUI started successfully');
+
+      // FALLBACK: Capture email from FirebaseUI DOM as backup
+      // This ensures we catch the email even if the override doesn't work
+      setTimeout(() => {
+        console.log('🔍 Setting up DOM-based email capture fallback...');
+
+        const container = document.getElementById('firebaseui-auth-container');
+        if (container) {
+          // Monitor for form submissions using event delegation
+          container.addEventListener('submit', () => {
+            console.log('📝 [DOM FALLBACK] Form submission detected');
+
+            // Find email input in the form
+            const emailInput = container.querySelector('input[type="email"]');
+            if (emailInput && emailInput.value) {
+              const email = emailInput.value.trim();
+              console.log('📧 [DOM FALLBACK] Captured email from input:', email);
+
+              try {
+                window.localStorage.setItem('emailForSignIn', email);
+                console.log('✅ [DOM FALLBACK] Email stored in localStorage:', window.localStorage.getItem('emailForSignIn'));
+              } catch (error) {
+                console.error('❌ [DOM FALLBACK] Error storing email:', error);
+              }
+            } else {
+              console.warn('⚠️ [DOM FALLBACK] No email input found or empty value');
+            }
+          }, true); // Use capture phase to ensure we catch it early
+
+          console.log('✅ DOM-based email capture fallback installed');
+        } else {
+          console.error('❌ Could not find firebaseui-auth-container for DOM fallback');
+        }
+      }, 100);
 
       // Customize button text after FirebaseUI renders
       setTimeout(() => {

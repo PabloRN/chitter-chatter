@@ -9,6 +9,7 @@ module.exports = {
     // '@vue/typescript',
   ],
   rules: {
+    'no-underscore-dangle': ['error', { allow: ['_originalSendSignInLinkToEmail'] }],
     'no-console': 'off',
     'no-debugger': process.env.NODE_ENV === 'prod' ? 'error' : 'off',
     'max-len': [2, 200],
