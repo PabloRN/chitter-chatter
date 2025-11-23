@@ -46,27 +46,36 @@
           <v-row class="mb-4">
             <v-col cols="12" sm="6">
               <v-text-field v-model.number="formData.maxUsers" :rules="maxUsersRules" label="Max Users" type="number"
-                hint="Maximum users allowed" persistent-hint outlined dense :min="2" :max="30" />
+                :hint="`Maximum users allowed (up to ${maxUsersAllowed})`" persistent-hint outlined dense :min="2"
+                :max="maxUsersAllowed" />
             </v-col>
             <v-col cols="12" sm="6">
-
             </v-col>
           </v-row>
 
           <v-switch v-model="formData.minAge" label="+18" color="primary"
             hint="Sexual content is not allowed but you may want only +18 visitors" persistent-hint class="mb-4" />
+
           <!-- Private Room Toggle -->
-          <v-switch v-model="formData.isPrivate" label="Private Room" color="primary"
-            hint="Private rooms are only visible to invited users" persistent-hint class="mb-4" />
+          <v-switch v-model="formData.isPrivate" :disabled="!canCreatePrivateRoom" label="Private Room" color="primary"
+            :hint="canCreatePrivateRoom ? 'Private rooms are only visible to invited users' : 'Upgrade to Owner ($2.99) to create private rooms'"
+            persistent-hint class="mb-4">
+            <template v-if="!canCreatePrivateRoom" #label>
+              <div class="d-flex align-center">
+                Private Room
+                <v-icon class="ml-2" size="small">mdi-lock</v-icon>
+              </div>
+            </template>
+          </v-switch>
 
           <!-- Background Selector -->
           <div class="upload-section mb-4">
-            <BackgroundSelector v-model="selectedBackground" />
+            <BackgroundSelector v-model="selectedBackground" :canUpload="canUploadBackground" />
           </div>
 
           <!-- Avatar Manager Section -->
           <div class="upload-section mb-4">
-            <AvatarManager ref="avatarManager" v-model="formData.publicAvatars" />
+            <AvatarManager ref="avatarManager" v-model="formData.publicAvatars" :canUpload="canUploadAvatars" />
           </div>
 
           <!-- Requirements Check Alert -->
@@ -129,6 +138,7 @@ import {
 } from '@/utils/roomTypes';
 import AvatarManager from '@/components/AvatarManager.vue';
 import BackgroundSelector from '@/components/BackgroundSelector.vue';
+import subscriptionService from '@/services/subscriptionService';
 import lodash from 'lodash';
 
 const props = defineProps({
@@ -219,6 +229,27 @@ const hasChanges = computed(() => {
   const avatarsChanged = JSON.stringify(formData.publicAvatars) !== JSON.stringify(originalData.value.publicAvatars);
 
   return basicFieldsChanged || backgroundChanged || avatarsChanged;
+});
+
+// Premium access computed properties
+const canUploadBackground = computed(() => {
+  const user = userStore.getCurrentUser;
+  return subscriptionService.hasPremiumAccess(user);
+});
+
+const canUploadAvatars = computed(() => {
+  const user = userStore.getCurrentUser;
+  return subscriptionService.hasPremiumAccess(user);
+});
+
+const canCreatePrivateRoom = computed(() => {
+  const user = userStore.getCurrentUser;
+  return subscriptionService.hasPremiumAccess(user);
+});
+
+const maxUsersAllowed = computed(() => {
+  const user = userStore.getCurrentUser;
+  return subscriptionService.getMaxUsersForRoom(user);
 });
 
 // Validation rules

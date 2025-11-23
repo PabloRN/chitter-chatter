@@ -78,10 +78,17 @@
                       <v-icon size="16" color="white">{{ topic.icon }}</v-icon>
                     </v-avatar>
                   </div>
-                  <div class="room-users">
-                    <v-icon small>mdi-account-group</v-icon>
-                    {{ room.maxUsers }}
+                  <div class="d-flex justify-end">
+                    <div class="room-users ma-1">
+                      <v-icon small>mdi-account-group</v-icon>
+                      {{ room.maxUsers }}
+                    </div>
+                    <div class="room-users ma-1">
+                      <v-icon small>mdi-heart</v-icon>
+                      {{ room.addedToFavorites || 0 }}
+                    </div>
                   </div>
+
                 </div>
                 <p v-if="room.description" class="room-description">
                   {{ room.description }}
@@ -110,15 +117,9 @@
                     </v-btn>
                   </template>
                   <v-list density="compact">
-                    <v-list-item
-                      @click="copyRoomLink(room.id)"
-                      prepend-icon="mdi-link"
-                      title="Copy Link">
+                    <v-list-item @click="copyRoomLink(room.id)" prepend-icon="mdi-link" title="Copy Link">
                     </v-list-item>
-                    <v-list-item
-                      @click="showDeleteDialog(room)"
-                      prepend-icon="mdi-delete"
-                      title="Delete"
+                    <v-list-item @click="showDeleteDialog(room)" prepend-icon="mdi-delete" title="Delete"
                       class="error--text">
                     </v-list-item>
                   </v-list>
@@ -162,12 +163,7 @@
                       <p class="option-description">
                         Perfect if you just need one more room
                       </p>
-                      <v-btn
-                        color="success"
-                        block
-                        :loading="purchasingRoomSlot"
-                        class="mt-3"
-                      >
+                      <v-btn color="success" block :loading="purchasingRoomSlot" class="mt-3">
                         <v-icon left>mdi-cart</v-icon>
                         Purchase Now
                       </v-btn>
@@ -175,15 +171,12 @@
                   </v-card>
 
                   <!-- Subscription Options -->
-                  <v-card
-                    v-if="userTier === 'free'"
-                    class="option-card subscription"
-                    elevation="2"
-                    @click="goToPricing"
-                  >
+                  <v-card v-if="userTier === 'free'" class="option-card subscription" elevation="2"
+                    @click="goToPricing">
                     <div class="option-badge popular">Most Popular</div>
                     <div class="option-content">
-                      <v-icon size="40" class="mb-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                      <v-icon size="40" class="mb-2"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                         mdi-crown
                       </v-icon>
                       <h3 class="option-title">Upgrade to Landlord</h3>
@@ -197,26 +190,19 @@
                         <li><v-icon small color="success">mdi-check</v-icon> Moderation tools</li>
                         <li><v-icon small color="success">mdi-check</v-icon> No ads</li>
                       </ul>
-                      <v-btn
-                        color="primary"
-                        block
-                        class="mt-3 gradient-btn"
-                      >
+                      <v-btn color="primary" block class="mt-3 gradient-btn">
                         <v-icon left>mdi-diamond-stone</v-icon>
                         View Plans
                       </v-btn>
                     </div>
                   </v-card>
 
-                  <v-card
-                    v-else-if="userTier === 'landlord'"
-                    class="option-card subscription"
-                    elevation="2"
-                    @click="goToPricing"
-                  >
+                  <v-card v-else-if="userTier === 'landlord'" class="option-card subscription" elevation="2"
+                    @click="goToPricing">
                     <div class="option-badge premium">Premium</div>
                     <div class="option-content">
-                      <v-icon size="40" class="mb-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                      <v-icon size="40" class="mb-2"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                         mdi-star
                       </v-icon>
                       <h3 class="option-title">Upgrade to Creator</h3>
@@ -230,11 +216,7 @@
                         <li><v-icon small color="success">mdi-check</v-icon> API access</li>
                         <li><v-icon small color="success">mdi-check</v-icon> Revenue sharing</li>
                       </ul>
-                      <v-btn
-                        color="primary"
-                        block
-                        class="mt-3 gradient-btn"
-                      >
+                      <v-btn color="primary" block class="mt-3 gradient-btn">
                         <v-icon left>mdi-diamond-stone</v-icon>
                         View Plans
                       </v-btn>

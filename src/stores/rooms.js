@@ -39,14 +39,24 @@ const useRoomsStore = defineStore('rooms', {
       const user = userStore.getCurrentUser;
       if (!user || user.isAnonymous) return false;
 
-      // TODO: Add paid user check when payment system is implemented
-
-      if (user.isPaid) return true;
-      if (user.isAdmin) return true;
-
-      // Free users can create only 1 room
-      // Use the rooms store as the authoritative source for owned rooms count
       const ownedRoomsCount = state.ownedRooms.length;
+
+      // Admin: 100 rooms
+      if (user.isAdmin) return ownedRoomsCount < 100;
+
+      // Creator: 100 rooms
+      if (user.isCreator) return ownedRoomsCount < 100;
+
+      // Landlord: 5 rooms max
+      if (user.isLandlord) return ownedRoomsCount < 5;
+
+      // Owner: 1 room + purchased slots
+      if (user.isOwner) {
+        const limit = 1 + (user.purchasedRoomSlots || 0);
+        return ownedRoomsCount < limit;
+      }
+
+      // Free: 1 room max
       return ownedRoomsCount < USER_ROOM_LIMITS.free;
     },
   },

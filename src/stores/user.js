@@ -118,10 +118,16 @@ const useUserStore = defineStore('user', {
       cancelAtPeriodEnd: false,
     },
     isPremiumUser: (state) => {
-      const tier = state.currentUser?.subscriptionTier || 'free';
-      return tier === 'landlord' || tier === 'creator';
+      const user = state.currentUser;
+      return user?.isOwner || user?.isLandlord || user?.isCreator || false;
     },
-    isCreatorUser: (state) => state.currentUser?.subscriptionTier === 'creator',
+    isCreatorUser: (state) => state.currentUser?.isCreator || false,
+    isOwner: (state) => state.currentUser?.isOwner || false,
+    isLandlord: (state) => state.currentUser?.isLandlord || false,
+    canUpgradeToOwner: (state) => {
+      const user = state.currentUser;
+      return !user?.isOwner && !user?.isLandlord && !user?.isCreator;
+    },
   },
 
   actions: {

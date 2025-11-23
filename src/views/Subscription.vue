@@ -35,32 +35,121 @@
     <!-- Pricing Cards -->
     <div class="pricing-container">
       <div class="pricing-grid">
-        <!-- Free Tier -->
+        <!-- Free Tier / Owner Upgrade / Extra Room Slot -->
         <v-card class="pricing-card free-tier" elevation="2">
           <div class="card-content">
             <div class="tier-header">
-              <h3 class="tier-name">Free</h3>
-              <div class="tier-price">
-                <span class="price-amount">$0</span>
-                <span class="price-period">/forever</span>
-              </div>
-              <p class="tier-description">For registered newcomers exploring the Toonstalk universe.</p>
+              <!-- Show Owner upgrade for registered non-premium users -->
+              <template
+                v-if="userStore.getCurrentUser && !userStore.getCurrentUser.isAnonymous && userStore.canUpgradeToOwner">
+                <h3 class="tier-name">Room Owner</h3>
+                <div class="tier-price">
+                  <span class="price-amount">$2.99</span>
+                  <span class="price-period">/one-time</span>
+                </div>
+                <p class="tier-description">Unlock premium features for your room. Upload custom content, host more
+                  users, and create private rooms.</p>
+              </template>
+              <!-- Show Extra Room Slot for existing Owners -->
+              <template v-else-if="userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser">
+                <h3 class="tier-name">Extra Room Slot</h3>
+                <div class="tier-price">
+                  <span class="price-amount">$4.99</span>
+                  <span class="price-period">/one-time</span>
+                </div>
+                <p class="tier-description">Expand your Toonstalk presence. Each purchase adds one more room slot to
+                  your account.</p>
+              </template>
+              <!-- Show Free tier for non-logged-in or existing premium users -->
+              <template v-else>
+                <h3 class="tier-name">Free</h3>
+                <div class="tier-price">
+                  <span class="price-amount">$0</span>
+                  <span class="price-period">/forever</span>
+                </div>
+                <p class="tier-description">For registered newcomers exploring the Toonstalk universe.</p>
+              </template>
             </div>
 
-            <v-btn block size="large" variant="outlined" class="subscribe-btn" @click="handleSubscribe('free')">
-              Get Started
+            <!-- Dynamic button based on user state -->
+            <v-btn block size="large"
+              :variant="(userStore.canUpgradeToOwner || (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser)) ? 'flat' : 'outlined'"
+              :color="(userStore.canUpgradeToOwner || (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser)) ? 'primary' : undefined"
+              class="subscribe-btn" @click="handleSubscribe('free')">
+              {{
+                (!userStore.getCurrentUser || userStore.getCurrentUser.isAnonymous) ? 'Register' :
+                  userStore.canUpgradeToOwner ? 'Become an Owner' :
+                    (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser) ? 'Buy Extra Room' :
+                      'View Profile'
+              }}
             </v-btn>
 
             <div class="features-list">
-              <div class="features-header">What's included:</div>
-              <div v-for="feature in freeTierFeatures" :key="feature" class="feature-item">
-                <v-icon color="success" size="small">mdi-check-circle</v-icon>
-                <span>{{ feature }}</span>
-              </div>
-              <div v-for="feature in freeTierLimitations" :key="feature" class="feature-item disabled">
-                <v-icon color="grey" size="small">mdi-close-circle</v-icon>
-                <span>{{ feature }}</span>
-              </div>
+              <!-- Show Owner benefits for eligible users -->
+              <template
+                v-if="userStore.getCurrentUser && !userStore.getCurrentUser.isAnonymous && userStore.canUpgradeToOwner">
+                <div class="features-header">Premium features included:</div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Upload custom backgrounds</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Upload custom avatars</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Up to 20 users per room</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Create private rooms</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Advanced moderation tools</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Priority support</span>
+                </div>
+              </template>
+              <!-- Show Extra Room benefits for existing Owners -->
+              <template v-else-if="userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser">
+                <div class="features-header">What you'll get:</div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Add one more room to your account</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Keep all your Owner benefits</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Custom backgrounds & avatars</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Up to 20 users per room</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Private room creation</span>
+                </div>
+              </template>
+              <!-- Show Free tier features for others -->
+              <template v-else>
+                <div class="features-header">What's included:</div>
+                <div v-for="feature in freeTierFeatures" :key="feature" class="feature-item">
+                  <v-icon color="success" size="small">mdi-check-circle</v-icon>
+                  <span>{{ feature }}</span>
+                </div>
+                <div v-for="feature in freeTierLimitations" :key="feature" class="feature-item disabled">
+                  <v-icon color="grey" size="small">mdi-close-circle</v-icon>
+                  <span>{{ feature }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </v-card>
@@ -274,20 +363,61 @@ async function handleSubscribe(tier) {
   const currentUser = userStore.getCurrentUser;
 
   if (tier === 'free') {
-    // Navigate to signup/login
+    // Case 1: Not logged in → Register
     if (!currentUser || currentUser.isAnonymous) {
       mainStore.setSnackbar({
         type: 'info',
-        msg: 'Please sign up to get started!',
+        msg: 'Please register to get started!',
       });
       router.push({ name: 'rooms' });
-    } else {
-      mainStore.setSnackbar({
-        type: 'success',
-        msg: 'You already have a free account!',
-      });
-      router.push({ name: 'rooms' });
+      return;
     }
+
+    // Case 2: Registered but not Owner → Show Owner upgrade
+    if (userStore.canUpgradeToOwner) {
+      try {
+        mainStore.setSnackbar({
+          type: 'info',
+          msg: 'Redirecting to Owner upgrade checkout...',
+        });
+        const checkoutUrl = await subscriptionService.purchaseOwnerUpgrade();
+        window.location.href = checkoutUrl;
+      } catch (error) {
+        console.error('Error upgrading to Owner:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: error.message || 'Failed to process upgrade. Please try again.',
+        });
+      }
+      return;
+    }
+
+    // Case 2.5: Existing Owner wanting to buy extra room slot
+    if (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser) {
+      try {
+        mainStore.setSnackbar({
+          type: 'info',
+          msg: 'Redirecting to checkout for extra room slot...',
+        });
+        console.log('currentUser', currentUser);
+        const checkoutUrl = await subscriptionService.purchaseRoomSlot(currentUser.userId);
+        window.location.href = checkoutUrl;
+      } catch (error) {
+        console.error('Error purchasing room slot:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: error.message || 'Failed to process purchase. Please try again.',
+        });
+      }
+      return;
+    }
+
+    // Case 3: Already has premium (Landlord/Creator) → Go to profile
+    mainStore.setSnackbar({
+      type: 'info',
+      msg: 'You already have premium access!',
+    });
+    router.push({ name: 'profile' });
     return;
   }
 
@@ -306,13 +436,13 @@ async function handleSubscribe(tier) {
       type: 'info',
       msg: 'Processing subscription...',
     });
-
+    console.log('tier', tier);
     // Create or update subscription
     const result = await subscriptionService.createCheckoutSession(
       tier,
       billingPeriod.value,
     );
-
+    console.log('result', result);
     // Handle subscription update (no checkout needed)
     if (result.updated) {
       mainStore.setSnackbar({

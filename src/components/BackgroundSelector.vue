@@ -7,7 +7,15 @@
 
     <v-card outlined>
       <v-tabs v-model="activeTab" grow>
-        <v-tab>Upload Custom</v-tab>
+        <v-tab :disabled="!canUpload">
+          <div class="d-flex align-center">
+            Upload Custom
+            <v-icon v-if="!canUpload" class="ml-2" size="small">mdi-lock</v-icon>
+          </div>
+          <v-tooltip v-if="!canUpload" activator="parent" location="bottom">
+            Upgrade to Owner ($2.99) to upload custom backgrounds
+          </v-tooltip>
+        </v-tab>
         <v-tab>Select Preloaded</v-tab>
       </v-tabs>
 
@@ -88,6 +96,10 @@ const props = defineProps({
   modelValue: {
     type: Object,
     default: () => null,
+  },
+  canUpload: {
+    type: Boolean,
+    default: true,
   },
 });
 

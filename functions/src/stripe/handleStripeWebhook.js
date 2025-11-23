@@ -7,10 +7,11 @@ const stripeWebhookSecret = defineString('STRIPE_WEBHOOK_SECRET');
 
 // Stripe Price ID to Tier mapping (must match subscriptionService.js)
 const STRIPE_PRICE_IDS = {
-  'price_1SK4YXBmoCe1wac303G15iyR': 'landlord', // landlord_monthly
-  'price_1SK4YWBmoCe1wac3XfXnod9L': 'landlord', // landlord_annual
-  'price_1SNCJoBmoCe1wac39auhID7K': 'creator',   // creator_monthly
-  'price_1SNCLtBmoCe1wac3TnZh9kjj': 'creator',   // creator_annual
+  'price_1SWYYhBmoCe1wac3zCRqHSZE': 'landlord', // landlord_monthly
+  'price_1SWYsdBmoCe1wac3jyDTLTzt': 'landlord', // landlord_annual
+  'price_1SWa3gBmoCe1wac3debRsl5V': 'creator',   // creator_monthly
+  'price_1SWa6BBmoCe1wac3BFuOc9ob': 'creator',   // creator_annual
+  'price_1SWi1vBmoCe1wac3f43Olfqn': 'owner',   // owner
 };
 
 exports.handleStripeWebhook = onRequest(
@@ -140,6 +141,7 @@ async function handleSubscriptionUpdate(subscription) {
     await admin.database().ref(`users/${userId}`).update({
       subscriptionTier: tier,
       isCreator: tier === 'creator',
+      isLandlord: tier === 'landlord',
     });
 
     console.log(`✅ Subscription updated successfully for user ${userId}: ${tier}, cancelAtPeriodEnd: ${updateData.cancelAtPeriodEnd !== undefined ? updateData.cancelAtPeriodEnd : 'not set'}, cancelAt: ${updateData.cancelAt || 'not set'}`);
@@ -255,6 +257,30 @@ async function handleCheckoutCompleted(session) {
     });
 
     console.log(`Room slot purchased for user ${userId}. New total: ${newSlotCount}`);
+  }
+
+  // If it's an Owner upgrade purchase
+  if (type === 'owner_upgrade' && session.mode === 'payment') {
+    const userRef = admin.database().ref(`users/${userId}`);
+
+    // Set user as Owner
+    await userRef.update({
+      isOwner: true,
+    });
+
+    // Record the purchase
+    const purchaseId = admin.database().ref().push().key;
+    await userRef.child('ownerUpgrades').child(purchaseId).set({
+      purchaseId,
+      stripeSessionId: session.id,
+      stripePaymentIntent: session.payment_intent,
+      amount: session.amount_total / 100,
+      currency: session.currency,
+      purchasedAt: admin.database.ServerValue.TIMESTAMP,
+      status: 'completed',
+    });
+
+    console.log(`Owner upgrade completed for user ${userId}`);
   }
 }
 

@@ -51,8 +51,8 @@ export const DEFAULT_ROOM_VALUES = {
 // Room creation limits by tier
 export const USER_ROOM_LIMITS = {
   free: 1,
-  landlord: 10,
-  creator: -1, // -1 means unlimited
+  landlord: 5,
+  creator: 100, // -1 means unlimited
   admin: 100,
 };
 
@@ -74,7 +74,7 @@ export function calculateTotalRoomLimit(user) {
   let baseLimit = USER_ROOM_LIMITS.free;
 
   if (user.subscriptionTier === 'creator' || user.isCreator) {
-    return -1; // Unlimited for creator tier
+    return 100; // Unlimited for creator tier
   }
 
   if (user.subscriptionTier === 'landlord') {

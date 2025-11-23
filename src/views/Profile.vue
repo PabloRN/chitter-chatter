@@ -10,19 +10,27 @@
       </v-toolbar-title>
       <v-spacer></v-spacer>
 
-      <!-- Feedback button -->
-      <v-btn icon class="mr-2" @click="showFeedbackDialog = true" title="Send Feedback">
-        <v-icon>mdi-message-alert-outline</v-icon>
-      </v-btn>
+      <!-- Navigation Links -->
+      <div class="nav-links">
+        <v-btn text class="nav-link" @click="goToPricing">
+          <v-icon left size="small">mdi-diamond-stone</v-icon>
+          Pricing
+        </v-btn>
+        <v-btn text class="nav-link feedback-btn" @click="showFeedbackDialog = true">
+          <v-icon left size="small">mdi-message-text-outline</v-icon>
+          Feedback
+        </v-btn>
+        <v-btn v-if="!isEditing" @click="isEditing = !isEditing" variant="outlined" color="purple" size="small">
+          <v-icon>mdi-pencil</v-icon>
+          Edit
+        </v-btn>
+        <v-btn v-else @click="isEditing = !isEditing" variant="outlined" color="success" size="small">
+          <v-icon>mdi-content-save</v-icon>
+          Save
+        </v-btn>
+      </div>
 
-      <v-btn v-if="!isEditing" @click="isEditing = !isEditing" class="edit-btn">
-        <v-icon>mdi-pencil</v-icon>
-        Edit
-      </v-btn>
-      <v-btn v-else @click="isEditing = !isEditing" class="edit-btn">
-        <v-icon>mdi-check</v-icon>
-        Save
-      </v-btn>
+
 
     </v-app-bar>
 
@@ -77,7 +85,12 @@
               </div>
               <div class="stat-divider"></div>
               <div class="stat-item">
-                <span class="stat-number"> {{ getCurrentUser?.client ? 'Client' : 'Registered' }}</span>
+                <span class="stat-number">
+                  {{ getCurrentUser?.client ? 'Client' :
+                    getCurrentUser?.isCreator ? 'Creator' :
+                      getCurrentUser?.isLandlord ? 'Landlord' :
+                        getCurrentUser?.isOwner ? 'Owner' : 'Registered' }}
+                </span>
                 <span class="stat-label">Account Type</span>
               </div>
             </div>
@@ -163,12 +176,7 @@
               <!-- Current Tier -->
               <div class="subscription-tier-display">
                 <div class="tier-badge-container">
-                  <v-chip
-                    :color="subscriptionTierColor"
-                    size="large"
-                    class="tier-badge"
-                    prepend-icon="mdi-star-circle"
-                  >
+                  <v-chip :color="subscriptionTierColor" size="large" class="tier-badge" prepend-icon="mdi-star-circle">
                     {{ subscriptionTierName }}
                   </v-chip>
                 </div>
@@ -178,7 +186,8 @@
                     (Cancels on {{ formatDate(subscriptionData.currentPeriodEnd) }})
                   </span>
                 </p>
-                <p v-if="subscriptionData.currentPeriodEnd && !subscriptionData.cancelAtPeriodEnd" class="subscription-renewal">
+                <p v-if="subscriptionData.currentPeriodEnd && !subscriptionData.cancelAtPeriodEnd"
+                  class="subscription-renewal">
                   Renews on {{ formatDate(subscriptionData.currentPeriodEnd) }}
                 </p>
               </div>
@@ -186,30 +195,17 @@
               <!-- Action Buttons -->
               <div class="subscription-actions">
                 <!-- Manage Subscription (for paid tiers) -->
-                <v-btn
-                  v-if="subscriptionData.tier !== 'free' && subscriptionData.stripeCustomerId"
-                  color="primary"
-                  variant="flat"
-                  size="large"
-                  prepend-icon="mdi-cog"
-                  @click="manageSubscription"
-                  :loading="loadingPortal"
-                  block
-                  class="mb-3"
-                >
+                <v-btn v-if="subscriptionData.tier !== 'free' && subscriptionData.stripeCustomerId" color="primary"
+                  variant="flat" size="large" prepend-icon="mdi-cog" @click="manageSubscription"
+                  :loading="loadingPortal" block class="mb-3">
                   Manage Subscription
                 </v-btn>
 
                 <!-- Upgrade Button (for free or landlord) -->
-                <v-btn
-                  v-if="subscriptionData.tier === 'free' || subscriptionData.tier === 'landlord'"
-                  :color="subscriptionData.tier === 'free' ? 'success' : 'purple'"
-                  variant="outlined"
-                  size="large"
+                <v-btn v-if="subscriptionData.tier === 'free' || subscriptionData.tier === 'landlord'"
+                  :color="subscriptionData.tier === 'free' ? 'success' : 'purple'" variant="outlined" size="large"
                   :prepend-icon="subscriptionData.tier === 'free' ? 'mdi-rocket-launch' : 'mdi-arrow-up-bold'"
-                  @click="goToSubscription"
-                  block
-                >
+                  @click="goToSubscription" block>
                   {{ subscriptionData.tier === 'free' ? 'Upgrade to Premium' : 'Upgrade to Creator' }}
                 </v-btn>
               </div>
@@ -426,11 +422,7 @@
     </v-snackbar>
 
     <!-- Feedback Dialog -->
-    <FeedbackDialog
-      v-model="showFeedbackDialog"
-      @success="handleFeedbackSuccess"
-      @error="handleFeedbackError"
-    />
+    <FeedbackDialog v-model="showFeedbackDialog" @success="handleFeedbackSuccess" @error="handleFeedbackError" />
   </div>
 </template>
 
@@ -615,6 +607,9 @@ const descriptionRules = [
 ];
 
 // methods
+const goToPricing = () => {
+  router.push('/pricing');
+};
 
 const remove = (item) => {
   selectedHobbies.value = selectedHobbies.value.filter((s) => s.name !== item.raw.name)
@@ -1148,7 +1143,7 @@ const formatDate = (timestamp) => {
   gap: 8px;
 }
 
-.preference-item .preference-info > div {
+.preference-item .preference-info>div {
   flex: 1;
 }
 
