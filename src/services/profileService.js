@@ -70,10 +70,16 @@ class ProfileService {
     try {
       const db = this.getDatabase();
       const userRef = dbRef(db, `users/${userId}`);
+      const roomRef = dbRef(db, `rooms/${roomId}`);
 
       const snapshot = await get(userRef);
+      const roomSnapshot = await get(roomRef);
+
       const userData = snapshot.val();
+      const roomData = roomSnapshot.val();
+
       const currentFavorites = userData?.favoriteRooms || [];
+      const currentAddedToFavorites = roomData?.addedToFavorites || 0;
 
       let newFavorites;
       let wasRemoved = false;
@@ -81,9 +87,12 @@ class ProfileService {
       if (currentFavorites.includes(roomId)) {
         newFavorites = currentFavorites.filter((currentRoomId) => roomId !== currentRoomId);
         wasRemoved = true;
+        await update(roomRef, { addedToFavorites: currentAddedToFavorites !== 0 ? currentAddedToFavorites - 1 : 0 });
       } else {
+        console.log('roomIdfav', roomId);
         newFavorites = [...currentFavorites, roomId];
         wasRemoved = false;
+        await update(roomRef, { addedToFavorites: currentAddedToFavorites + 1 });
       }
 
       await update(userRef, { favoriteRooms: newFavorites });

@@ -50,8 +50,8 @@
       </div>
       <div class="icon-caption">Hide</div>
     </v-btn>
-    <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="handleEmit('signOut')" @touchstart.native.prevent="handleEmit('signOut')" v-touch="{
+    <v-btn v-if="!getCurrentUser.isAnonymous" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark
+      small @click.prevent.stop="handleEmit('signOut')" @touchstart.native.prevent="handleEmit('signOut')" v-touch="{
         end: () => toggleMenu,
       }">
       <div>
@@ -59,7 +59,19 @@
           mdi-logout-variant
         </v-icon>
       </div>
-      <div class="icon-caption" :disabled="getCurrentUser.isAnonymous">Logout</div>
+      <div class="icon-caption">Logout</div>
+    </v-btn>
+    <v-btn v-else :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent.stop="handleEmit('showLoginDialog')" @touchstart.native.prevent="handleEmit('showLoginDialog')"
+      v-touch="{
+        end: () => toggleMenu,
+      }">
+      <div>
+        <v-icon class="manga-icon">
+          mdi-account-circle
+        </v-icon>
+      </div>
+      <div class="icon-caption" :disabled="getCurrentUser.isAnonymous">Login</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
       @click.prevent.stop="handleEmit('showMessages')" @touchstart.native.prevent="handleEmit('showMessages')">
@@ -162,6 +174,10 @@ const handleEmit = (item) => {
     case 'showMessages':
       toggleMenu();
       emit('showMessages');
+      break;
+    case 'showLoginDialog':
+      toggleMenu();
+      emit('showLoginDialog');
       break;
   }
 };
