@@ -139,15 +139,21 @@ const useUserStore = defineStore('user', {
     },
 
     handleCrossTabMessage(message) {
+      // Ignore messages sent by this tab to prevent infinite loops
+      if (tabCommunicationService.isOwnMessage(message)) {
+        console.log('🚫 Ignoring own message');
+        return;
+      }
+
       switch (message.type) {
         case 'AUTH_SUCCESS':
           if (message.isUpgrade) {
             console.log('🔄 Received upgrade notification from other tab:', message);
-            // Trigger user upgrade for this tab
+            // Trigger user upgrade for this tab (isCurrent: false since it's from another tab)
             this.userUpgraded({
               verifiedUser: message.verifiedUser,
               unverifiedUser: message.unverifiedUser,
-              isCurrent: true,
+              isCurrent: false,
             });
           }
           break;

@@ -44,11 +44,14 @@ const useRoomsStore = defineStore('rooms', {
       // Admin: 100 rooms
       if (user.isAdmin) return ownedRoomsCount < 100;
 
-      // Creator: 100 rooms
+      // Creator: 100 rooms (unlimited)
       if (user.isCreator) return ownedRoomsCount < 100;
 
-      // Landlord: 5 rooms max
-      if (user.isLandlord) return ownedRoomsCount < 5;
+      // Landlord: 5 rooms max + purchased slots
+      if (user.isLandlord) {
+        const limit = 5 + (user.purchasedRoomSlots || 0);
+        return ownedRoomsCount < limit;
+      }
 
       // Owner: 1 room + purchased slots
       if (user.isOwner) {
@@ -160,7 +163,6 @@ const useRoomsStore = defineStore('rooms', {
           if (defaultAvatar) {
             defaultUrl = defaultAvatar.url || defaultAvatar.avatarURL;
             defaultMiniUrl = defaultAvatar.miniUrl || defaultAvatar.miniAvatarURL;
-            console.log('Found default avatar from room data:', { defaultUrl, defaultMiniUrl });
           } else {
             console.log('No default avatar found in room data');
           }

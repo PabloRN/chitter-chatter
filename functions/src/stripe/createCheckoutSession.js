@@ -2,6 +2,12 @@ const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const getStripe = require('./stripe-config');
 
+// Import shared Stripe constants and utilities
+const {
+  getTierFromPriceId,
+  isDowngrade,
+} = require('./stripe-constants');
+
 exports.createCheckoutSession = onRequest(
   {
     region: 'us-central1',
@@ -72,21 +78,45 @@ exports.createCheckoutSession = onRequest(
         const existingSubscription = subscriptions.data[0];
         console.log(`Found active subscription ${existingSubscription.id}, updating to price ${priceId}`);
 
-        // Update the subscription to the new price
+        // Determine current and new tiers
+        const currentPriceId = existingSubscription.items.data[0].price.id;
+        const currentTier = getTierFromPriceId(currentPriceId);
+        const newTier = getTierFromPriceId(priceId);
+
+        // Check if this is a downgrade
+        const isDowngradeFlow = isDowngrade(currentTier, newTier);
+
+        console.log(`Tier change: ${currentTier} → ${newTier} (${isDowngradeFlow ? 'DOWNGRADE' : 'UPGRADE'})`);
+
+        // Build update parameters
+        const updateParams = {
+          items: [
+            {
+              id: existingSubscription.items.data[0].id,
+              price: priceId,
+            },
+          ],
+          metadata: {
+            userId,
+            tier: newTier,
+          },
+        };
+
+        // For downgrades, schedule for end of period with no proration
+        // For upgrades, apply immediately with prorations
+        if (isDowngradeFlow) {
+          updateParams.proration_behavior = 'none'; // No immediate charge/credit
+          updateParams.billing_cycle_anchor = 'unchanged'; // Keep current billing cycle
+          console.log(`⬇️ Scheduling downgrade for end of billing period`);
+        } else {
+          updateParams.proration_behavior = 'create_prorations'; // Immediate with prorated charges
+          console.log(`⬆️ Applying upgrade immediately with prorations`);
+        }
+
+        // Update the subscription
         const updatedSubscription = await stripe.subscriptions.update(
           existingSubscription.id,
-          {
-            items: [
-              {
-                id: existingSubscription.items.data[0].id,
-                price: priceId,
-              },
-            ],
-            proration_behavior: 'create_prorations', // Prorate the charges
-            metadata: {
-              userId,
-            },
-          },
+          updateParams,
         );
 
         console.log(`✅ Subscription updated successfully: ${updatedSubscription.id}`);
@@ -95,7 +125,9 @@ exports.createCheckoutSession = onRequest(
         res.status(200).json({
           subscriptionId: updatedSubscription.id,
           updated: true,
-          message: 'Subscription updated successfully',
+          message: isDowngradeFlow ?
+            'Downgrade scheduled for end of billing period' :
+            'Subscription upgraded successfully',
         });
       } else {
         // No active subscription - create new checkout session

@@ -179,6 +179,11 @@
                   <v-chip :color="subscriptionTierColor" size="large" class="tier-badge" prepend-icon="mdi-star-circle">
                     {{ subscriptionTierName }}
                   </v-chip>
+                  <!-- Recently Upgraded Indicator -->
+                  <v-chip v-if="isRecentlyUpgraded" color="success" size="small" class="upgrade-badge ml-2"
+                    prepend-icon="mdi-arrow-up-circle">
+                    {{ upgradeDisplayText }}
+                  </v-chip>
                 </div>
                 <p v-if="subscriptionData.status" class="subscription-status">
                   Status: <strong>{{ subscriptionData.status }}</strong>
@@ -413,6 +418,42 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Downgrade Confirmation Dialog -->
+    <v-dialog v-model="showDowngradeDialog" max-width="600">
+      <v-card>
+        <v-card-title class="warning--text">
+          <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+          Confirm Subscription Change
+        </v-card-title>
+        <v-card-text v-if="pendingDowngrade">
+          <p><strong>You're about to downgrade from {{ pendingDowngrade.from }} to {{ pendingDowngrade.to }}.</strong></p>
+
+          <v-alert type="info" class="my-4">
+            <strong>When does this take effect?</strong><br>
+            This change will happen at the <strong>end of your current billing period</strong>
+            on {{ formatDate(subscriptionData.currentPeriodEnd) }}.<br><br>
+            You'll keep all your {{ pendingDowngrade.from }} features until then.
+          </v-alert>
+
+          <p><strong>What you'll lose:</strong></p>
+          <ul v-if="pendingDowngrade.from === 'Creator'">
+            <li>Unlimited rooms (reduced to 5 rooms on Landlord)</li>
+            <li>Creator badge on your profile</li>
+            <li>Host up to 30 users (reduced to 20)</li>
+            <li>Unlimited custom avatars/backgrounds</li>
+          </ul>
+
+          <p class="mt-4"><strong>Note:</strong> If you currently have more than 5 rooms, you'll need to delete or archive some before creating new ones after the downgrade.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="showDowngradeDialog = false">Cancel</v-btn>
+          <v-btn color="warning" @click="confirmDowngrade">Confirm Downgrade</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="showSuccess" color="success" timeout="3000">
       {{ successMessage }}
     </v-snackbar>
@@ -440,6 +481,8 @@ import {
   getAuth, GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
 import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
+import { formatDate } from '@/utils/dateUtils';
+import { TIER_RANKS } from '@/constants/tiers';
 //TODO: Move to a separate file
 const hobbies = [
   { name: "Football", icon: "mdi-soccer", color: "green" },
@@ -478,6 +521,8 @@ const mainStore = useMainStore();
 const isEditing = ref(false);
 const loadingPortal = ref(false);
 const showDeleteDialog = ref(false);
+const showDowngradeDialog = ref(false);
+const pendingDowngrade = ref(null);
 const editedUser = ref({
   nickname: '',
   age: null,
@@ -549,6 +594,8 @@ const subscriptionData = computed(() => {
     stripeCustomerId: user?.subscription?.stripeCustomerId || null,
     currentPeriodEnd: user?.subscription?.currentPeriodEnd || null,
     cancelAtPeriodEnd: user?.subscription?.cancelAtPeriodEnd || false,
+    lastUpgradedAt: user?.subscription?.lastUpgradedAt || null,
+    previousTier: user?.subscription?.previousTier || null,
   };
 });
 
@@ -562,6 +609,36 @@ const subscriptionTierColor = computed(() => {
   if (tier === 'creator') return 'purple';
   if (tier === 'landlord') return 'primary';
   return 'grey';
+});
+
+const isRecentlyUpgraded = computed(() => {
+  const lastUpgradedAt = subscriptionData.value.lastUpgradedAt;
+  if (!lastUpgradedAt) return false;
+
+  const now = Date.now();
+  const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+  return lastUpgradedAt > sevenDaysAgo;
+});
+
+const upgradeDisplayText = computed(() => {
+  if (!isRecentlyUpgraded.value) return '';
+
+  const previousTier = subscriptionData.value.previousTier;
+  const currentTier = subscriptionData.value.tier;
+
+  if (!previousTier) return 'Recently Upgraded!';
+
+  const tierNames = {
+    free: 'Free',
+    owner: 'Owner',
+    landlord: 'Landlord',
+    creator: 'Creator',
+  };
+
+  const prevName = tierNames[previousTier] || previousTier;
+  const currName = tierNames[currentTier] || currentTier;
+
+  return `Upgraded from ${prevName}!`;
 });
 
 // redirect if not authenticated
@@ -601,7 +678,30 @@ watch(getCurrentUser.value, (newVal) => {
     router.push({ name: 'rooms' });
   }
 });
-//rules 
+
+// Watch for subscription tier changes
+watch(() => subscriptionData.value.tier, (newTier, oldTier) => {
+  if (oldTier && newTier !== oldTier && !getCurrentUser.value?.isAnonymous) {
+    const tierNames = {
+      free: 'Free',
+      owner: 'Owner',
+      landlord: 'Landlord',
+      creator: 'Creator',
+    };
+
+    const tierName = tierNames[newTier] || newTier;
+
+    mainStore.setSnackbar({
+      type: 'success',
+      msg: `🎉 Subscription updated to ${tierName}!`,
+      timeout: 5000,
+    });
+
+    console.log(`✅ Subscription tier changed from ${oldTier} to ${newTier}`);
+  }
+});
+
+//rules
 const descriptionRules = [
   (v) => !v || v.length <= 200 || `Description must be less than ${200} characters`,
 ];
@@ -645,7 +745,24 @@ const unlinkAccount = async (providerId) => {
     console.error('Failed to unlink provider:', error);
   }
 };
-const goBack = () => router.go(-1);
+const goBack = () => {
+  // Check if we have meaningful browser history
+  if (window.history.length > 1 && document.referrer) {
+    const referrer = new URL(document.referrer);
+    const currentHost = window.location.host;
+
+    // Only use router.back() if we came from the same app
+    if (referrer.host === currentHost) {
+      router.back();
+    } else {
+      // Came from external link or new tab, go to rooms
+      router.push({ name: 'rooms' });
+    }
+  } else {
+    // No history (new tab, direct link), go to rooms
+    router.push({ name: 'rooms' });
+  }
+};
 
 const goToAdmin = () => {
   router.push({ name: 'admin' });
@@ -818,7 +935,7 @@ const manageSubscription = async () => {
     });
 
     const portalUrl = await subscriptionService.createPortalSession();
-    window.location.href = portalUrl;
+    window.open(portalUrl, '_blank');
   } catch (error) {
     console.error('Error opening portal:', error);
     mainStore.setSnackbar({
@@ -830,14 +947,97 @@ const manageSubscription = async () => {
   }
 };
 
-const goToSubscription = () => {
-  router.push({ name: 'pricing' });
+const goToSubscription = async () => {
+  // Check if this is a downgrade
+  const currentTier = subscriptionData.value.tier;
+  const targetTier = 'creator'; // Always targeting creator from this button
+
+  // Check tier hierarchy using shared constants
+  const isDowngradeFlow = TIER_RANKS[targetTier] < TIER_RANKS[currentTier];
+
+  if (isDowngradeFlow) {
+    // Show downgrade confirmation dialog
+    const tierNames = { landlord: 'Landlord', creator: 'Creator' };
+    pendingDowngrade.value = {
+      from: tierNames[currentTier] || currentTier,
+      to: tierNames[targetTier] || targetTier,
+      targetTier,
+    };
+    showDowngradeDialog.value = true;
+    return;
+  }
+
+  // For upgrades, proceed directly
+  if (currentTier === 'landlord') {
+    try {
+      loadingPortal.value = true;
+      mainStore.setSnackbar({
+        type: 'info',
+        msg: 'Processing upgrade to Creator...',
+      });
+
+      // Default to monthly billing for upgrade
+      const result = await subscriptionService.createCheckoutSession('creator', 'monthly');
+
+      if (result.updated) {
+        // Subscription was updated immediately (proration scenario)
+        mainStore.setSnackbar({
+          type: 'success',
+          msg: 'Successfully upgraded to Creator! Check your email for confirmation.',
+        });
+      } else {
+        // Redirect to Stripe Checkout
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Error upgrading to Creator:', error);
+      mainStore.setSnackbar({
+        type: 'error',
+        msg: error.message || 'Failed to upgrade. Please try again.',
+      });
+    } finally {
+      loadingPortal.value = false;
+    }
+  } else {
+    // For free/owner users, go to pricing page
+    router.push({ name: 'pricing' });
+  }
 };
 
-const formatDate = (timestamp) => {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+const confirmDowngrade = async () => {
+  try {
+    loadingPortal.value = true;
+    showDowngradeDialog.value = false;
+
+    mainStore.setSnackbar({
+      type: 'info',
+      msg: 'Processing downgrade...',
+    });
+
+    const result = await subscriptionService.createCheckoutSession(
+      pendingDowngrade.value.targetTier,
+      'monthly',
+    );
+
+    if (result.updated) {
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: `Downgrade scheduled for ${formatDate(subscriptionData.value.currentPeriodEnd)}. Check your email for details.`,
+        timeout: 7000,
+      });
+    } else {
+      window.location.href = result.url;
+    }
+  } catch (error) {
+    console.error('Error processing downgrade:', error);
+    mainStore.setSnackbar({
+      type: 'error',
+      msg: error.message || 'Failed to process downgrade. Please try again.',
+    });
+  } finally {
+    loadingPortal.value = false;
+    pendingDowngrade.value = null;
+  }
 };
 </script>
 <style scoped lang="scss">
@@ -1175,6 +1375,11 @@ const formatDate = (timestamp) => {
 
 .tier-badge-container {
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .tier-badge {
@@ -1182,6 +1387,25 @@ const formatDate = (timestamp) => {
   font-weight: 600 !important;
   padding: 8px 20px !important;
   height: auto !important;
+}
+
+.upgrade-badge {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 4px 12px !important;
+  height: auto !important;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+  }
 }
 
 .subscription-status {

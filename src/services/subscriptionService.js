@@ -21,6 +21,9 @@ const STRIPE_PRICE_IDS = {
 // Room slot pricing
 const ROOM_SLOT_PRICE = 4.99;
 
+// Maximum number of extra room slots that can be purchased
+const MAX_PURCHASABLE_SLOTS = 2;
+
 /**
  * Create a Stripe Checkout Session
  * @param {string} tier - The subscription tier (landlord, creator)
@@ -475,10 +478,13 @@ function getMaxUsersForRoom(user) {
  */
 function getRoomLimit(user) {
   if (!user) return 1;
+
+  const purchasedSlots = user.purchasedRoomSlots || 0;
+
   if (user.isAdmin) return 100;
-  if (user.isCreator) return -1; // unlimited
-  if (user.isLandlord) return 5;
-  if (user.isOwner) return 1 + (user.purchasedRoomSlots || 0);
+  if (user.isCreator) return -1; // unlimited (purchased slots don't matter)
+  if (user.isLandlord) return 5 + purchasedSlots; // Landlord base + purchased slots
+  if (user.isOwner) return 1 + purchasedSlots; // Owner base + purchased slots
   return 1; // free tier
 }
 
@@ -499,4 +505,5 @@ export default {
   getRoomLimit,
   STRIPE_PRICE_IDS,
   ROOM_SLOT_PRICE,
+  MAX_PURCHASABLE_SLOTS,
 };

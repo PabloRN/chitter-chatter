@@ -16,6 +16,7 @@
       ['blockUser']: () => toggleBlockUser(),
       ['showLoginDialog']: () => showLoginDialogHandler(),
       ['userInfo']: () => showUserInfo(),
+      ['addFriend']: () => onAddFriendClicked(),
     }" ref="roundedmenu" />
     <RoundedMenuCurrent v-else :moving="mouseMoved" ref="roundedmenucurrent" v-on="{
       ['exitRoom']: leaveRoom,
@@ -76,7 +77,7 @@ const expresion = reactive({
   angry: false,
   happy: false,
   sad: false,
-  sorprise: false,
+  surprise: false,
   inlove: false,
 });
 const dialogSide = ref('bubble-bottom-left');
@@ -157,6 +158,9 @@ const showLoginDialogHandler = () => {
 const showUserInfo = () => {
   showUserInfoDialog.value = true;
 };
+const onAddFriendClicked = () => {
+  showUserInfoDialog.value = true;
+};
 
 const handleSpaceKey = (e) => {
   if (document.activeElement === e.currentTarget) {
@@ -184,7 +188,7 @@ const toggleBlockUser = () => {
 };
 
 function showProfile() {
-  window.open('/profile', '_blank');
+  router.push({ name: 'profile' });
 }
 
 const findClosestDivPosition = (givenDivId) => {

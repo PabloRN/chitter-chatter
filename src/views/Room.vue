@@ -422,7 +422,6 @@ onBeforeUnmount(() => {
 
 onBeforeRouteLeave((from, to, next) => {
   if (currentUser.value && currentUser.value.userId) {
-    console.log('currentUser.value', currentUser.value);
     const { roomId } = route.params;
     const { userId } = currentUser.value;
 

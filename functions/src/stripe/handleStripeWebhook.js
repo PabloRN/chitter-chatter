@@ -3,16 +3,27 @@ const { defineString } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const getStripe = require('./stripe-config');
 
-const stripeWebhookSecret = defineString('STRIPE_WEBHOOK_SECRET');
+// Stripe constants and utilities
+const {
+  STRIPE_PRICE_IDS,
+  MAX_PURCHASABLE_SLOTS,
+  isUpgrade,
+  isDowngrade,
+} = require('./stripe-constants');
 
-// Stripe Price ID to Tier mapping (must match subscriptionService.js)
-const STRIPE_PRICE_IDS = {
-  'price_1SWYYhBmoCe1wac3zCRqHSZE': 'landlord', // landlord_monthly
-  'price_1SWYsdBmoCe1wac3jyDTLTzt': 'landlord', // landlord_annual
-  'price_1SWa3gBmoCe1wac3debRsl5V': 'creator',   // creator_monthly
-  'price_1SWa6BBmoCe1wac3BFuOc9ob': 'creator',   // creator_annual
-  'price_1SWi1vBmoCe1wac3f43Olfqn': 'owner',   // owner
-};
+// Email services
+const sendOwnerUpgradeConfirmation = require('../email/sendOwnerUpgradeConfirmationEmail');
+const sendAdminOwnerNotification = require('../email/sendAdminOwnerUpgradeNotification');
+const sendRoomSlotConfirmation = require('../email/sendRoomSlotPurchaseConfirmation');
+const sendAdminRoomSlotNotification = require('../email/sendAdminRoomSlotNotification');
+const sendSubscriptionUpgradeEmail = require('../email/sendSubscriptionUpgradeEmail');
+const sendAdminSubscriptionNotification = require('../email/sendAdminSubscriptionNotification');
+const sendSubscriptionConfirmation = require('../email/sendSubscriptionConfirmationEmail');
+const sendCancellationEmail = require('../email/sendSubscriptionCancellationEmail');
+const sendAdminCancellationNotification = require('../email/sendAdminCancellationNotification');
+const sendSubscriptionDowngradeEmail = require('../email/sendSubscriptionDowngradeEmail');
+
+const stripeWebhookSecret = defineString('STRIPE_WEBHOOK_SECRET');
 
 exports.handleStripeWebhook = onRequest(
   {
@@ -96,8 +107,6 @@ async function handleSubscriptionUpdate(subscription) {
     const priceId = subscription.items.data[0].price.id;
     const tier = STRIPE_PRICE_IDS[priceId] || 'free';
 
-    console.log(`Subscription details - userId: ${userId}, priceId: ${priceId}, tier: ${tier}, status: ${subscription.status}, cancel_at_period_end: ${subscription.cancel_at_period_end}, cancel_at: ${subscription.cancel_at}`);
-
     // Check if subscription is canceled via either method
     const isCanceled = subscription.cancel_at_period_end || !!subscription.cancel_at;
 
@@ -144,8 +153,6 @@ async function handleSubscriptionUpdate(subscription) {
       isLandlord: tier === 'landlord',
     });
 
-    console.log(`✅ Subscription updated successfully for user ${userId}: ${tier}, cancelAtPeriodEnd: ${updateData.cancelAtPeriodEnd !== undefined ? updateData.cancelAtPeriodEnd : 'not set'}, cancelAt: ${updateData.cancelAt || 'not set'}`);
-
     // Get user email from Firebase Auth (not Realtime Database)
     let userEmail = null;
     try {
@@ -165,50 +172,132 @@ async function handleSubscriptionUpdate(subscription) {
     if (userEmail) {
       // Detect if this is a new subscription (user just subscribed)
       if (isNewSubscription && tier !== 'free') {
-        console.log(`📧 Sending subscription confirmation email to ${userEmail}`);
-        const sendSubscriptionConfirmation = require('../email/sendSubscriptionConfirmationEmail');
-        await sendSubscriptionConfirmation.sendEmail(userEmail, {
-          tier,
-          userId,
-          subscriptionId: subscription.id,
-        });
+        try {
+          console.log(`📧 Sending subscription confirmation email to ${userEmail}`);
+          await sendSubscriptionConfirmation.sendEmail(userEmail, {
+            tier,
+            userId,
+            subscriptionId: subscription.id,
+          });
 
-        // Send admin notification for new subscription
-        console.log(`📧 Sending admin notification for new ${tier} subscription`);
-        const sendAdminSubscriptionNotification = require('../email/sendAdminSubscriptionNotification');
-        await sendAdminSubscriptionNotification.sendEmail({
-          tier,
-          userId,
-          userEmail,
-          subscriptionId: subscription.id,
-        });
+          // Send admin notification for new subscription
+          console.log(`📧 Sending admin notification for new ${tier} subscription`);
+          await sendAdminSubscriptionNotification.sendEmail({
+            tier,
+            userId,
+            userEmail,
+            subscriptionId: subscription.id,
+          });
+        } catch (emailError) {
+          console.error('❌ Error sending new subscription emails:', emailError);
+          // Don't throw - webhook should succeed even if emails fail
+        }
       }
 
       // Detect if subscription was just canceled
       const wasCanceled = previousSub && !previousSub.cancelAtPeriodEnd && isCanceled;
       if (wasCanceled) {
-        console.log(`📧 Sending cancellation email to ${userEmail}`);
-        const sendCancellationEmail = require('../email/sendSubscriptionCancellationEmail');
-        await sendCancellationEmail.sendEmail(userEmail, {
-          tier,
-          userId,
-          subscriptionId: subscription.id,
-          cancelAt: updateData.cancelAt,
-          currentPeriodEnd: updateData.currentPeriodEnd,
-        });
+        try {
+          console.log(`📧 Sending cancellation email to ${userEmail}`);
+          await sendCancellationEmail.sendEmail(userEmail, {
+            tier,
+            userId,
+            subscriptionId: subscription.id,
+            cancelAt: updateData.cancelAt,
+            currentPeriodEnd: updateData.currentPeriodEnd,
+          });
 
-        // Send admin notification for cancellation with full details
-        console.log(`📧 Sending admin notification for ${tier} cancellation`);
-        const sendAdminCancellationNotification = require('../email/sendAdminCancellationNotification');
-        await sendAdminCancellationNotification.sendEmail({
-          tier,
-          userId,
-          userEmail,
-          subscriptionId: subscription.id,
-          cancelAt: updateData.cancelAt,
-          currentPeriodEnd: updateData.currentPeriodEnd,
-          cancellationDetails: subscription.cancellation_details || null,
-        });
+          // Send admin notification for cancellation with full details
+          console.log(`📧 Sending admin notification for ${tier} cancellation`);
+          await sendAdminCancellationNotification.sendEmail({
+            tier,
+            userId,
+            userEmail,
+            subscriptionId: subscription.id,
+            cancelAt: updateData.cancelAt,
+            currentPeriodEnd: updateData.currentPeriodEnd,
+            cancellationDetails: subscription.cancellation_details || null,
+          });
+        } catch (emailError) {
+          console.error('❌ Error sending cancellation emails:', emailError);
+          // Don't throw - webhook should succeed even if emails fail
+        }
+      }
+
+      // Detect tier changes (excluding free tier)
+      const hasTierChanged = previousSub &&
+        previousSub.tier &&
+        previousSub.tier !== tier &&
+        previousSub.tier !== 'free' &&
+        tier !== 'free';
+
+      if (hasTierChanged) {
+        const upgrading = isUpgrade(previousSub.tier, tier);
+        const downgrading = isDowngrade(previousSub.tier, tier);
+
+        if (upgrading) {
+          // ✅ Handle UPGRADE - Update Firebase first, then send upgrade email
+          console.log(`⬆️ UPGRADE detected: ${previousSub.tier} → ${tier}`);
+          console.log(`💾 Updating Firebase with upgrade tracking`);
+          await admin.database().ref(`users/${userId}/subscription`).update({
+            lastUpgradedAt: Date.now(),
+            previousTier: previousSub.tier,
+          });
+
+          // Send upgrade emails with error handling
+          try {
+            console.log(`📧 Sending upgrade email to ${userEmail}`);
+            await sendSubscriptionUpgradeEmail.sendEmail(userEmail, {
+              previousTier: previousSub.tier,
+              newTier: tier,
+              userId,
+              subscriptionId: subscription.id,
+            });
+
+            // Send admin notification for upgrade
+            console.log(`📧 Sending admin notification for upgrade`);
+            await sendAdminSubscriptionNotification.sendEmail({
+              tier,
+              userId,
+              userEmail,
+              subscriptionId: subscription.id,
+            });
+          } catch (emailError) {
+            console.error('❌ Error sending upgrade emails (Firebase already updated):', emailError);
+          }
+        } else if (downgrading) {
+          // ✅ Handle DOWNGRADE - Update Firebase first, then send downgrade email
+          console.log(`⬇️ DOWNGRADE detected: ${previousSub.tier} → ${tier}`);
+          console.log(`💾 Updating Firebase with downgrade tracking`);
+          await admin.database().ref(`users/${userId}/subscription`).update({
+            lastDowngradedAt: Date.now(),
+            previousTier: previousSub.tier,
+            scheduledDowngradeTo: tier,
+          });
+
+          // Send downgrade emails with error handling
+          try {
+            console.log(`📧 Sending downgrade email to ${userEmail}`);
+            await sendSubscriptionDowngradeEmail.sendEmail(userEmail, {
+              previousTier: previousSub.tier,
+              newTier: tier,
+              userId,
+              subscriptionId: subscription.id,
+              effectiveDate: updateData.currentPeriodEnd,
+            });
+
+            // Send admin notification for downgrade
+            console.log(`📧 Sending admin notification for downgrade`);
+            await sendAdminSubscriptionNotification.sendEmail({
+              tier,
+              userId,
+              userEmail,
+              subscriptionId: subscription.id,
+            });
+          } catch (emailError) {
+            console.error('❌ Error sending downgrade emails (Firebase already updated):', emailError);
+          }
+        }
       }
     }
   } catch (error) {
@@ -236,7 +325,26 @@ async function handleCheckoutCompleted(session) {
     const userSnapshot = await userRef.once('value');
     const userData = userSnapshot.val();
 
+    // ✅ VALIDATION: Verify user tier and slot limit
+    const isOwner = userData?.isOwner === true;
+    const isLandlord = userData?.isLandlord === true;
+    const isCreator = userData?.isCreator === true;
     const currentSlots = userData?.purchasedRoomSlots || 0;
+
+    // Validate tier - only Owner can purchase
+    if (!isOwner || isLandlord || isCreator) {
+      console.error(`❌ Invalid room slot purchase for user ${userId} - Wrong tier (isOwner: ${isOwner}, isLandlord: ${isLandlord}, isCreator: ${isCreator})`);
+      // Don't process the purchase but don't fail the webhook
+      return;
+    }
+
+    // Validate maximum limit
+    if (currentSlots >= MAX_PURCHASABLE_SLOTS) {
+      console.error(`❌ Invalid room slot purchase for user ${userId} - Already at maximum (${currentSlots}/${MAX_PURCHASABLE_SLOTS})`);
+      // Don't process the purchase but don't fail the webhook
+      return;
+    }
+
     const newSlotCount = currentSlots + 1;
 
     // Update purchased room slots
@@ -257,6 +365,38 @@ async function handleCheckoutCompleted(session) {
     });
 
     console.log(`Room slot purchased for user ${userId}. New total: ${newSlotCount}`);
+
+    // Send confirmation emails
+    try {
+      const userRecord = await admin.auth().getUser(userId);
+      const userEmail = userRecord.email;
+
+      if (userEmail) {
+        console.log(`📧 Sending room slot purchase emails to ${userEmail}`);
+
+        // Send user confirmation
+        await sendRoomSlotConfirmation.sendEmail(userEmail, {
+          userId,
+          sessionId: session.id,
+          amount: session.amount_total / 100,
+          newTotalSlots: newSlotCount,
+        });
+
+        // Send admin notification
+        await sendAdminRoomSlotNotification.sendEmail({
+          userId,
+          userEmail,
+          amount: session.amount_total / 100,
+          sessionId: session.id,
+          newTotalSlots: newSlotCount,
+        });
+      } else {
+        console.warn('⚠️ No email found for user, skipping room slot purchase emails');
+      }
+    } catch (emailError) {
+      console.error('❌ Error sending room slot purchase emails:', emailError);
+      // Don't throw - we don't want email failures to fail the webhook
+    }
   }
 
   // If it's an Owner upgrade purchase
@@ -281,6 +421,36 @@ async function handleCheckoutCompleted(session) {
     });
 
     console.log(`Owner upgrade completed for user ${userId}`);
+
+    // Send confirmation emails
+    try {
+      const userRecord = await admin.auth().getUser(userId);
+      const userEmail = userRecord.email;
+
+      if (userEmail) {
+        console.log(`📧 Sending Owner upgrade emails to ${userEmail}`);
+
+        // Send user confirmation
+        await sendOwnerUpgradeConfirmation.sendEmail(userEmail, {
+          userId,
+          sessionId: session.id,
+          amount: session.amount_total / 100,
+        });
+
+        // Send admin notification
+        await sendAdminOwnerNotification.sendEmail({
+          userId,
+          userEmail,
+          amount: session.amount_total / 100,
+          sessionId: session.id,
+        });
+      } else {
+        console.warn('⚠️ No email found for user, skipping Owner upgrade emails');
+      }
+    } catch (emailError) {
+      console.error('❌ Error sending Owner upgrade emails:', emailError);
+      // Don't throw - we don't want email failures to fail the webhook
+    }
   }
 }
 
