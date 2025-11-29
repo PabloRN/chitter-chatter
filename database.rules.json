@@ -70,6 +70,48 @@
           ".read": "$userId === auth.uid || (auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true)",
           ".write": "$userId === auth.uid"
         }
+      },
+      "notifications": {
+        "$userId": {
+          ".read": "$userId === auth.uid || (auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true)",
+          ".write": "$userId === auth.uid",
+          "$notificationId": {
+            ".validate": "newData.hasChildren(['id', 'type', 'title', 'message', 'createdAt', 'read', 'clicked', 'priority'])"
+          }
+        }
+      },
+      "notificationSettings": {
+        "$userId": {
+          ".read": "$userId === auth.uid",
+          ".write": "$userId === auth.uid"
+        }
+      },
+      "friends": {
+        "$userId": {
+          ".read": "$userId === auth.uid",
+          ".write": "$userId === auth.uid",
+          "$friendId": {
+            ".validate": "newData.hasChildren(['userId', 'status', 'addedAt'])"
+          }
+        }
+      },
+      "friendRequests": {
+        "$userId": {
+          ".read": "$userId === auth.uid",
+          ".write": false,
+          "received": {
+            ".write": "auth != null",
+            "$requestId": {
+              ".validate": "newData.hasChildren(['id', 'from', 'fromUserNickname', 'status', 'createdAt'])"
+            }
+          },
+          "sent": {
+            ".write": "$userId === auth.uid",
+            "$requestId": {
+              ".validate": "newData.hasChildren(['id', 'to', 'toUserNickname', 'status', 'createdAt'])"
+            }
+          }
+        }
       }
     }
   }

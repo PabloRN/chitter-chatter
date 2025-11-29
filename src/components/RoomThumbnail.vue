@@ -1,8 +1,7 @@
 <!-- eslint-disable max-len -->
 <template>
   <v-scroll-y-reverse-transition>
-    <div class="room-card-container" @mouseenter="showPreview = true" @mouseleave="showPreview = false"
-      @focusin="showPreview = true" @focusout="showPreview = false">
+    <div class="room-card-container">
       <v-card @click="enterRoom(room, id)" class="mx-auto room-card">
         <v-img :src="room?.thumbnail || room?.backgroundImage" class="room-image" height="200px" :cover="true">
           <!-- Subtle gradient overlay for text visibility -->
@@ -22,9 +21,15 @@
 
             <!-- User count (right bottom) -->
             <div class="right-content">
-              <div class="user-count">
-                <v-icon class="user-icon" size="16">mdi-account-group</v-icon>
+              <div class="user-count" :class="{ 'has-friends': hasFriendsInRoom }">
+                <v-icon v-if="hasFriendsInRoom" class="friend-indicator" size="12" color="success">
+                  mdi-account-heart
+                </v-icon>
+                <v-icon v-else class="user-icon" size="16">mdi-account-group</v-icon>
                 <span>{{ usersOnline || 0 }}/{{ room?.maxUsers || 10 }}</span>
+                <v-tooltip v-if="hasFriendsInRoom" activator="parent" location="top">
+                  {{ friendsInRoom.length }} {{ friendsInRoom.length === 1 ? 'friend' : 'friends' }} in this room
+                </v-tooltip>
               </div>
             </div>
           </div>
@@ -53,12 +58,14 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import {
   getDatabase, ref as dbRef, update, get,
 } from 'firebase/database';
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
+import friendsService from '@/services/friendsService';
 
 // ✅ Props
 const props = defineProps({
@@ -71,13 +78,10 @@ const roomsStore = useRoomsStore();
 const userStore = useUserStore();
 const router = useRouter();
 
-// ✅ Local state
-const showPreview = ref(false);
+// Store refs
+const { friendsList } = storeToRefs(userStore);
 
 // ✅ Computed
-const roomList = computed(() => roomsStore.roomList);
-const usersOnlineNow = computed(() => roomsStore.usersOnlineNow);
-
 const isUserAuthenticated = computed(() => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous);
 
 const isFavorite = computed(() => {
@@ -88,6 +92,18 @@ const isFavorite = computed(() => {
 const usersOnline = computed(() => props.room?.usersOnline || 0);
 
 const roomIsFull = computed(() => usersOnline.value >= (props.room?.maxUsers || 20));
+
+// Check if friends are in the room
+const friendsInRoom = computed(() => {
+  if (!usersOnline.value || !friendsList.value || friendsList.value.length === 0) {
+    return [];
+  }
+
+  const roomUsers = props.room.users;
+  return friendsService.getFriendsInRoom(friendsList.value, roomUsers);
+});
+
+const hasFriendsInRoom = computed(() => friendsInRoom.value.length > 0);
 
 // ✅ Methods
 const enterRoom = (room, key) => {
@@ -242,6 +258,47 @@ const toggleFavorite = async () => {
 
 .user-icon {
   color: white;
+}
+
+.user-count.has-friends {
+  background: rgba(76, 175, 80, 0.5);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.friend-indicator {
+  margin-left: 4px;
+  animation: pulse 12s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0% {
+    transform: scale(1);
+  }
+
+  5% {
+    transform: scale(1.15);
+  }
+
+  10% {
+    transform: scale(1);
+  }
+
+  /* Second pulse */
+  15% {
+    transform: scale(1.15);
+  }
+
+  20% {
+    transform: scale(1);
+  }
+
+  /* Long pause (idle) */
+  20%,
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Netflix-style hover preview */

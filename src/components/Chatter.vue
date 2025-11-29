@@ -158,8 +158,21 @@ const showLoginDialogHandler = () => {
 const showUserInfo = () => {
   showUserInfoDialog.value = true;
 };
-const onAddFriendClicked = () => {
-  showUserInfoDialog.value = true;
+
+const onAddFriendClicked = async () => {
+  // Check if user is authenticated
+  if (getCurrentUser.value?.isAnonymous) {
+    showLoginDialog.value = true;
+    return;
+  }
+
+  try {
+    await userStore.sendFriendRequest(props.userId);
+    // Success - snackbar will be shown by the store
+  } catch (error) {
+    console.error('Failed to send friend request:', error);
+    // Error snackbar will be shown by the store
+  }
 };
 
 const handleSpaceKey = (e) => {
@@ -609,6 +622,7 @@ watch(userPositionModified, () => {
   width: 100%;
   display: flex;
   justify-content: center;
+  width: 120%;
 }
 
 .nickname {
@@ -616,6 +630,7 @@ watch(userPositionModified, () => {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 1);
   font-family: 'Nanum Pen Script', cursive !important;
   font-size: 1.5em;
+  width: 120%;
 }
 
 @media (max-width: 768px) {
