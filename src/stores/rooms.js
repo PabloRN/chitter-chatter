@@ -76,12 +76,23 @@ const useRoomsStore = defineStore('rooms', {
         Object.keys(snapshot.val()).forEach((singleRoom) => {
           const usersRoom = ref(db, `rooms/${singleRoom}/users/`);
 
-          onChildAdded(usersRoom, () => {
+          onChildAdded(usersRoom, (userSnapshot) => {
             this.addOnline1({ roomId: singleRoom });
+            // Update room users object for real-time friend indicator
+            if (this.roomList[singleRoom]) {
+              if (!this.roomList[singleRoom].users) {
+                this.roomList[singleRoom].users = {};
+              }
+              this.roomList[singleRoom].users[userSnapshot.key] = userSnapshot.val();
+            }
           });
 
-          onChildRemoved(usersRoom, () => {
+          onChildRemoved(usersRoom, (userSnapshot) => {
             this.subOnline1({ roomId: singleRoom });
+            // Update room users object for real-time friend indicator
+            if (this.roomList[singleRoom]?.users) {
+              delete this.roomList[singleRoom].users[userSnapshot.key];
+            }
           });
         });
 
@@ -188,6 +199,7 @@ const useRoomsStore = defineStore('rooms', {
         onDisconnect(refRoom).remove();
 
         await update(ref(db), updates);
+        // await set(ref(db, `friends/${userId}/roomIn/`), roomId);
         this.pushUserSuccess();
       } catch (error) {
         console.error(error);
@@ -220,7 +232,7 @@ const useRoomsStore = defineStore('rooms', {
         }
 
         await update(ref(db), updates);
-
+        // await set(ref(db, `friends/${userId}/roomIn/`), null);
         this.exitRoom({ roomId, userId, roomUsersKey });
       } catch (error) {
         console.error(error);

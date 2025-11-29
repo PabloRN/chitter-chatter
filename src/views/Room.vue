@@ -112,7 +112,7 @@
 
 <script setup>
 import {
-  ref, computed, onMounted, onBeforeUnmount, watch, nextTick,
+  ref, computed, onMounted, onBeforeUnmount, onUnmounted, watch, nextTick,
 } from 'vue';
 import { getDatabase, ref as dbRef, set } from 'firebase/database';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
@@ -420,7 +420,25 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateWindowSize);
 });
 
+onUnmounted(() => {
+  // Cleanup listener if component is unmounted unexpectedly
+  if (route.params.roomId) {
+    messagesStore.removeDialogs(route.params.roomId);
+    messagesStore.cleanMessages();
+  }
+});
+
 onBeforeRouteLeave((from, to, next) => {
+  console.log('BEFORE ROUTE LEAVE FROM ROOM');
+
+  // Unsubscribe from Firebase listener FIRST
+  if (route.params.roomId) {
+    messagesStore.removeDialogs(route.params.roomId);
+  }
+
+  // Then clean local messages
+  messagesStore.cleanMessages();
+
   if (currentUser.value && currentUser.value.userId) {
     const { roomId } = route.params;
     const { userId } = currentUser.value;

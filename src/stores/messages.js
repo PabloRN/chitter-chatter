@@ -11,6 +11,8 @@ const useMessagesStore = defineStore('messages', {
     privateMessage: [],
     privateUsers: '',
     showMessagesStatus: false,
+    activeListeners: {}, // { roomId: { unsubscribeAdd: fn, unsubscribeRemove: fn } }
+    currentRoomId: null, // Track which room we're listening to
   }),
 
   getters: {
@@ -189,12 +191,19 @@ const useMessagesStore = defineStore('messages', {
     },
 
     async getDialogs(roomId) {
+      // Check if already listening to this room
+      if (this.activeListeners[roomId]) {
+        console.log('Already listening to room:', roomId);
+        return; // Prevent duplicate listeners
+      }
+
       const db = getDatabase();
 
       try {
         const messagesListRef = ref(db, `rooms/${roomId}/messages/`);
 
-        onChildAdded(messagesListRef, (messageSnap) => {
+        // Store the unsubscribe function returned by onChildAdded
+        const unsubscribeAdd = onChildAdded(messagesListRef, (messageSnap) => {
           const messageVal = messageSnap.val();
           if (messageVal !== null && this.roomMessages.filter((m) => m.roomUsersKey === messageSnap.key).length === 0) {
             this.messageAddedSuccess({
@@ -209,26 +218,57 @@ const useMessagesStore = defineStore('messages', {
           }
         });
 
-        onChildRemoved(messagesListRef, (messageSnap) => {
+        const unsubscribeRemove = onChildRemoved(messagesListRef, (messageSnap) => {
           if (messageSnap.val() !== null) {
             this.messageRemovedSuccess(messageSnap.key);
           }
         });
+
+        // Store the unsubscribe functions
+        this.activeListeners[roomId] = {
+          unsubscribeAdd,
+          unsubscribeRemove,
+        };
+        this.currentRoomId = roomId;
+
+        console.log('Started listening to room:', roomId);
       } catch (error) {
         this.setRoomsFail();
       }
     },
 
-    async removeDialogs(roomId) {
-      const db = getDatabase();
-      const updates = {};
-      updates[`/rooms/${roomId}/messages/`] = null;
+    // New method to properly unsubscribe without deleting data
+    unsubscribeFromRoom(roomId) {
+      if (this.activeListeners[roomId]) {
+        const { unsubscribeAdd, unsubscribeRemove } = this.activeListeners[roomId];
 
+        // Call the unsubscribe functions to stop listening
+        if (unsubscribeAdd) unsubscribeAdd();
+        if (unsubscribeRemove) unsubscribeRemove();
+
+        // Remove from tracking
+        delete this.activeListeners[roomId];
+
+        console.log('Unsubscribed from room:', roomId);
+      }
+
+      // Clear current room if it matches
+      if (this.currentRoomId === roomId) {
+        this.currentRoomId = null;
+      }
+    },
+
+    async removeDialogs(roomId) {
       try {
-        off(ref(db, `rooms/${roomId}/messages/`));
-        await update(ref(db), updates);
+        // Just unsubscribe the listener, don't delete messages!
+        this.unsubscribeFromRoom(roomId);
+
+        // Clear local message state for this room
         this.removeDialogsSuccess();
+
+        console.log('Removed dialogs listener for room:', roomId);
       } catch (error) {
+        console.error('Error removing dialogs:', error);
         this.setRoomsFail();
       }
     },
@@ -290,10 +330,18 @@ const useMessagesStore = defineStore('messages', {
 
     messageAddedSuccess(message) {
       this.roomMessages = [...this.roomMessages, message]; // Create new array for reactivity
+      // Also update the display array if TimeMachine is open
+      if (this.showMessagesStatus === true) {
+        this.roomMessagesToShow = [...this.roomMessagesToShow, message];
+      }
     },
 
     messageRemovedSuccess(messageId) {
       this.roomMessages = this.roomMessages.filter((message) => message.roomUsersKey !== messageId);
+      // Also update the display array if TimeMachine is open
+      if (this.showMessagesStatus === true) {
+        this.roomMessagesToShow = this.roomMessagesToShow.filter((message) => message.roomUsersKey !== messageId);
+      }
     },
 
     removeDialogsSuccess() {
