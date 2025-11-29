@@ -560,12 +560,12 @@ const availableProviders = [
   {
     id: 'google.com', name: 'Google', icon: 'mdi-google', provider: new GoogleAuthProvider(),
   },
-  {
-    id: 'yahoo.com', name: 'Yahoo', icon: 'mdi-yahoo', provider: null,
-  }, // placeholder, implement OAuth if you have it
-  {
-    id: 'github.com', name: 'GitHub', icon: 'mdi-github', provider: null,
-  }, // same
+  // {
+  //   id: 'yahoo.com', name: 'Yahoo', icon: 'mdi-yahoo', provider: null,
+  // }, // placeholder, implement OAuth if you have it
+  // {
+  //   id: 'github.com', name: 'GitHub', icon: 'mdi-github', provider: null,
+  // }, // same
 ];
 
 const router = useRouter();

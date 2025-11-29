@@ -980,15 +980,15 @@ const useUserStore = defineStore('user', {
             forceSameDevice: true,
           },
           window.firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+          // {
+          //   provider: 'yahoo.com',
+          //   scopes: ['mail-r', 'sdps-r'],
+          //   customParameters: {
+          //     prompt: 'login',
+          //   },
+          // },
           {
-            provider: 'yahoo.com',
-            scopes: ['mail-r', 'sdps-r'],
-            customParameters: {
-              prompt: 'login',
-            },
-          },
-          {
-            provider: window.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+            // provider: window.firebase.auth.FacebookAuthProvider.PROVIDER_ID,
             scopes: ['email', 'public_profile'],
           },
 
