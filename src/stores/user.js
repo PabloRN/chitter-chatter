@@ -25,7 +25,9 @@ import tabCommunicationService from '@/services/tabCommunicationService';
 import avatarService from '@/services/avatarService';
 import profileService from '@/services/profileService';
 import analyticsService from '@/services/analyticsService';
+import friendsService from '@/services/friendsService';
 import useMainStore from './main';
+import useNotificationsStore from './notifications';
 
 const useUserStore = defineStore('user', {
   state: () => ({
@@ -52,6 +54,9 @@ const useUserStore = defineStore('user', {
     showWelcomeForm: false, // For controlling welcome form visibility
     blockListeners: [], // cleanup functions
     authListener: null, // For cross-tab communication cleanup
+    friends: [], // User's friends list
+    friendRequests: [], // Pending friend requests
+    friendsListeners: [], // Friends-related listener cleanup functions
     initialUser: {
       nickname: '',
       avatar: '',
@@ -127,6 +132,31 @@ const useUserStore = defineStore('user', {
     canUpgradeToOwner: (state) => {
       const user = state.currentUser;
       return !user?.isOwner && !user?.isLandlord && !user?.isCreator;
+    },
+    // Friends getters
+    friendsList: (state) => state.friends || [],
+    friendRequestsList: (state) => state.friendRequests || [],
+    friendRequestsCount: (state) => (state.friendRequests || []).length,
+    isFriend: (state) => (userId) => (state.friends || []).some((f) => f.userId === userId),
+    // Profile completion getter
+    profileCompletion: (state) => {
+      const user = state.currentUser;
+      if (!user || user.isAnonymous) {
+        return { percentage: 0, hasNickname: false, hasAvatar: false, hasAge: false, hasHobbies: false, hasDescription: false };
+      }
+
+      const checks = {
+        hasNickname: !!(user.nickname && user.nickname.trim() && !user.nickname.startsWith('anon_')),
+        hasAvatar: !!(user.personalAvatar || user.avatar),
+        hasAge: !!(user.age && user.age > 0),
+        hasHobbies: !!(user.hobbies && user.hobbies.length > 0),
+        hasDescription: !!(user.description && user.description.trim().length >= 20),
+      };
+
+      const completedCount = Object.values(checks).filter(Boolean).length;
+      const percentage = Math.round((completedCount / 5) * 100);
+
+      return { percentage, ...checks };
     },
   },
 
@@ -454,6 +484,19 @@ const useUserStore = defineStore('user', {
             this.setCurrentUser({ data: userData, userId: user.uid });
             this.setupPrivateMessageListener();
             this.initBlockListeners(user.uid);
+
+            // Initialize notifications for non-anonymous users
+            if (userData && !userData.isAnonymous) {
+              const notificationsStore = useNotificationsStore();
+              if (!notificationsStore.isListening) {
+                notificationsStore.initialize(user.uid);
+              }
+
+              // Initialize friends listeners for non-anonymous users
+              if (this.friendsListeners.length === 0) {
+                this.initFriendsListeners(user.uid);
+              }
+            }
           });
         } else {
           // Signed out → login anonymously again
@@ -717,9 +760,13 @@ const useUserStore = defineStore('user', {
             ...anonymousData,
             isAnonymous: false,
             userId: loggedUser.uid,
-            personalAvatar: loggedUser.providerData[0]?.photoURL || '',
             unverified: anonymousUser.uid,
           };
+
+          // Only add personalAvatar if provider supplies one
+          if (loggedUser.providerData[0]?.photoURL) {
+            newUserData.personalAvatar = loggedUser.providerData[0].photoURL;
+          }
 
           await set(ref(db, `users/${loggedUser.uid}`), newUserData);
         }
@@ -1091,6 +1138,14 @@ const useUserStore = defineStore('user', {
       // Handle different upgrade types
       if (isCurrent) {
         this.signingInUpgraded = true;
+
+        // Initialize notifications for upgraded user
+        const notificationsStore = useNotificationsStore();
+        notificationsStore.initialize(verifiedUser);
+
+        // Initialize friends listeners for upgraded user
+        this.initFriendsListeners(verifiedUser);
+
         // Add small delay to ensure everything is ready before showing welcome form
         setTimeout(() => {
           this.showWelcomeForm = true;
@@ -1105,7 +1160,143 @@ const useUserStore = defineStore('user', {
       this.userData[userId].nickname = nickname;
     },
 
+    // Friends-related actions
+    initFriendsListeners(userId) {
+      if (!userId) return;
+
+      try {
+        // Listen to friends list
+        const friendsUnsubscribe = friendsService.listenToFriends(userId, (friends) => {
+          this.friends = friends;
+        });
+
+        // Listen to friend requests
+        const requestsUnsubscribe = friendsService.listenToFriendRequests(userId, (requests) => {
+          this.friendRequests = requests;
+        });
+
+        this.friendsListeners.push(friendsUnsubscribe, requestsUnsubscribe);
+        console.log('✅ Friends listeners initialized');
+      } catch (error) {
+        console.error('Error initializing friends listeners:', error);
+      }
+    },
+
+    async sendFriendRequest(toUserId) {
+      const mainStore = useMainStore();
+
+      try {
+        const userData = {
+          nickname: this.currentUser.nickname,
+          personalAvatar: this.currentUser.personalAvatar,
+          miniAvatar: this.currentUser.miniAvatar,
+        };
+
+        await friendsService.sendFriendRequest(this.currentUser.userId, toUserId, userData);
+
+        mainStore.setSnackbar({
+          type: 'success',
+          msg: 'Friend request sent!',
+        });
+      } catch (error) {
+        console.error('Error sending friend request:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: error.message || 'Failed to send friend request',
+        });
+        throw error;
+      }
+    },
+
+    async acceptFriendRequest(requestId) {
+      const mainStore = useMainStore();
+
+      try {
+        const userData = {
+          nickname: this.currentUser.nickname,
+          personalAvatar: this.currentUser.personalAvatar,
+          miniAvatar: this.currentUser.miniAvatar,
+        };
+
+        await friendsService.acceptFriendRequest(this.currentUser.userId, requestId, userData);
+
+        mainStore.setSnackbar({
+          type: 'success',
+          msg: 'Friend request accepted!',
+        });
+      } catch (error) {
+        console.error('Error accepting friend request:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: 'Failed to accept friend request',
+        });
+        throw error;
+      }
+    },
+
+    async declineFriendRequest(requestId) {
+      const mainStore = useMainStore();
+
+      try {
+        await friendsService.declineFriendRequest(this.currentUser.userId, requestId);
+
+        mainStore.setSnackbar({
+          type: 'success',
+          msg: 'Friend request declined',
+        });
+      } catch (error) {
+        console.error('Error declining friend request:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: 'Failed to decline friend request',
+        });
+        throw error;
+      }
+    },
+
+    async removeFriend(friendId) {
+      const mainStore = useMainStore();
+
+      try {
+        await friendsService.removeFriend(this.currentUser.userId, friendId);
+
+        mainStore.setSnackbar({
+          type: 'success',
+          msg: 'Friend removed',
+        });
+      } catch (error) {
+        console.error('Error removing friend:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: 'Failed to remove friend',
+        });
+        throw error;
+      }
+    },
+
+    cleanupFriendsListeners() {
+      // Call all friend listener cleanup functions
+      this.friendsListeners.forEach((unsubscribe) => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
+      this.friendsListeners = [];
+
+      // Cleanup friends service
+      friendsService.cleanup();
+
+      console.log('🧹 Friends listeners cleaned up');
+    },
+
     setUserSignedOut() {
+      // Cleanup notifications
+      const notificationsStore = useNotificationsStore();
+      notificationsStore.cleanup();
+
+      // Cleanup friends
+      this.cleanupFriendsListeners();
+
       this.signingInUpgraded = false;
       this.isUserUpgraded = false;
       this.currentUser.unverified = null;
