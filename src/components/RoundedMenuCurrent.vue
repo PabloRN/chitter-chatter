@@ -74,7 +74,8 @@
       <div class="icon-caption" :disabled="getCurrentUser.isAnonymous">Login</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="handleEmit('showNotifications')" @touchstart.native.prevent="handleEmit('showNotifications')">
+      @click.prevent.stop="handleEmit('showNotifications')"
+      @touchstart.native.prevent="handleEmit('showNotifications')">
       <div style="position: relative;">
         <v-icon class="manga-icon"> mdi-bell </v-icon>
         <v-badge v-if="hasUnreadNotifications" dot color="error" overlap
@@ -100,16 +101,10 @@
 
   <!-- Notifications Panel -->
   <v-menu v-model="showNotificationsPanel" :close-on-content-click="false" location="bottom" max-width="400">
-    <NotificationPanel
-      :notifications="notifications"
-      :loading="loadingNotifications"
-      @close="showNotificationsPanel = false"
-      @mark-as-read="handleMarkAsRead"
-      @mark-as-clicked="handleMarkAsClicked"
-      @mark-all-as-read="handleMarkAllAsRead"
-      @delete-notification="handleDeleteNotification"
-      @delete-all="handleDeleteAll"
-    />
+    <NotificationPanel :notifications="notifications" :loading="loadingNotifications"
+      @close="showNotificationsPanel = false" @mark-as-read="handleMarkAsRead" @mark-as-clicked="handleMarkAsClicked"
+      @mark-all-as-read="handleMarkAllAsRead" @delete-notification="handleDeleteNotification"
+      @delete-all="handleDeleteAll" />
   </v-menu>
 </template>
 
