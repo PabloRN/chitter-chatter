@@ -75,7 +75,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import {
+  ref, computed, watch, onMounted,
+} from 'vue';
 
 // Props
 const props = defineProps({
@@ -99,9 +101,7 @@ const DISMISSED_KEY = 'profile_completion_dismissed';
 // Computed
 const completionPercentage = computed(() => props.completionData?.percentage || 0);
 
-const showCard = computed(() => {
-  return !props.user?.isAnonymous && completionPercentage.value < 100;
-});
+const showCard = computed(() => !props.user?.isAnonymous && completionPercentage.value < 100);
 
 const checklistItems = computed(() => [
   {

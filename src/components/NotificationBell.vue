@@ -18,7 +18,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import {
+  ref, computed, onMounted, onUnmounted,
+} from 'vue';
 import { storeToRefs } from 'pinia';
 import useNotificationsStore from '@/stores/notifications';
 import useUserStore from '@/stores/user';

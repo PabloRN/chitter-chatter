@@ -93,7 +93,7 @@ exports.approvePendingDeletion = onRequest(
           await admin.auth().deleteUser(userId);
           console.log(`✅ Deleted ${userId} from Firebase Authentication`);
         } catch (authError) {
-          console.error(`Error deleting from Auth:`, authError);
+          console.error('Error deleting from Auth:', authError);
         }
       }
 

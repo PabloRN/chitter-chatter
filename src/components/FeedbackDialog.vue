@@ -107,9 +107,7 @@ const rules = {
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return pattern.test(value) || 'Please enter a valid email';
   },
-  maxLength: (max) => (value) => {
-    return !value || value.length <= max || `Maximum ${max} characters allowed`;
-  },
+  maxLength: (max) => (value) => !value || value.length <= max || `Maximum ${max} characters allowed`,
 };
 
 // Auto-fill email if user is authenticated

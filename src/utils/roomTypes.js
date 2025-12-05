@@ -43,6 +43,7 @@ export const DEFAULT_ROOM_VALUES = {
   minAge: 13,
   backgroundImage: '',
   isPrivate: false,
+  isFanArt: false,
   publicAvatars: [],
   defaultAvatar: null, // Avatar that new users get when entering room
   createdBy: '',
@@ -111,6 +112,7 @@ export function createRoom(data = {}) {
     description: data.description || DEFAULT_ROOM_VALUES.description,
     maxUsers: data.maxUsers || DEFAULT_ROOM_VALUES.maxUsers,
     minAge: data.minAge || DEFAULT_ROOM_VALUES.minAge,
+    isFanArt: data.isFanArt || DEFAULT_ROOM_VALUES.isFanArt,
     backgroundImage: data.backgroundImage || DEFAULT_ROOM_VALUES.backgroundImage,
     isPrivate: data.isPrivate || DEFAULT_ROOM_VALUES.isPrivate,
     publicAvatars: data.publicAvatars || DEFAULT_ROOM_VALUES.publicAvatars,

@@ -66,7 +66,7 @@ exports.recreateUser = onRequest(
         const existingUser = await auth.getUser(userId);
         userExistsInAuth = true;
         console.log('⚠️  User already exists in Firebase Auth!');
-        console.log(`   Providers: ${existingUser.providerData.map(p => p.providerId).join(', ') || 'NONE'}`);
+        console.log(`   Providers: ${existingUser.providerData.map((p) => p.providerId).join(', ') || 'NONE'}`);
 
         // If user exists but has no providers, delete and recreate
         if (existingUser.providerData.length === 0) {
@@ -85,7 +85,7 @@ exports.recreateUser = onRequest(
               success: true,
               message: 'User already exists in Firebase Auth with valid providers. Use forceRecreate=true to recreate.',
               alreadyExists: true,
-              providers: existingUser.providerData.map(p => p.providerId),
+              providers: existingUser.providerData.map((p) => p.providerId),
             });
             return;
           }
@@ -102,11 +102,11 @@ exports.recreateUser = onRequest(
       console.log('🔧 Recreating user in Firebase Auth...');
 
       // Generate a random temporary password
-      const tempPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
+      const tempPassword = `${Math.random().toString(36).slice(-12)}Aa1!`;
 
       const newUser = await auth.createUser({
         uid: userId, // ⭐ Using the SAME UID
-        email: email,
+        email,
         emailVerified: true, // Set to true so they can login immediately
         password: tempPassword, // Add password provider
         displayName: userData.nickname || 'User',

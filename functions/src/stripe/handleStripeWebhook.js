@@ -225,11 +225,11 @@ async function handleSubscriptionUpdate(subscription) {
       }
 
       // Detect tier changes (excluding free tier)
-      const hasTierChanged = previousSub &&
-        previousSub.tier &&
-        previousSub.tier !== tier &&
-        previousSub.tier !== 'free' &&
-        tier !== 'free';
+      const hasTierChanged = previousSub
+        && previousSub.tier
+        && previousSub.tier !== tier
+        && previousSub.tier !== 'free'
+        && tier !== 'free';
 
       if (hasTierChanged) {
         const upgrading = isUpgrade(previousSub.tier, tier);
@@ -238,7 +238,7 @@ async function handleSubscriptionUpdate(subscription) {
         if (upgrading) {
           // ✅ Handle UPGRADE - Update Firebase first, then send upgrade email
           console.log(`⬆️ UPGRADE detected: ${previousSub.tier} → ${tier}`);
-          console.log(`💾 Updating Firebase with upgrade tracking`);
+          console.log('💾 Updating Firebase with upgrade tracking');
           await admin.database().ref(`users/${userId}/subscription`).update({
             lastUpgradedAt: Date.now(),
             previousTier: previousSub.tier,
@@ -255,7 +255,7 @@ async function handleSubscriptionUpdate(subscription) {
             });
 
             // Send admin notification for upgrade
-            console.log(`📧 Sending admin notification for upgrade`);
+            console.log('📧 Sending admin notification for upgrade');
             await sendAdminSubscriptionNotification.sendEmail({
               tier,
               userId,
@@ -268,7 +268,7 @@ async function handleSubscriptionUpdate(subscription) {
         } else if (downgrading) {
           // ✅ Handle DOWNGRADE - Update Firebase first, then send downgrade email
           console.log(`⬇️ DOWNGRADE detected: ${previousSub.tier} → ${tier}`);
-          console.log(`💾 Updating Firebase with downgrade tracking`);
+          console.log('💾 Updating Firebase with downgrade tracking');
           await admin.database().ref(`users/${userId}/subscription`).update({
             lastDowngradedAt: Date.now(),
             previousTier: previousSub.tier,
@@ -287,7 +287,7 @@ async function handleSubscriptionUpdate(subscription) {
             });
 
             // Send admin notification for downgrade
-            console.log(`📧 Sending admin notification for downgrade`);
+            console.log('📧 Sending admin notification for downgrade');
             await sendAdminSubscriptionNotification.sendEmail({
               tier,
               userId,

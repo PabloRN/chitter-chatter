@@ -107,10 +107,10 @@ exports.createCheckoutSession = onRequest(
         if (isDowngradeFlow) {
           updateParams.proration_behavior = 'none'; // No immediate charge/credit
           updateParams.billing_cycle_anchor = 'unchanged'; // Keep current billing cycle
-          console.log(`⬇️ Scheduling downgrade for end of billing period`);
+          console.log('⬇️ Scheduling downgrade for end of billing period');
         } else {
           updateParams.proration_behavior = 'create_prorations'; // Immediate with prorated charges
-          console.log(`⬆️ Applying upgrade immediately with prorations`);
+          console.log('⬆️ Applying upgrade immediately with prorations');
         }
 
         // Update the subscription
@@ -125,9 +125,9 @@ exports.createCheckoutSession = onRequest(
         res.status(200).json({
           subscriptionId: updatedSubscription.id,
           updated: true,
-          message: isDowngradeFlow ?
-            'Downgrade scheduled for end of billing period' :
-            'Subscription upgraded successfully',
+          message: isDowngradeFlow
+            ? 'Downgrade scheduled for end of billing period'
+            : 'Subscription upgraded successfully',
         });
       } else {
         // No active subscription - create new checkout session

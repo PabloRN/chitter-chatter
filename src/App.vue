@@ -40,7 +40,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import {
+  ref, onMounted, onUnmounted, watch,
+} from 'vue';
 import SnackBar from './components/Snackbar';
 import CookieConsent from './components/CookieConsent';
 import SurveyPopup from './components/SurveyPopup';

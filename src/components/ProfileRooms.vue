@@ -50,8 +50,7 @@
         <!-- Rooms List -->
         <div v-else>
           <div class="rooms-grid">
-            <v-card v-for="room in ownedRooms" :key="room.id" class="room-card" elevation="2"
-              @click="goToRoom(room.id)">
+            <v-card v-for="room in ownedRooms" :key="room.id" class="room-card" elevation="2">
               <!-- Room Background -->
               <div class="room-background">
                 <v-img v-if="room.thumbnail || room.backgroundImage" :src="room.thumbnail || room.backgroundImage"
@@ -272,8 +271,7 @@
       <!-- Rooms List -->
       <div v-else>
         <div class="rooms-grid">
-          <v-card v-for="room in ownedRooms" :key="room.id" class="room-card" elevation="2"
-            @click="goToRoom(room.id)">
+          <v-card v-for="room in ownedRooms" :key="room.id" class="room-card" elevation="2">
             <!-- Room Background -->
             <div class="room-background">
               <v-img v-if="room.thumbnail || room.backgroundImage" :src="room.thumbnail || room.backgroundImage"
@@ -287,7 +285,38 @@
                 <v-chip small :color="room.isPrivate ? 'orange' : 'green'" text-color="white">
                   {{ room.isPrivate ? 'Private' : 'Public' }}
                 </v-chip>
+                <v-menu location="bottom">
+                  <template #activator="{ props }">
+                    <v-btn icon size="x-small" v-bind="props">
+                      <v-icon small>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                  </template>
 
+                  <v-list class="profile-dropdown pa-0">
+
+                    <v-list-item @click="editRoom(room.id)" class="pl-1">
+                      <template #prepend>
+                        <v-icon class="text-blue">mdi-pencil</v-icon>
+                      </template>
+                      <v-list-item-title class="text-blue">Edit Room</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="copyRoomLink(room.id)" class="pl-1">
+                      <template #prepend>
+                        <v-icon class="text-green">mdi-link</v-icon>
+                      </template>
+                      <v-list-item-title class="text-green">Copy Link</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click="showDeleteDialog(room)" class="pl-1">
+                      <template #prepend>
+                        <v-icon class="text-red">mdi-delete</v-icon>
+                      </template>
+                      <v-list-item-title class="text-red">Delete</v-list-item-title>
+                    </v-list-item>
+
+                  </v-list>
+                </v-menu>
               </div>
             </div>
 
@@ -318,35 +347,9 @@
             </v-card-text>
 
             <!-- Room Actions -->
-            <v-card-actions class="room-actions">
-              <v-btn small text color="primary" @click.stop="editRoom(room.id)">
-                <v-icon left small>mdi-pencil</v-icon>
-                Edit
-              </v-btn>
-              <v-btn small text color="green" @click.stop="copyRoomLink(room.id)">
-                <v-icon left small>mdi-link</v-icon>
-                Share
-              </v-btn>
-              <v-spacer />
-              <v-btn small text color="red" @click.stop="showDeleteDialog(room)">
-                <v-icon left small>mdi-delete</v-icon>
-                Delete
-              </v-btn>
-              <v-menu offset-y>
-                <template #activator="{ on, attrs }">
-                  <v-btn icon small v-bind="attrs" v-on="on" @click.stop>
-                    <v-icon>mdi-dots-vertical</v-icon>
-                  </v-btn>
-                </template>
-                <v-list density="compact">
-                  <v-list-item @click="copyRoomLink(room.id)" prepend-icon="mdi-link" title="Copy Link">
-                  </v-list-item>
-                  <v-list-item @click="showDeleteDialog(room)" prepend-icon="mdi-delete" title="Delete"
-                    class="error--text">
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-            </v-card-actions>
+            <!-- <v-card-actions class="room-actions">
+
+            </v-card-actions> -->
           </v-card>
         </div>
 
@@ -393,8 +396,7 @@
                 </v-card>
 
                 <!-- Subscription Options -->
-                <v-card v-if="userTier === 'free'" class="option-card subscription" elevation="2"
-                  @click="goToPricing">
+                <v-card v-if="userTier === 'free'" class="option-card subscription" elevation="2" @click="goToPricing">
                   <div class="option-badge popular">Most Popular</div>
                   <div class="option-content">
                     <v-icon size="40" class="mb-2"
@@ -537,7 +539,6 @@ const userTier = computed(() => {
   return currentUser?.subscriptionTier || 'free';
 });
 
-
 // Methods
 const loadOwnedRooms = async (forceRefresh = false) => {
   const currentUser = userStore.getCurrentUser;
@@ -565,7 +566,6 @@ const goToRoom = (roomId) => {
 const editRoom = (roomId) => {
   router.push(`/profile/room/${roomId}/edit`);
 };
-
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown';

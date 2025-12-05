@@ -202,7 +202,7 @@ const selectedAvatars = computed(() => {
   // Ensure at least one avatar is default
   if (avatars.length > 0 && !avatars.some((a) => a.isDefault)) {
     avatars[0].isDefault = true;
-    defaultAvatarId.value = avatars[0].id || `uploaded_0`;
+    defaultAvatarId.value = avatars[0].id || 'uploaded_0';
   }
 
   return avatars;
@@ -275,7 +275,7 @@ const onFileChange = async (fileOrEvent) => {
 
   // Set first uploaded avatar as default if no default is set
   if (!defaultAvatarId.value && uploadedPreviews.value.length > 0) {
-    defaultAvatarId.value = `uploaded_0`;
+    defaultAvatarId.value = 'uploaded_0';
   }
 
   showSuccess.value = true;
@@ -294,7 +294,7 @@ const removeUploadedAvatar = (index) => {
   // If we removed the default avatar, set a new default
   if (defaultAvatarId.value === removedId) {
     if (uploadedPreviews.value.length > 0) {
-      defaultAvatarId.value = `uploaded_0`;
+      defaultAvatarId.value = 'uploaded_0';
     } else if (selectedPreloadedIds.value.length > 0) {
       defaultAvatarId.value = selectedPreloadedIds.value[0];
     } else {
@@ -327,7 +327,7 @@ const togglePreloadedAvatar = (avatar) => {
     if (defaultAvatarId.value === avatar.id && totalSelected.value > 0) {
       // Set first available avatar as default
       if (uploadedPreviews.value.length > 0) {
-        defaultAvatarId.value = `uploaded_0`;
+        defaultAvatarId.value = 'uploaded_0';
       } else if (selectedPreloadedIds.value.length > 0) {
         defaultAvatarId.value = selectedPreloadedIds.value[0];
       }

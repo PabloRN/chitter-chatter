@@ -98,8 +98,13 @@ const props = defineProps({
   message: {
     type: Array,
     default: () => [],
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
   },
 });
+const emit = defineEmits(['update:modelValue']);
 
 const messagesStore = useMessagesStore();
 const showHistory = ref(false);

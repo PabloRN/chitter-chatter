@@ -47,7 +47,7 @@ const goBack = () => {
 };
 
 const loadDocument = async () => {
-  const docType = route.meta.docType;
+  const { docType } = route.meta;
   const docPath = documentMap[docType];
 
   if (!docPath) {

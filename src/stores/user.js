@@ -142,7 +142,9 @@ const useUserStore = defineStore('user', {
     profileCompletion: (state) => {
       const user = state.currentUser;
       if (!user || user.isAnonymous) {
-        return { percentage: 0, hasNickname: false, hasAvatar: false, hasAge: false, hasHobbies: false, hasDescription: false };
+        return {
+          percentage: 0, hasNickname: false, hasAvatar: false, hasAge: false, hasHobbies: false, hasDescription: false,
+        };
       }
 
       const checks = {

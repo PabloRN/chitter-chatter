@@ -11,7 +11,9 @@ const { createTransporter } = require('./nodemailer-config');
 async function sendEmail(data) {
   try {
     const transporter = createTransporter();
-    const { type, userId, userEmail, userData, reason, transferredRooms } = data;
+    const {
+      type, userId, userEmail, userData, reason, transferredRooms,
+    } = data;
 
     const timestamp = new Date().toLocaleString('en-US', {
       year: 'numeric',
@@ -68,7 +70,9 @@ async function sendEmail(data) {
 /**
  * Generate email HTML for instant deletion (FYI)
  */
-function generateInstantDeletionEmail({ userId, userEmail, userData, timestamp, transferredRooms }) {
+function generateInstantDeletionEmail({
+  userId, userEmail, userData, timestamp, transferredRooms,
+}) {
   const tier = userData.subscriptionTier || userData.subscription?.tier || 'free';
   const archiveDate = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -177,7 +181,7 @@ function generateInstantDeletionEmail({ userId, userEmail, userData, timestamp, 
           ${transferredRooms.length > 0 ? `
             <p><strong>🏠 Transferred Rooms:</strong></p>
             <ul>
-              ${transferredRooms.map(roomId => `<li>Room ID: ${roomId}</li>`).join('')}
+              ${transferredRooms.map((roomId) => `<li>Room ID: ${roomId}</li>`).join('')}
             </ul>
           ` : '<p><em>No rooms to transfer</em></p>'}
 
@@ -200,7 +204,9 @@ function generateInstantDeletionEmail({ userId, userEmail, userData, timestamp, 
 /**
  * Generate email HTML for review required (ACTION NEEDED)
  */
-function generateReviewRequiredEmail({ userId, userEmail, userData, timestamp, reason }) {
+function generateReviewRequiredEmail({
+  userId, userEmail, userData, timestamp, reason,
+}) {
   const tier = userData.subscriptionTier || userData.subscription?.tier || 'free';
   const subscriptionEnd = userData.subscription?.currentPeriodEnd
     ? new Date(userData.subscription.currentPeriodEnd).toLocaleDateString('en-US', {

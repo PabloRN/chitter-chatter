@@ -1,5 +1,5 @@
-const { createTransporter } = require('./nodemailer-config');
 const { defineString } = require('firebase-functions/params');
+const { createTransporter } = require('./nodemailer-config');
 
 const appUrl = defineString('APP_URL', { default: 'http://localhost:8080' });
 

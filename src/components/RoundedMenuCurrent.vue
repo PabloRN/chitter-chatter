@@ -109,7 +109,9 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
+import {
+  ref, computed, nextTick, onMounted, onUnmounted,
+} from 'vue';
 import { storeToRefs } from 'pinia';
 import useUserStore from '@/stores/user';
 import useMessagesStore from '@/stores/messages';
@@ -126,7 +128,7 @@ const props = defineProps({
 });
 
 // emits
-const emit = defineEmits(['privateMessage', 'exitRoom', 'showAvatarList', 'signOut', 'showMessages']);
+const emit = defineEmits(['privateMessage', 'exitRoom', 'showAvatarList', 'signOut', 'showMessages', 'showProfile', 'showLoginDialog']);
 
 // stores
 const userStore = useUserStore();

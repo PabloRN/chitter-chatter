@@ -390,7 +390,7 @@ watch(isUserAuthenticated, (newVal) => {
   content: '';
   position: absolute;
   inset: -4px;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgb(224, 10, 10);
   border-radius: 16px;
   z-index: -1;
 }

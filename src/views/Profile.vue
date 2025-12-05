@@ -59,7 +59,6 @@
 
             <div class="user-stats">
 
-
               <div class="stat-item">
                 <span class="stat-number">{{ getCurrentUser?.level || 'L1' }}</span>
                 <span class="stat-label">Level</span>
@@ -538,23 +537,23 @@ import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
 import { formatDate } from '@/utils/dateUtils';
 import { TIER_RANKS } from '@/constants/tiers';
 import { calculateTotalRoomLimit } from '@/utils/roomTypes';
-//TODO: Move to a separate file
+// TODO: Move to a separate file
 const hobbies = [
-  { name: "Football", icon: "mdi-soccer", color: "green" },
-  { name: "Basketball", icon: "mdi-basketball", color: "deep-orange" },
-  { name: "Gaming", icon: "mdi-gamepad-variant", color: "purple" },
-  { name: "Music", icon: "mdi-music", color: "blue" },
-  { name: "Reading", icon: "mdi-book-open-page-variant", color: "indigo" },
-  { name: "Drawing", icon: "mdi-pencil", color: "pink" },
-  { name: "Cooking", icon: "mdi-silverware-fork-knife", color: "red" },
-  { name: "Traveling", icon: "mdi-airplane", color: "cyan" },
-  { name: "Movies", icon: "mdi-movie-open", color: "teal" },
-  { name: "Fitness", icon: "mdi-dumbbell", color: "orange" },
-  { name: "Photography", icon: "mdi-camera", color: "light-blue" },
-  { name: "Coding", icon: "mdi-laptop", color: "grey darken-1" },
-  { name: "Anime & Manga", icon: "mdi-drama-masks", color: "deep-purple" },
-  { name: "Collecting", icon: "mdi-cards-variant", color: "brown" },
-  { name: "Nature", icon: "mdi-tree", color: "green darken-2" }
+  { name: 'Football', icon: 'mdi-soccer', color: 'green' },
+  { name: 'Basketball', icon: 'mdi-basketball', color: 'deep-orange' },
+  { name: 'Gaming', icon: 'mdi-gamepad-variant', color: 'purple' },
+  { name: 'Music', icon: 'mdi-music', color: 'blue' },
+  { name: 'Reading', icon: 'mdi-book-open-page-variant', color: 'indigo' },
+  { name: 'Drawing', icon: 'mdi-pencil', color: 'pink' },
+  { name: 'Cooking', icon: 'mdi-silverware-fork-knife', color: 'red' },
+  { name: 'Traveling', icon: 'mdi-airplane', color: 'cyan' },
+  { name: 'Movies', icon: 'mdi-movie-open', color: 'teal' },
+  { name: 'Fitness', icon: 'mdi-dumbbell', color: 'orange' },
+  { name: 'Photography', icon: 'mdi-camera', color: 'light-blue' },
+  { name: 'Coding', icon: 'mdi-laptop', color: 'grey darken-1' },
+  { name: 'Anime & Manga', icon: 'mdi-drama-masks', color: 'deep-purple' },
+  { name: 'Collecting', icon: 'mdi-cards-variant', color: 'brown' },
+  { name: 'Nature', icon: 'mdi-tree', color: 'green darken-2' },
 ];
 const availableProviders = [
   {
@@ -607,18 +606,16 @@ const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
-const selectedHobbies = ref([])
-const loading = ref(false)
+const selectedHobbies = ref([]);
+const loading = ref(false);
 const showFeedbackDialog = ref(false);
 const showFriendRequestsDialog = ref(false);
 const expandedPanels = ref([0, 1]); // 0 = About Me, 1 = My Rooms (expanded by default)
 
 // computed
-const categories = computed(() =>
-  hobbies.filter(
-    (item) => !selectedHobbies.value.find((s) => s.name === item.name)
-  )
-)
+const categories = computed(() => hobbies.filter(
+  (item) => !selectedHobbies.value.find((s) => s.name === item.name),
+));
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0);
 const joinedDate = computed(() => 'Dec 2024'); // TODO: fetch from user data
@@ -672,19 +669,19 @@ const subscriptionData = computed(() => {
 });
 
 const subscriptionTierName = computed(() => {
-  const tier = subscriptionData.value.tier;
+  const { tier } = subscriptionData.value;
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 });
 
 const subscriptionTierColor = computed(() => {
-  const tier = subscriptionData.value.tier;
+  const { tier } = subscriptionData.value;
   if (tier === 'creator') return 'purple';
   if (tier === 'landlord') return 'primary';
   return 'grey';
 });
 
 const isRecentlyUpgraded = computed(() => {
-  const lastUpgradedAt = subscriptionData.value.lastUpgradedAt;
+  const { lastUpgradedAt } = subscriptionData.value;
   if (!lastUpgradedAt) return false;
 
   const now = Date.now();
@@ -695,7 +692,7 @@ const isRecentlyUpgraded = computed(() => {
 const upgradeDisplayText = computed(() => {
   if (!isRecentlyUpgraded.value) return '';
 
-  const previousTier = subscriptionData.value.previousTier;
+  const { previousTier } = subscriptionData.value;
   const currentTier = subscriptionData.value.tier;
 
   if (!previousTier) return 'Recently Upgraded!';
@@ -715,7 +712,6 @@ const upgradeDisplayText = computed(() => {
 
 // redirect if not authenticated
 onMounted(() => {
-
   if (getCurrentUser.value && getCurrentUser.value?.isAnonymous) {
     console.log('Profile mounted', getCurrentUser.value.isAnonymous);
     router.push({ name: 'rooms' });
@@ -773,7 +769,7 @@ watch(() => subscriptionData.value.tier, (newTier, oldTier) => {
   }
 });
 
-//rules
+// rules
 const descriptionRules = [
   (v) => !v || v.length <= 200 || `Description must be less than ${200} characters`,
 ];
@@ -784,9 +780,8 @@ const toggleEdit = () => {
 };
 
 const remove = (item) => {
-  selectedHobbies.value = selectedHobbies.value.filter((s) => s.name !== item.raw.name)
-}
-
+  selectedHobbies.value = selectedHobbies.value.filter((s) => s.name !== item.raw.name);
+};
 
 const linkAccount = async (providerId) => {
   try {
@@ -1199,7 +1194,6 @@ const confirmDowngrade = async () => {
     align-items: baseline;
     justify-content: space-between;
   }
-
 
 }
 

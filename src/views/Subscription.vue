@@ -333,7 +333,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
+import {
+  ref, computed, watch, nextTick,
+} from 'vue';
 import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
 import useMainStore from '@/stores/main';
@@ -376,17 +378,13 @@ const PRICING = {
 };
 
 // Computed prices
-const landlordPrice = computed(() => {
-  return billingPeriod.value === 'annual'
-    ? PRICING.landlord.annual.toFixed(2)
-    : PRICING.landlord.monthly.toFixed(2);
-});
+const landlordPrice = computed(() => (billingPeriod.value === 'annual'
+  ? PRICING.landlord.annual.toFixed(2)
+  : PRICING.landlord.monthly.toFixed(2)));
 
-const creatorPrice = computed(() => {
-  return billingPeriod.value === 'annual'
-    ? PRICING.creator.annual.toFixed(2)
-    : PRICING.creator.monthly.toFixed(2);
-});
+const creatorPrice = computed(() => (billingPeriod.value === 'annual'
+  ? PRICING.creator.annual.toFixed(2)
+  : PRICING.creator.monthly.toFixed(2)));
 
 // Feature lists
 const freeTierFeatures = [

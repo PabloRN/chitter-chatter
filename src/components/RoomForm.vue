@@ -58,7 +58,7 @@
 
           <!-- Private Room Toggle -->
           <v-switch v-model="formData.isPrivate" :disabled="!canCreatePrivateRoom" label="Private Room" color="primary"
-            :hint="canCreatePrivateRoom ? 'Private rooms are only visible to invited users' : 'Upgrade to Owner ($2.99) to create private rooms'"
+            :hint="canCreatePrivateRoom ? 'Private rooms are only visible to you and invited users' : 'Upgrade to Owner ($2.99) to create private rooms'"
             persistent-hint class="mb-4">
             <template v-if="!canCreatePrivateRoom" #label>
               <div class="d-flex align-center">
@@ -67,6 +67,12 @@
               </div>
             </template>
           </v-switch>
+
+          <!-- Fan Art Room Toggle -->
+
+          <v-switch v-model="formData.isFanArt" label="Fan Art" color="primary"
+            hint="Mark your room as Fan Art if you want to upload your own designs. Please don’t upload sexual content — all uploads are your responsibility"
+            persistent-hint class="mb-4" />
 
           <!-- Background Selector -->
           <div class="upload-section mb-4">
@@ -171,9 +177,8 @@ const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
-const selectedHobbies = ref([])
-const loading = ref(false)
-
+const selectedHobbies = ref([]);
+const loading = ref(false);
 
 // Form data
 const formData = reactive({
@@ -183,6 +188,7 @@ const formData = reactive({
   maxUsers: DEFAULT_ROOM_VALUES.maxUsers,
   minAge: DEFAULT_ROOM_VALUES.minAge,
   isPrivate: DEFAULT_ROOM_VALUES.isPrivate,
+  isFanArt: DEFAULT_ROOM_VALUES.isFanArt,
   backgroundImage: DEFAULT_ROOM_VALUES.backgroundImage,
   publicAvatars: [...DEFAULT_ROOM_VALUES.publicAvatars],
 });
@@ -190,14 +196,10 @@ const formData = reactive({
 // Original data for change detection (only for edit mode)
 const originalData = ref({});
 
-
 // computed
-const categories = computed(() =>
-  ROOM_TOPICS.filter(
-    (item) => !selectedHobbies.value.find((s) => s.name === item.name)
-  )
-)
-
+const categories = computed(() => ROOM_TOPICS.filter(
+  (item) => !selectedHobbies.value.find((s) => s.name === item.name),
+));
 
 const hasMinimumRequirements = computed(() => {
   const hasBackground = !!selectedBackground.value || !!formData.backgroundImage;
@@ -205,9 +207,7 @@ const hasMinimumRequirements = computed(() => {
   return hasBackground && hasEnoughAvatars;
 });
 
-const canPublishRoom = computed(() => {
-  return formValid.value && hasMinimumRequirements.value;
-});
+const canPublishRoom = computed(() => formValid.value && hasMinimumRequirements.value);
 
 const hasChanges = computed(() => {
   if (!props.isEdit) return true; // For new rooms, always allow creation
@@ -220,6 +220,7 @@ const hasChanges = computed(() => {
     || formData.maxUsers !== originalData.value.maxUsers
     || formData.minAge !== originalData.value.minAge
     || formData.isPrivate !== originalData.value.isPrivate
+    || formData.isFanArt !== originalData.value.isFanArt
   );
 
   // Check for background changes
@@ -272,7 +273,7 @@ const maxUsersRules = [
 
 const same = (arr1, arr2) => lodash.isEqual(
   lodash.sortBy(arr1, 'name'),
-  lodash.sortBy(arr2, 'name')
+  lodash.sortBy(arr2, 'name'),
 );
 const loadRoomData = async () => {
   if (!props.isEdit || !props.roomId) return;
@@ -304,6 +305,7 @@ const loadRoomData = async () => {
         maxUsers: room.maxUsers,
         minAge: room.minAge,
         isPrivate: room.isPrivate,
+        isFanArt: room.isFanArt,
         backgroundImage: room.backgroundImage || room.thumbnail,
         publicAvatars: room.publicAvatars || [],
       };
@@ -316,6 +318,7 @@ const loadRoomData = async () => {
         maxUsers: room.maxUsers,
         minAge: room.minAge,
         isPrivate: room.isPrivate,
+        isFanArt: room.isFanArt,
         backgroundImage: room.backgroundImage || room.thumbnail,
         publicAvatars: (room.publicAvatars || []).map((avatar) => ({
           ...avatar,

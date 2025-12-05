@@ -224,14 +224,10 @@ const hasDefaultAvatar = computed(() => roomAvatars.value.some((avatar) => avata
 const canDeleteAvatar = computed(() => roomAvatars.value.length > 1);
 
 // Count avatars added from preloaded collection (pending saves)
-const preloadedAvatarsSelected = computed(() => {
-  return roomAvatars.value.filter((a) => a.isPreview && a.type === 'preloaded').length;
-});
+const preloadedAvatarsSelected = computed(() => roomAvatars.value.filter((a) => a.isPreview && a.type === 'preloaded').length);
 
 // Show Ready button when on preloaded tab and avatars are selected
-const showReadyButton = computed(() => {
-  return activeTab.value === 1 && preloadedAvatarsSelected.value > 0;
-});
+const showReadyButton = computed(() => activeTab.value === 1 && preloadedAvatarsSelected.value > 0);
 
 // Methods
 const onAvatarFileChange = async (fileOrEvent) => {
@@ -405,9 +401,7 @@ const loadPreloadedAvatars = async () => {
   }
 };
 
-const isPreloadedAlreadyAdded = (preloadedId) => {
-  return roomAvatars.value.some((avatar) => avatar.preloadedId === preloadedId);
-};
+const isPreloadedAlreadyAdded = (preloadedId) => roomAvatars.value.some((avatar) => avatar.preloadedId === preloadedId);
 
 const addPreloadedAvatar = (preloadedAvatar) => {
   // Check if already added

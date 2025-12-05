@@ -75,9 +75,7 @@ const feedback = ref('');
 const loading = ref(false);
 
 const rules = {
-  maxLength: (max) => (value) => {
-    return !value || value.length <= max || `Maximum ${max} characters allowed`;
-  },
+  maxLength: (max) => (value) => !value || value.length <= max || `Maximum ${max} characters allowed`,
 };
 
 const getRatingLabel = () => {

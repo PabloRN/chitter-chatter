@@ -41,8 +41,8 @@ const currentVersion = pkg.version;
 
 // Compare versions (basic comparison)
 function compareVersions(v1, v2) {
-  const parts1 = v1.split('.').map(p => parseInt(p.split('-')[0]));
-  const parts2 = v2.split('.').map(p => parseInt(p.split('-')[0]));
+  const parts1 = v1.split('.').map((p) => parseInt(p.split('-')[0]));
+  const parts2 = v2.split('.').map((p) => parseInt(p.split('-')[0]));
 
   for (let i = 0; i < 3; i++) {
     if (parts1[i] > parts2[i]) return 1;
@@ -74,14 +74,14 @@ try {
   const currentBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
 
   if (!isHotfix && currentBranch !== 'development') {
-    console.error(`\n❌ Error: Must be on 'development' branch for normal releases\n`);
+    console.error('\n❌ Error: Must be on \'development\' branch for normal releases\n');
     console.error(`Currently on: ${currentBranch}\n`);
     console.error('Run: git checkout development\n');
     process.exit(1);
   }
 
   if (isHotfix && !currentBranch.startsWith('hotfix/')) {
-    console.error(`\n❌ Error: Hotfix releases must be on a hotfix/* branch\n`);
+    console.error('\n❌ Error: Hotfix releases must be on a hotfix/* branch\n');
     console.error(`Currently on: ${currentBranch}\n`);
     console.error('Run: git checkout -b hotfix/your-fix-name\n');
     process.exit(1);
@@ -95,7 +95,6 @@ try {
   console.log(`Type:            ${isHotfix ? 'Hotfix' : 'Normal Release'}`);
   console.log('─'.repeat(50));
   console.log('');
-
 } catch (error) {
   console.error('\n❌ Error: Failed to check git branch\n');
   process.exit(1);
@@ -104,7 +103,7 @@ try {
 // Update package.json
 console.log('📝 Updating package.json...');
 pkg.version = newVersion;
-fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
+fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
 console.log('✓ Updated package.json');
 
 // Generate changelog
@@ -127,14 +126,14 @@ try {
   console.error('\n❌ Error: Git operations failed\n');
   console.error('Rolling back package.json...');
   pkg.version = currentVersion;
-  fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
+  fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
   process.exit(1);
 }
 
 // Success message
 console.log('\n');
 console.log('═'.repeat(50));
-console.log('🎉 Release v' + newVersion + ' ready!');
+console.log(`🎉 Release v${newVersion} ready!`);
 console.log('═'.repeat(50));
 console.log('');
 console.log('Next steps:');
@@ -153,7 +152,7 @@ if (isHotfix) {
   console.log('📌 Hotfix Reminder:');
   console.log('  After deployment, merge this hotfix back to development:');
   console.log('  git checkout development');
-  console.log(`  git merge hotfix/your-fix-name`);
+  console.log('  git merge hotfix/your-fix-name');
   console.log('  git push');
   console.log('');
 }

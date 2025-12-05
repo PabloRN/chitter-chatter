@@ -169,7 +169,7 @@ exports.cleanupAnonymousUsers = onSchedule(
         }
       }
 
-      console.log(`✅ User cleanup completed:`);
+      console.log('✅ User cleanup completed:');
       console.log(`   - Ghost users deleted: ${ghostCount}`);
       console.log(`   - Anonymous users deleted: ${deletedCount}`);
       console.log(`   - Total deleted: ${ghostCount + deletedCount}`);
