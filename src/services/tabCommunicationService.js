@@ -134,6 +134,7 @@ class TabCommunicationService {
     this.sendMessage('chitter-auth', {
       type: 'AUTH_SUCCESS',
       timestamp: Date.now(),
+      sourceTabId: this.getTabId(),
       userId: authData.userId,
       isUpgrade: authData.isUpgrade || false,
       verifiedUser: authData.verifiedUser,
@@ -201,6 +202,19 @@ class TabCommunicationService {
       targetTabId,
       reason,
     });
+  }
+
+  /**
+   * Check if a message was sent by the current tab
+   * Used to prevent infinite loops when tabs receive their own broadcast messages
+   * @param {Object} message - The message object to check
+   * @returns {boolean} - True if message is from current tab
+   */
+  isOwnMessage(message) {
+    if (!message || !message.sourceTabId) {
+      return false;
+    }
+    return message.sourceTabId === this.getTabId();
   }
 
   /**
@@ -285,11 +299,16 @@ class TabCommunicationService {
 
       chitterKeys.forEach((key) => {
         const stored = sessionStorage.getItem(key);
-        console.log('stored', stored);
         if (stored) {
-          const storageData = JSON.parse(stored);
-          if (Date.now() > storageData.expires) {
-            sessionStorage.removeItem(key);
+          try {
+            const storageData = JSON.parse(stored);
+            // Only process if it has the expected structure with expires field
+            if (storageData && storageData.expires && Date.now() > storageData.expires) {
+              sessionStorage.removeItem(key);
+            }
+          } catch (parseError) {
+            // Skip this key - it's not a JSON object (e.g., chitter_tab_id)
+            console.log(`Skipping non-JSON key: ${key}`);
           }
         }
       });

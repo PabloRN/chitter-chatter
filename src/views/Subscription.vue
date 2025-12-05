@@ -35,32 +35,128 @@
     <!-- Pricing Cards -->
     <div class="pricing-container">
       <div class="pricing-grid">
-        <!-- Free Tier -->
+        <!-- Free Tier / Owner Upgrade / Extra Room Slot -->
         <v-card class="pricing-card free-tier" elevation="2">
           <div class="card-content">
             <div class="tier-header">
-              <h3 class="tier-name">Free</h3>
-              <div class="tier-price">
-                <span class="price-amount">$0</span>
-                <span class="price-period">/forever</span>
-              </div>
-              <p class="tier-description">For registered newcomers exploring the Toonstalk universe.</p>
+              <!-- Show Owner upgrade for registered non-premium users -->
+              <template
+                v-if="userStore.getCurrentUser && !userStore.getCurrentUser.isAnonymous && userStore.canUpgradeToOwner">
+                <h3 class="tier-name">Room Owner</h3>
+                <div class="tier-price">
+                  <span class="price-amount">$2.99</span>
+                  <span class="price-period">/one-time</span>
+                </div>
+                <p class="tier-description">Unlock premium features for your room. Upload custom content, host more
+                  users, and create private rooms.</p>
+              </template>
+              <!-- Show Extra Room Slot for existing Owners -->
+              <template v-else-if="userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser">
+                <h3 class="tier-name">Extra Room Slot</h3>
+                <div class="tier-price">
+                  <span class="price-amount">$4.99</span>
+                  <span class="price-period">/one-time</span>
+                </div>
+                <p class="tier-description">Expand your Toonstalk presence. Each purchase adds one more room slot to
+                  your account.</p>
+                <div style="text-align: center; margin-top: 8px;">
+                  <v-chip :color="canPurchaseMoreSlots ? 'primary' : 'success'" size="small">
+                    Extra Rooms: {{ slotCountText }}
+                  </v-chip>
+                </div>
+              </template>
+              <!-- Show Free tier for non-logged-in or existing premium users -->
+              <template v-else>
+                <h3 class="tier-name">Free</h3>
+                <div class="tier-price">
+                  <span class="price-amount">$0</span>
+                  <span class="price-period">/forever</span>
+                </div>
+                <p class="tier-description">For registered newcomers exploring the Toonstalk universe.</p>
+              </template>
             </div>
 
-            <v-btn block size="large" variant="outlined" class="subscribe-btn" @click="handleSubscribe('free')">
-              Get Started
+            <!-- Dynamic button based on user state -->
+            <v-btn block size="large"
+              :variant="(userStore.canUpgradeToOwner || (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser && canPurchaseMoreSlots)) ? 'flat' : 'outlined'"
+              :color="(userStore.canUpgradeToOwner || (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser && canPurchaseMoreSlots)) ? 'primary' : undefined"
+              :disabled="(userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser && !canPurchaseMoreSlots)"
+              class="subscribe-btn" @click="handleSubscribe('free')">
+              {{
+                (!userStore.getCurrentUser || userStore.getCurrentUser.isAnonymous) ? 'Register' :
+                  userStore.canUpgradeToOwner ? 'Become an Owner' :
+                    (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser) ?
+                      (canPurchaseMoreSlots ? 'Buy Extra Room' : 'Maximum Rooms Purchased') :
+                      'View Profile'
+              }}
             </v-btn>
 
             <div class="features-list">
-              <div class="features-header">What's included:</div>
-              <div v-for="feature in freeTierFeatures" :key="feature" class="feature-item">
-                <v-icon color="success" size="small">mdi-check-circle</v-icon>
-                <span>{{ feature }}</span>
-              </div>
-              <div v-for="feature in freeTierLimitations" :key="feature" class="feature-item disabled">
-                <v-icon color="grey" size="small">mdi-close-circle</v-icon>
-                <span>{{ feature }}</span>
-              </div>
+              <!-- Show Owner benefits for eligible users -->
+              <template
+                v-if="userStore.getCurrentUser && !userStore.getCurrentUser.isAnonymous && userStore.canUpgradeToOwner">
+                <div class="features-header">Premium features included:</div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Upload custom backgrounds</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Upload custom avatars</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Up to 20 users per room</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Create private rooms</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Advanced moderation tools</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Priority support</span>
+                </div>
+              </template>
+              <!-- Show Extra Room benefits for existing Owners -->
+              <template v-else-if="userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser">
+                <div class="features-header">What you'll get:</div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Add one more room to your account</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Keep all your Owner benefits</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Custom backgrounds & avatars</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Up to 20 users per room</span>
+                </div>
+                <div class="feature-item">
+                  <v-icon color="primary" size="small">mdi-check-circle</v-icon>
+                  <span>Private room creation</span>
+                </div>
+              </template>
+              <!-- Show Free tier features for others -->
+              <template v-else>
+                <div class="features-header">What's included:</div>
+                <div v-for="feature in freeTierFeatures" :key="feature" class="feature-item">
+                  <v-icon color="success" size="small">mdi-check-circle</v-icon>
+                  <span>{{ feature }}</span>
+                </div>
+                <div v-for="feature in freeTierLimitations" :key="feature" class="feature-item disabled">
+                  <v-icon color="grey" size="small">mdi-close-circle</v-icon>
+                  <span>{{ feature }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </v-card>
@@ -180,15 +276,72 @@
         </v-card-text>
       </v-card>
     </v-footer>
+
+    <!-- Downgrade Confirmation Dialog -->
+    <v-dialog v-model="showDowngradeDialog" max-width="600">
+      <v-card>
+        <v-card-title class="warning--text">
+          <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+          Confirm Subscription Change
+        </v-card-title>
+        <v-card-text v-if="pendingDowngrade">
+          <p><strong>You're about to downgrade from {{ pendingDowngrade.from }} to {{ pendingDowngrade.to }}.</strong></p>
+
+          <v-alert type="info" class="my-4">
+            <strong>When does this take effect?</strong><br>
+            This change will happen at the <strong>end of your current billing period</strong>.<br><br>
+            You'll keep all your {{ pendingDowngrade.from }} features until then.
+          </v-alert>
+
+          <p><strong>What you'll lose:</strong></p>
+          <ul v-if="pendingDowngrade.from === 'Creator'">
+            <li>Unlimited rooms (reduced to 5 rooms on Landlord)</li>
+            <li>Creator badge on your profile</li>
+            <li>Host up to 30 users (reduced to 20)</li>
+            <li>Unlimited custom avatars/backgrounds</li>
+          </ul>
+
+          <p class="mt-4"><strong>Note:</strong> If you currently have more than 5 rooms, you'll need to delete or archive some before creating new ones after the downgrade.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="showDowngradeDialog = false">Cancel</v-btn>
+          <v-btn color="warning" @click="confirmDowngrade" :loading="loadingSubscription">Confirm Downgrade</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Auth Dialog for Registration -->
+    <v-dialog v-model="showAuthDialog" max-width="400" persistent>
+      <v-card class="auth-dialog">
+        <v-card-title class="text-h6 text-center">
+          Welcome to ToonsTalk
+        </v-card-title>
+        <v-card-text class="text-center">
+          <p class="mb-4">
+            Create an account to get started with your subscription!
+          </p>
+          <div id="firebaseui-auth-container"></div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="closeAuthDialog">Cancel</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import {
+  ref, computed, watch, nextTick,
+} from 'vue';
 import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
 import useMainStore from '@/stores/main';
 import subscriptionService from '@/services/subscriptionService';
+import { formatDate } from '@/utils/dateUtils';
+import { TIER_RANKS } from '@/constants/tiers';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -197,6 +350,20 @@ const mainStore = useMainStore();
 // Billing period toggle
 const isAnnual = ref(false);
 const billingPeriod = computed(() => (isAnnual.value ? 'annual' : 'monthly'));
+
+// Room slot purchase limits
+const purchasedRoomSlots = computed(() => userStore.getCurrentUser?.purchasedRoomSlots || 0);
+const maxPurchasableSlots = subscriptionService.MAX_PURCHASABLE_SLOTS;
+const canPurchaseMoreSlots = computed(() => purchasedRoomSlots.value < maxPurchasableSlots);
+const slotCountText = computed(() => `${purchasedRoomSlots.value}/${maxPurchasableSlots}`);
+
+// Auth dialog for registration
+const showAuthDialog = ref(false);
+
+// Downgrade confirmation dialog
+const showDowngradeDialog = ref(false);
+const pendingDowngrade = ref(null);
+const loadingSubscription = ref(false);
 
 // Pricing configuration
 const PRICING = {
@@ -211,17 +378,13 @@ const PRICING = {
 };
 
 // Computed prices
-const landlordPrice = computed(() => {
-  return billingPeriod.value === 'annual'
-    ? PRICING.landlord.annual.toFixed(2)
-    : PRICING.landlord.monthly.toFixed(2);
-});
+const landlordPrice = computed(() => (billingPeriod.value === 'annual'
+  ? PRICING.landlord.annual.toFixed(2)
+  : PRICING.landlord.monthly.toFixed(2)));
 
-const creatorPrice = computed(() => {
-  return billingPeriod.value === 'annual'
-    ? PRICING.creator.annual.toFixed(2)
-    : PRICING.creator.monthly.toFixed(2);
-});
+const creatorPrice = computed(() => (billingPeriod.value === 'annual'
+  ? PRICING.creator.annual.toFixed(2)
+  : PRICING.creator.monthly.toFixed(2)));
 
 // Feature lists
 const freeTierFeatures = [
@@ -274,20 +437,61 @@ async function handleSubscribe(tier) {
   const currentUser = userStore.getCurrentUser;
 
   if (tier === 'free') {
-    // Navigate to signup/login
+    // Case 1: Not logged in → Show registration dialog
     if (!currentUser || currentUser.isAnonymous) {
       mainStore.setSnackbar({
         type: 'info',
-        msg: 'Please sign up to get started!',
+        msg: 'Please register to get started!',
       });
-      router.push({ name: 'rooms' });
-    } else {
-      mainStore.setSnackbar({
-        type: 'success',
-        msg: 'You already have a free account!',
-      });
-      router.push({ name: 'rooms' });
+      showAuthDialog.value = true;
+      return;
     }
+
+    // Case 2: Registered but not Owner → Show Owner upgrade
+    if (userStore.canUpgradeToOwner) {
+      try {
+        mainStore.setSnackbar({
+          type: 'info',
+          msg: 'Redirecting to Owner upgrade checkout...',
+        });
+        const checkoutUrl = await subscriptionService.purchaseOwnerUpgrade();
+        window.location.href = checkoutUrl;
+      } catch (error) {
+        console.error('Error upgrading to Owner:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: error.message || 'Failed to process upgrade. Please try again.',
+        });
+      }
+      return;
+    }
+
+    // Case 2.5: Existing Owner wanting to buy extra room slot
+    if (userStore.isOwner && !userStore.isLandlord && !userStore.isCreatorUser) {
+      try {
+        mainStore.setSnackbar({
+          type: 'info',
+          msg: 'Redirecting to checkout for extra room slot...',
+        });
+        console.log('currentUser', currentUser);
+        const checkoutUrl = await subscriptionService.purchaseRoomSlot(currentUser.userId);
+        window.location.href = checkoutUrl;
+      } catch (error) {
+        console.error('Error purchasing room slot:', error);
+        mainStore.setSnackbar({
+          type: 'error',
+          msg: error.message || 'Failed to process purchase. Please try again.',
+        });
+      }
+      return;
+    }
+
+    // Case 3: Already has premium (Landlord/Creator) → Go to profile
+    mainStore.setSnackbar({
+      type: 'info',
+      msg: 'You already have premium access!',
+    });
+    router.push({ name: 'profile' });
     return;
   }
 
@@ -301,18 +505,34 @@ async function handleSubscribe(tier) {
     return;
   }
 
+  // Check if this is a downgrade
+  const currentTier = currentUser.subscriptionTier || currentUser.subscription?.tier || 'free';
+  const isDowngradeFlow = TIER_RANKS[tier] < TIER_RANKS[currentTier];
+
+  if (isDowngradeFlow) {
+    // Show downgrade confirmation dialog
+    const tierNames = { landlord: 'Landlord', creator: 'Creator' };
+    pendingDowngrade.value = {
+      from: tierNames[currentTier] || currentTier,
+      to: tierNames[tier] || tier,
+      targetTier: tier,
+    };
+    showDowngradeDialog.value = true;
+    return;
+  }
+
   try {
     mainStore.setSnackbar({
       type: 'info',
       msg: 'Processing subscription...',
     });
-
+    console.log('tier', tier);
     // Create or update subscription
     const result = await subscriptionService.createCheckoutSession(
       tier,
       billingPeriod.value,
     );
-
+    console.log('result', result);
     // Handle subscription update (no checkout needed)
     if (result.updated) {
       mainStore.setSnackbar({
@@ -339,6 +559,125 @@ async function handleSubscribe(tier) {
     });
   }
 }
+
+// Confirm downgrade after user accepts the warning
+async function confirmDowngrade() {
+  try {
+    loadingSubscription.value = true;
+    showDowngradeDialog.value = false;
+
+    mainStore.setSnackbar({
+      type: 'info',
+      msg: 'Processing downgrade...',
+    });
+
+    const result = await subscriptionService.createCheckoutSession(
+      pendingDowngrade.value.targetTier,
+      billingPeriod.value,
+    );
+
+    if (result.updated) {
+      const currentUser = userStore.getCurrentUser;
+      const currentPeriodEnd = currentUser.subscription?.currentPeriodEnd;
+
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: currentPeriodEnd
+          ? `Downgrade scheduled for ${formatDate(currentPeriodEnd)}. Check your email for details.`
+          : 'Downgrade scheduled. Check your email for details.',
+        timeout: 7000,
+      });
+
+      // Redirect to profile after a short delay
+      setTimeout(() => {
+        router.push({ name: 'profile' });
+      }, 3000);
+    } else {
+      window.location.href = result.url;
+    }
+  } catch (error) {
+    console.error('Error processing downgrade:', error);
+    mainStore.setSnackbar({
+      type: 'error',
+      msg: error.message || 'Failed to process downgrade. Please try again.',
+    });
+  } finally {
+    loadingSubscription.value = false;
+    pendingDowngrade.value = null;
+  }
+}
+
+// Close auth dialog
+function closeAuthDialog() {
+  showAuthDialog.value = false;
+}
+
+// Watchers
+
+// Initialize Firebase UI when auth dialog opens
+watch(showAuthDialog, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      userStore.setFirebaseUiInstance('subscription');
+    });
+  }
+});
+
+// Watch for successful authentication and redirect
+watch(
+  () => userStore.currentUser?.isAnonymous,
+  (newVal, oldVal) => {
+    // User upgraded from anonymous to registered
+    if (oldVal === true && newVal === false && showAuthDialog.value) {
+      showAuthDialog.value = false;
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: 'Registration successful! Redirecting to rooms...',
+      });
+      // Redirect to rooms after successful registration
+      setTimeout(() => {
+        router.push({ name: 'rooms' });
+      }, 1000);
+    }
+  },
+);
+
+// Watch for new authenticated user (non-anonymous)
+watch(
+  () => userStore.currentUser?.userId,
+  (newVal, oldVal) => {
+    // New user logged in (not anonymous)
+    if (!oldVal && newVal && !userStore.currentUser?.isAnonymous && showAuthDialog.value) {
+      showAuthDialog.value = false;
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: 'Welcome! Redirecting to rooms...',
+      });
+      // Redirect to rooms after successful registration
+      setTimeout(() => {
+        router.push({ name: 'rooms' });
+      }, 1000);
+    }
+  },
+);
+
+// Watch for signing in upgrade event
+watch(
+  () => userStore.signingInUpgraded,
+  (newVal) => {
+    if (newVal && showAuthDialog.value) {
+      showAuthDialog.value = false;
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: 'Account upgraded! Redirecting to rooms...',
+      });
+      // Redirect to rooms after successful upgrade
+      setTimeout(() => {
+        router.push({ name: 'rooms' });
+      }, 1000);
+    }
+  },
+);
 </script>
 
 <style scoped>

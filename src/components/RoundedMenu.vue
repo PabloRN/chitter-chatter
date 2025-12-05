@@ -11,10 +11,10 @@
       </div>
       <div class="icon-caption" style="opacity: 0.3;">Buffer</div>
     </v-btn>
-    <v-btn :disabled="isBlockedBy || otherIsAnonymous" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item"
-      fab dark small @click.prevent="handleEmit('addFriend')" @touchstart.native.prevent="handleEmit('addFriend')">
+    <v-btn :disabled="isBlockedBy" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
+      @click.prevent="handleEmit('addFriend')" @touchstart.native.prevent="handleEmit('addFriend')">
       <div>
-        <v-icon :disabled="isBlockedBy || otherIsAnonymous" class="manga-icon">
+        <v-icon :disabled="isBlockedBy" class="manga-icon">
           mdi-account-plus </v-icon>
       </div>
       <div :disabled="isBlockedBy" class="icon-caption">Add friend</div>

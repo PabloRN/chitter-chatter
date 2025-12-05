@@ -36,7 +36,7 @@ exports.cleanupArchivedUsers = onSchedule(
       // Process each archived user
       for (const [userId, archiveData] of Object.entries(deletedUsers)) {
         try {
-          const permanentDeletionDate = archiveData.permanentDeletionDate;
+          const { permanentDeletionDate } = archiveData;
 
           // Check if 30 days have passed
           if (now >= permanentDeletionDate) {
@@ -59,7 +59,7 @@ exports.cleanupArchivedUsers = onSchedule(
         }
       }
 
-      console.log(`✅ Archived user cleanup completed:`);
+      console.log('✅ Archived user cleanup completed:');
       console.log(`   - Permanently deleted: ${permanentlyDeletedCount} users`);
       console.log(`   - Skipped (not ready): ${skippedCount} users`);
       if (errors.length > 0) {

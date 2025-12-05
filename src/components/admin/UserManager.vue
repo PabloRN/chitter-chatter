@@ -277,7 +277,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import {
+  ref, computed, watch, onMounted,
+} from 'vue';
 import { getAuth } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 
@@ -309,13 +311,17 @@ const snackbarColor = ref('success');
 
 // Table configuration
 const headers = [
-  { title: '', key: 'avatar', sortable: false, width: '60px' },
+  {
+    title: '', key: 'avatar', sortable: false, width: '60px',
+  },
   { title: 'Nickname', key: 'nickname', sortable: true },
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Subscription', key: 'subscriptionTier', sortable: true },
   { title: 'Type', key: 'isAnonymous', sortable: true },
   { title: 'Status', key: 'onlineState', sortable: true },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
+  {
+    title: 'Actions', key: 'actions', sortable: false, align: 'end',
+  },
 ];
 
 const tierOptions = [
@@ -369,7 +375,7 @@ const loadUsers = async () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`,
+        Authorization: `Bearer ${idToken}`,
       },
     });
 
@@ -452,7 +458,7 @@ const recreateUser = async () => {
           userId: selectedUser.value.userId,
           email: recreateEmail.value,
         }),
-      }
+      },
     );
 
     const result = await response.json();

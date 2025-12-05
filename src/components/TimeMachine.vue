@@ -11,7 +11,7 @@
           </v-btn>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text class="pa-2" style="height: calc(100vh - 80px); overflow-y: auto;">
+        <v-card-text ref="scrollContainer" class="pa-2" style="height: calc(100vh - 80px); overflow-y: auto;">
           <v-list density="compact">
             <v-list-item v-for="(item, index) in getText" :key="index" class="mb-2">
               <template v-slot:prepend v-if="index % 2 === 0">
@@ -53,7 +53,7 @@
           </v-btn>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text style="height: 400px;">
+        <v-card-text ref="scrollContainerMobile" style="height: 400px;">
           <v-list density="compact">
             <v-list-item v-for="(item, index) in getText" :key="index">
               <template v-slot:prepend v-if="index % 2 === 0">
@@ -88,7 +88,7 @@
 
 <script setup>
 import {
-  ref, computed, watch, onMounted,
+  ref, computed, watch, onMounted, nextTick,
 } from 'vue';
 import useMessagesStore from '@/stores/messages';
 import formatDate from '@/utils/timeTools';
@@ -98,12 +98,21 @@ const props = defineProps({
   message: {
     type: Array,
     default: () => [],
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
   },
 });
+const emit = defineEmits(['update:modelValue']);
 
 const messagesStore = useMessagesStore();
 const showHistory = ref(false);
 const text = ref([]);
+
+// Refs for scrollable containers
+const scrollContainer = ref(null);
+const scrollContainerMobile = ref(null);
 
 // lifecycle
 onMounted(() => {
@@ -126,10 +135,44 @@ const hideRoomMessages = () => {
 
 const formattedDateTime = (timestamp) => formatDate(timestamp);
 
+// Function to scroll to bottom
+const scrollToBottom = () => {
+  nextTick(() => {
+    // Wait for Vuetify transitions to complete
+    setTimeout(() => {
+      const containerRef = isMobileDevice.value ? scrollContainerMobile.value : scrollContainer.value;
+      // Access the actual DOM element from Vuetify component
+      const container = containerRef?.$el;
+
+      if (container) {
+        console.log('Scrolling to bottom. Height:', container.scrollHeight); // Debug
+        container.scrollTop = container.scrollHeight;
+      } else {
+        console.warn('Scroll container not found'); // Debug
+      }
+    }, 350); // Wait for transition (Vuetify default is ~300ms)
+  });
+};
+
 // watch
 watch(showMessagesStatus, (value) => {
   showHistory.value = value;
 });
+
+// Watch for dialog opening - scroll to bottom
+watch(showHistory, (newValue) => {
+  if (newValue === true) {
+    scrollToBottom();
+  }
+});
+
+// Watch for new messages - auto-scroll to bottom
+// Watch the store's roomMessagesToShow array directly for better reactivity
+watch(() => messagesStore.roomMessagesToShow, (newMessages) => {
+  if (showHistory.value === true && newMessages.length > 0) {
+    scrollToBottom();
+  }
+}, { deep: true });
 </script>
 
 <style scoped>

@@ -65,10 +65,17 @@
               </div>
 
               <!-- Add Avatar Card -->
-              <div class="avatar-item add-avatar-card" @click="triggerFileUpload" :disabled="true">
+              <div class="avatar-item add-avatar-card"
+                   @click="canUpload ? triggerFileUpload() : null"
+                   :class="{ disabled: !canUpload }">
                 <div class="add-avatar-content">
-                  <v-icon size="48" color="primary" class="mb-2">mdi-plus</v-icon>
-                  <div class="add-avatar-text">Add Avatar</div>
+                  <v-icon size="48" :color="canUpload ? 'primary' : 'grey'" class="mb-2">
+                    {{ canUpload ? 'mdi-plus' : 'mdi-lock' }}
+                  </v-icon>
+                  <div class="add-avatar-text">{{ canUpload ? 'Upload' : 'Upload' }}</div>
+                  <v-tooltip v-if="!canUpload" activator="parent" location="bottom">
+                    Upgrade to Owner ($2.99) to upload custom avatars
+                  </v-tooltip>
                 </div>
 
                 <!-- Hidden file input -->
@@ -148,6 +155,17 @@
       </v-card-text>
     </v-card>
 
+    <!-- Floating Ready Button (for preloaded avatar selection) -->
+    <v-fab v-if="showReadyButton"
+           app
+           location="bottom end"
+           color="primary"
+           size="large"
+           @click="onReadyClick">
+      <v-icon start>mdi-check</v-icon>
+      Done Selecting ({{ preloadedAvatarsSelected }})
+    </v-fab>
+
     <!-- Success/Error Snackbars -->
     <v-snackbar v-model="showSuccess" color="success" timeout="3000">
       {{ successMessage }}
@@ -177,6 +195,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  canUpload: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -200,6 +222,12 @@ const previewUrls = ref([]); // Keep track of preview URLs for cleanup
 const hasDefaultAvatar = computed(() => roomAvatars.value.some((avatar) => avatar.isDefault));
 
 const canDeleteAvatar = computed(() => roomAvatars.value.length > 1);
+
+// Count avatars added from preloaded collection (pending saves)
+const preloadedAvatarsSelected = computed(() => roomAvatars.value.filter((a) => a.isPreview && a.type === 'preloaded').length);
+
+// Show Ready button when on preloaded tab and avatars are selected
+const showReadyButton = computed(() => activeTab.value === 1 && preloadedAvatarsSelected.value > 0);
 
 // Methods
 const onAvatarFileChange = async (fileOrEvent) => {
@@ -373,9 +401,7 @@ const loadPreloadedAvatars = async () => {
   }
 };
 
-const isPreloadedAlreadyAdded = (preloadedId) => {
-  return roomAvatars.value.some((avatar) => avatar.preloadedId === preloadedId);
-};
+const isPreloadedAlreadyAdded = (preloadedId) => roomAvatars.value.some((avatar) => avatar.preloadedId === preloadedId);
 
 const addPreloadedAvatar = (preloadedAvatar) => {
   // Check if already added
@@ -405,7 +431,11 @@ const addPreloadedAvatar = (preloadedAvatar) => {
   showSuccess.value = true;
   successMessage.value = 'Preloaded avatar added to room!';
 
-  // Switch back to manage tab to see the added avatar
+  // Don't auto-switch - user clicks Ready button to switch
+};
+
+const onReadyClick = () => {
+  // Switch to Manage Avatars tab to see the added avatars
   activeTab.value = 0;
 };
 

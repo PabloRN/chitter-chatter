@@ -180,7 +180,7 @@ exports.manualCleanupNow = onRequest(
         errors: errors.length > 0 ? errors : undefined,
       };
 
-      console.log(`✅ Manual cleanup completed:`);
+      console.log('✅ Manual cleanup completed:');
       console.log(`   - Ghost users deleted: ${ghostCount}`);
       console.log(`   - Anonymous users deleted: ${deletedUsers.length - ghostCount}`);
       console.log(`   - Total deleted from Database: ${deletedFromDatabase}`);

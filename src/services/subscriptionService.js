@@ -10,15 +10,19 @@ import { getAuth } from 'firebase/auth';
 
 // Stripe Price IDs - Replace with actual IDs from Stripe Dashboard
 const STRIPE_PRICE_IDS = {
-  landlord_monthly: 'price_1SK4YXBmoCe1wac303G15iyR',
-  landlord_annual: 'price_1SK4YWBmoCe1wac3XfXnod9L',
-  creator_monthly: 'price_1SNCJoBmoCe1wac39auhID7K',
-  creator_annual: 'price_1SNCLtBmoCe1wac3TnZh9kjj',
-  room_slot: 'price_1SNCmmBmoCe1wac3qoB2lBIy', // One-time purchase
+  landlord_monthly: 'price_1SWYYhBmoCe1wac3zCRqHSZE',
+  landlord_annual: 'price_1SWYsdBmoCe1wac3jyDTLTzt',
+  creator_monthly: 'price_1SWa3gBmoCe1wac3debRsl5V',
+  creator_annual: 'price_1SWa6BBmoCe1wac3BFuOc9ob',
+  room_slot: 'price_1SWaayBmoCe1wac3XEDCDgEQ', // One-time purchase
+  owner_upgrade: 'price_1SWi1vBmoCe1wac3f43Olfqn', // One-time purchase
 };
 
 // Room slot pricing
 const ROOM_SLOT_PRICE = 4.99;
+
+// Maximum number of extra room slots that can be purchased
+const MAX_PURCHASABLE_SLOTS = 2;
 
 /**
  * Create a Stripe Checkout Session
@@ -396,6 +400,94 @@ async function getPurchasedRoomSlots(userId) {
   }
 }
 
+/**
+ * Purchase Owner upgrade ($2.99 one-time)
+ * Upgrades user to Owner tier with premium features
+ * @returns {Promise<string>} - The Stripe Checkout Session URL
+ */
+async function purchaseOwnerUpgrade() {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.error('No authenticated user found');
+      throw new Error('You must be logged in to upgrade. Please sign in and try again.');
+    }
+
+    console.log('Attempting Owner upgrade for user:', user.uid);
+
+    const priceId = STRIPE_PRICE_IDS.owner_upgrade;
+    const idToken = await user.getIdToken();
+
+    // Call Cloud Function to create Stripe Checkout Session for Owner upgrade
+    const functionUrl = 'https://us-central1-chitter-chatter-f762a.cloudfunctions.net/purchaseOwnerUpgrade';
+
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        priceId,
+        userId: user.uid,
+        email: user.email,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create checkout session for Owner upgrade');
+    }
+
+    const { url } = await response.json();
+    return url;
+  } catch (error) {
+    console.error('Error purchasing Owner upgrade:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if user has premium access (Owner, Landlord, or Creator)
+ * @param {Object} user - The user object
+ * @returns {boolean} - Whether user has premium access
+ */
+function hasPremiumAccess(user) {
+  if (!user) return false;
+  return user.isOwner || user.isLandlord || user.isCreator || user.isAdmin || false;
+}
+
+/**
+ * Get max users allowed per room based on user tier
+ * @param {Object} user - The user object
+ * @returns {number} - Max users per room
+ */
+function getMaxUsersForRoom(user) {
+  if (!user) return 10;
+  if (user.isCreator) return 30;
+  if (user.isLandlord || user.isOwner) return 20;
+  return 10; // free tier
+}
+
+/**
+ * Get room limit for user based on tier
+ * @param {Object} user - The user object
+ * @returns {number} - Room limit (-1 for unlimited)
+ */
+function getRoomLimit(user) {
+  if (!user) return 1;
+
+  const purchasedSlots = user.purchasedRoomSlots || 0;
+
+  if (user.isAdmin) return 100;
+  if (user.isCreator) return -1; // unlimited (purchased slots don't matter)
+  if (user.isLandlord) return 5 + purchasedSlots; // Landlord base + purchased slots
+  if (user.isOwner) return 1 + purchasedSlots; // Owner base + purchased slots
+  return 1; // free tier
+}
+
 export default {
   createCheckoutSession,
   getSubscriptionStatus,
@@ -407,6 +499,11 @@ export default {
   purchaseRoomSlot,
   getRoomPurchaseHistory,
   getPurchasedRoomSlots,
+  purchaseOwnerUpgrade,
+  hasPremiumAccess,
+  getMaxUsersForRoom,
+  getRoomLimit,
   STRIPE_PRICE_IDS,
   ROOM_SLOT_PRICE,
+  MAX_PURCHASABLE_SLOTS,
 };

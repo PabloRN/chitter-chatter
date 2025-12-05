@@ -226,7 +226,7 @@ async function archiveUserData(userId, userData, authUser, reason) {
   });
 
   const archiveData = {
-    userData: userData,
+    userData,
     authData,
     deletedAt: admin.database.ServerValue.TIMESTAMP,
     permanentDeletionDate: thirtyDaysFromNow,

@@ -8,17 +8,19 @@
 
       <v-spacer></v-spacer>
 
-      <!-- Navigation Links -->
-      <div class="nav-links">
-        <v-btn text class="nav-link" @click="goToPricing">
-          <v-icon left size="small">mdi-diamond-stone</v-icon>
-          Pricing
-        </v-btn>
-        <v-btn text class="nav-link feedback-btn" @click="showFeedbackDialog = true">
-          <v-icon left size="small">mdi-message-text-outline</v-icon>
-          Feedback
-        </v-btn>
-      </div>
+      <!-- Notification Bell (for authenticated users) -->
+      <NotificationBell v-if="isUserAuthenticated" class="mr-2" />
+
+      <!-- Friend Requests Badge (for authenticated users) -->
+      <v-btn v-if="isUserAuthenticated && friendRequestsCount > 0" icon class="mr-2"
+        @click="showFriendRequestsDialog = true">
+        <v-badge :content="friendRequestsCount" color="error" overlap>
+          <v-icon>mdi-account-multiple</v-icon>
+        </v-badge>
+        <v-tooltip activator="parent" location="bottom">
+          Friend Requests ({{ friendRequestsCount }})
+        </v-tooltip>
+      </v-btn>
 
       <!-- TODO: create component -->
       <!-- Authentication buttons for non-authenticated users -->
@@ -29,51 +31,8 @@
       </div>
 
       <!-- Profile menu for authenticated users -->
-      <div v-else class="profile-section mr-3">
-        <v-menu offset-y z-index="99999">
-          <template v-slot:activator="{ props }">
-            <v-btn icon v-bind="props" class="profile-menu-btn">
-              <v-avatar size="42" class="profile-avatar">
-                <v-img v-if="getCurrentUser?.personalAvatar || getCurrentUser?.miniAvatar"
-                  :src="getCurrentUser?.personalAvatar || getCurrentUser?.miniAvatar" />
-                <v-icon v-else>mdi-account-circle</v-icon>
-              </v-avatar>
-            </v-btn>
-          </template>
-
-          <v-list class="profile-dropdown">
-            <v-list-item prepend-icon="mdi-account" title="Profile" @click="goToProfile" />
-
-            <!-- Admin Dashboard (Only for Admin Users) -->
-            <v-list-item
-              v-if="getCurrentUser?.isAdmin"
-              prepend-icon="mdi-shield-crown"
-              title="Admin Dashboard"
-              @click="goToAdmin"
-              class="admin-menu-item"
-            >
-              <template #prepend>
-                <v-icon color="error">mdi-shield-crown</v-icon>
-              </template>
-              <template #title>
-                <span class="text-error font-weight-medium">Admin Dashboard</span>
-              </template>
-            </v-list-item>
-            <v-divider v-if="getCurrentUser?.isAdmin"></v-divider>
-
-            <v-list-item prepend-icon="mdi-bell" title="Notifications" @click="goToNotifications" />
-            <v-list-item prepend-icon="mdi-heart" title="Favorites" @click="goToFavorites" />
-            <v-divider></v-divider>
-            <v-list-item prepend-icon="mdi-logout" title="Log Out" @click="logout" class="logout-item">
-              <template #prepend>
-                <v-icon color="red">mdi-logout</v-icon>
-              </template>
-              <template #title>
-                <span class="text-red">Log Out</span>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+      <div v-else class="profile-section">
+        <ProfileMenu @logout="logout" @feedback="showFeedbackDialog = true" />
       </div>
     </v-app-bar>
 
@@ -174,6 +133,9 @@
     </v-footer>
     <!-- Feedback Dialog -->
     <FeedbackDialog v-model="showFeedbackDialog" @success="handleFeedbackSuccess" @error="handleFeedbackError" />
+
+    <!-- Friend Requests Dialog -->
+    <FriendRequestsDialog v-model="showFriendRequestsDialog" />
   </div>
 </template>
 
@@ -181,6 +143,7 @@
 import {
   ref, computed, watch, onMounted, onBeforeUnmount, nextTick,
 } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { getAuth } from 'firebase/auth';
 import useRoomsStore from '@/stores/rooms';
@@ -188,6 +151,9 @@ import useUserStore from '@/stores/user';
 import useMainStore from '@/stores/main';
 import RoomThumbnail from '@/components/RoomThumbnail';
 import FeedbackDialog from '@/components/FeedbackDialog';
+import NotificationBell from '@/components/NotificationBell';
+import FriendRequestsDialog from '@/components/FriendRequestsDialog';
+import ProfileMenu from '@/components/ProfileMenu.vue';
 
 // ✅ stores
 const roomsStore = useRoomsStore();
@@ -195,10 +161,14 @@ const userStore = useUserStore();
 const mainStore = useMainStore();
 const router = useRouter();
 
+// Store refs
+const { friendRequestsCount } = storeToRefs(userStore);
+
 // ✅ state (was data)
 const showWelcomeDialog = ref(false);
 const showAuthDialog = ref(false);
 const showFeedbackDialog = ref(false);
+const showFriendRequestsDialog = ref(false);
 const usersOnline = ref(0);
 const flexBasisValues = ref(['25%']);
 const variant = ref('absolute');
@@ -271,33 +241,6 @@ const allRoomIds = computed(() => {
 });
 
 // ✅ methods
-function getRandomFlexBasis() {
-  const randomFlexBasis = flexBasisValues.value[
-    Math.floor(Math.random() * flexBasisValues.value.length)
-  ];
-  return { flexBasis: randomFlexBasis };
-}
-
-function goToProfile() {
-  router.push({ name: 'profile' });
-}
-
-function goToAdmin() {
-  router.push({ name: 'admin' });
-}
-
-function goToPricing() {
-  router.push({ name: 'pricing' });
-}
-
-function goToNotifications() {
-  console.log('Navigate to notifications');
-}
-
-function goToFavorites() {
-  console.log('Navigate to favorites');
-}
-
 async function logout() {
   try {
     await userStore.userSignOut();
@@ -447,7 +390,7 @@ watch(isUserAuthenticated, (newVal) => {
   content: '';
   position: absolute;
   inset: -4px;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgb(224, 10, 10);
   border-radius: 16px;
   z-index: -1;
 }

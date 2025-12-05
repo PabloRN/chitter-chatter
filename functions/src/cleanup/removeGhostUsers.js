@@ -114,14 +114,14 @@ exports.removeGhostUsers = onRequest(
 
       const result = {
         success: true,
-        message: `Ghost user removal completed`,
+        message: 'Ghost user removal completed',
         deleted: deletedCount,
         skipped: skippedCount,
         ghostUsers: ghostUsers.length > 0 ? ghostUsers : undefined,
         errors: errors.length > 0 ? errors : undefined,
       };
 
-      console.log(`✅ Ghost user removal completed:`);
+      console.log('✅ Ghost user removal completed:');
       console.log(`   - Deleted: ${deletedCount} ghost users`);
       console.log(`   - Skipped: ${skippedCount} regular users`);
       if (errors.length > 0) {

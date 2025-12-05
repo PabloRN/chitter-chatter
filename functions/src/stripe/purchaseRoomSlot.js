@@ -2,6 +2,9 @@ const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const getStripe = require('./stripe-config');
 
+// Import shared Stripe constants
+const { MAX_PURCHASABLE_SLOTS } = require('./stripe-constants');
+
 /**
  * Create Stripe Checkout Session for one-time room slot purchase
  * Endpoint: POST /purchaseRoomSlot
@@ -44,6 +47,32 @@ exports.purchaseRoomSlot = onRequest(
       const userRef = admin.database().ref(`users/${userId}`);
       const userSnapshot = await userRef.once('value');
       const userData = userSnapshot.val();
+
+      // ✅ TIER VALIDATION: Only Owner users can purchase extra room slots
+      const isOwner = userData?.isOwner === true;
+      const isLandlord = userData?.isLandlord === true;
+      const isCreator = userData?.isCreator === true;
+
+      if (!isOwner || isLandlord || isCreator) {
+        console.warn(`Room slot purchase denied for user ${userId} - Invalid tier (isOwner: ${isOwner}, isLandlord: ${isLandlord}, isCreator: ${isCreator})`);
+        res.status(403).json({
+          error: 'Only Owner tier users can purchase extra room slots. Landlord and Creator tiers have higher room limits included.',
+        });
+        return;
+      }
+
+      // ✅ MAXIMUM SLOT LIMIT: Users can only purchase up to 2 extra room slots
+      const currentSlots = userData?.purchasedRoomSlots || 0;
+
+      if (currentSlots >= MAX_PURCHASABLE_SLOTS) {
+        console.warn(`Room slot purchase denied for user ${userId} - Maximum limit reached (${currentSlots}/${MAX_PURCHASABLE_SLOTS})`);
+        res.status(400).json({
+          error: `You have reached the maximum limit of ${MAX_PURCHASABLE_SLOTS} extra room slots. Consider upgrading to Landlord tier for 5 rooms.`,
+        });
+        return;
+      }
+
+      console.log(`✅ Room slot purchase approved for user ${userId} (current: ${currentSlots}/${MAX_PURCHASABLE_SLOTS})`);
 
       let customerId = userData?.subscription?.stripeCustomerId;
 

@@ -22,7 +22,7 @@ export default defineConfig({
         clientsClaim: true,
         // Exclude Firebase auth URLs from service worker caching
         navigateFallbackDenylist: [
-          /^\/__\//,  // All Firebase reserved URLs
+          /^\/__\//, // All Firebase reserved URLs
         ],
         // Don't precache or handle Firebase URLs
         globIgnores: ['**/__/**'],
@@ -57,7 +57,19 @@ export default defineConfig({
       },
     }),
   ],
-  define: { 'process.env': {} },
+  define: {
+    'process.env': {},
+    __VUE_OPTIONS_API__: true,
+    __VUE_PROD_DEVTOOLS__: false,
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+  },
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
+  build: {
+    sourcemap: false,
+    minify: 'esbuild',
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

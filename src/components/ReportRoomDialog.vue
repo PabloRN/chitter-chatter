@@ -52,7 +52,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { getDatabase, ref as dbRef, push, get, set } from 'firebase/database';
+import {
+  getDatabase, ref as dbRef, push, get, set,
+} from 'firebase/database';
 import useUserStore from '@/stores/user';
 
 const props = defineProps({
@@ -90,9 +92,7 @@ const reasonOptions = [
 
 const rules = {
   required: (value) => !!value || 'This field is required',
-  maxLength: (max) => (value) => {
-    return !value || value.length <= max || `Maximum ${max} characters allowed`;
-  },
+  maxLength: (max) => (value) => !value || value.length <= max || `Maximum ${max} characters allowed`,
 };
 
 const close = () => {

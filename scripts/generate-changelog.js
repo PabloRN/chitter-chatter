@@ -30,9 +30,11 @@ let commits = [];
 try {
   const log = execSync(`git log ${commitRange} --pretty=format:"%H|%s|%an|%ad" --date=short`, { encoding: 'utf8' });
   if (log.trim()) {
-    commits = log.trim().split('\n').map(line => {
+    commits = log.trim().split('\n').map((line) => {
       const [hash, subject, author, date] = line.split('|');
-      return { hash, subject, author, date };
+      return {
+        hash, subject, author, date,
+      };
     });
   }
 } catch (error) {
@@ -55,7 +57,7 @@ const commitTypes = {
 };
 
 // Categorize commits
-commits.forEach(commit => {
+commits.forEach((commit) => {
   const match = commit.subject.match(/^(\w+)(\(.+\))?:\s*(.+)$/);
   if (match) {
     const [, type, scope, message] = match;
@@ -77,11 +79,11 @@ commits.forEach(commit => {
 let versionChangelog = `## [${currentVersion}] - ${new Date().toISOString().split('T')[0]}\n\n`;
 
 let hasChanges = false;
-Object.values(commitTypes).forEach(category => {
+Object.values(commitTypes).forEach((category) => {
   if (category.commits.length > 0) {
     hasChanges = true;
     versionChangelog += `${category.title}\n\n`;
-    category.commits.forEach(commit => {
+    category.commits.forEach((commit) => {
       const scopeText = commit.scope ? `**${commit.scope}:** ` : '';
       versionChangelog += `- ${scopeText}${commit.message} ([${commit.hash}])\n`;
     });

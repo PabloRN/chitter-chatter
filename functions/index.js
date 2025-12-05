@@ -19,6 +19,7 @@ const { createCheckoutSession } = require('./src/stripe/createCheckoutSession');
 const { createPortalSession } = require('./src/stripe/createPortalSession');
 const { handleStripeWebhook } = require('./src/stripe/handleStripeWebhook');
 const { purchaseRoomSlot } = require('./src/stripe/purchaseRoomSlot');
+const { purchaseOwnerUpgrade } = require('./src/stripe/purchaseOwnerUpgrade');
 
 // ============================================================================
 // CLEANUP FUNCTIONS - Import from src/cleanup/
@@ -61,6 +62,7 @@ exports.createCheckoutSession = createCheckoutSession;
 exports.createPortalSession = createPortalSession;
 exports.handleStripeWebhook = handleStripeWebhook;
 exports.purchaseRoomSlot = purchaseRoomSlot;
+exports.purchaseOwnerUpgrade = purchaseOwnerUpgrade;
 
 // Cleanup Functions
 exports.cleanupAnonymousUsers = cleanupAnonymousUsers;

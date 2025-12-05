@@ -10,23 +10,17 @@
       </v-toolbar-title>
       <v-spacer></v-spacer>
 
-      <!-- Feedback button -->
-      <v-btn icon class="mr-2" @click="showFeedbackDialog = true" title="Send Feedback">
-        <v-icon>mdi-message-alert-outline</v-icon>
-      </v-btn>
+      <!-- Notification Bell -->
+      <NotificationBell v-if="!getCurrentUser?.isAnonymous" class="mr-2" />
 
-      <v-btn v-if="!isEditing" @click="isEditing = !isEditing" class="edit-btn">
-        <v-icon>mdi-pencil</v-icon>
-        Edit
-      </v-btn>
-      <v-btn v-else @click="isEditing = !isEditing" class="edit-btn">
-        <v-icon>mdi-check</v-icon>
-        Save
-      </v-btn>
-
+      <!-- Profile Menu -->
+      <ProfileMenu @logout="handleLogout" @feedback="showFeedbackDialog = true" />
     </v-app-bar>
 
     <div class="profile-container">
+      <!-- Profile Completion Card -->
+      <ProfileCompletionCard :user="getCurrentUser" :completion-data="profileCompletion"
+        @edit-profile="isEditing = true" @quick-action="isEditing = true" />
       <!-- Profile Header -->
       <v-card class="profile-header themed-card" elevation="4">
         <div class="profile-header-content">
@@ -65,7 +59,6 @@
 
             <div class="user-stats">
 
-
               <div class="stat-item">
                 <span class="stat-number">{{ getCurrentUser?.level || 'L1' }}</span>
                 <span class="stat-label">Level</span>
@@ -77,7 +70,12 @@
               </div>
               <div class="stat-divider"></div>
               <div class="stat-item">
-                <span class="stat-number"> {{ getCurrentUser?.client ? 'Client' : 'Registered' }}</span>
+                <span class="stat-number">
+                  {{ getCurrentUser?.client ? 'Client' :
+                    getCurrentUser?.isCreator ? 'Creator' :
+                      getCurrentUser?.isLandlord ? 'Landlord' :
+                        getCurrentUser?.isOwner ? 'Owner' : 'Registered' }}
+                </span>
                 <span class="stat-label">Account Type</span>
               </div>
             </div>
@@ -91,313 +89,346 @@
 
       <!-- Profile Content -->
       <div class="profile-content">
-        <!-- About Section -->
-        <v-card class="profile-section themed-card d-block" elevation="2">
-          <v-card-title class="section-title">
-            <v-icon class="mr-2">mdi-account-details</v-icon>
-            About Me
-          </v-card-title>
-          <v-card-text>
-            <div class="info-row">
-              <span class="info-label">Hobbies:</span>
-              <div v-if="!isEditing" class="d-flex justify-end flex-wrap">
-                <v-chip v-for="chip in getCurrentUser?.hobbies" class="ma-2" :color="chip.color"
-                  :prepend-icon="chip.icon">
-                  {{ chip.name }}
+        <v-expansion-panels variant="accordion" multiple v-model="expandedPanels">
+          <!-- About Section -->
+          <v-expansion-panel class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
+              <v-icon class="mr-2">mdi-account-details</v-icon>
+              About Me
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div class="info-row">
+                <span class="info-label">Hobbies:</span>
+                <div v-if="!isEditing" class="d-flex justify-end flex-wrap">
+                  <v-chip v-for="chip in getCurrentUser?.hobbies" class="ma-2" :color="chip.color"
+                    :prepend-icon="chip.icon">
+                    {{ chip.name }}
+                  </v-chip>
+                </div>
+                <v-combobox v-if="isEditing" closable-chips v-model="editedUser.selectedHobbies" :items="categories"
+                  item-title="name" item-value="name" multiple chips clearable :disabled="loading"
+                  label="Search & Select" hide-selectedHobbies>
+                  <!-- Chips inside the field -->
+                  <template v-slot:selection="{ item, index }">
+                    <v-chip :prepend-icon="item.icon" :key="index" closable :disabled="loading" :color="item.color"
+                      @click:close="remove(item)">
+                      {{ item.name }}
+                    </v-chip>
+                  </template>
+
+                  <!-- Dropdown item rendering -->
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <template #prepend>
+                        <v-icon :icon="item.raw.icon"></v-icon>
+                      </template>
+                      <v-list-item-title>{{ item.name }}</v-list-item-title>
+                    </v-list-item>
+                  </template>
+                </v-combobox>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Description:</span>
+                <span class="info-value description">
+                  <!-- Description -->
+                  <div v-if="!isEditing" class="d-flex justify-end flex-wrap">
+                    {{ getCurrentUser?.description || 'Not specified' }}
+                  </div>
+                  <v-textarea v-else v-model="editedUser.description" :rules="descriptionRules" label="Description"
+                    :disabled="!isEditing" hint="Let people know more about you" persistent-hint outlined dense
+                    :counter="200" rows="3" class="mb-4" />
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Age:</span>
+                <div v-if="!isEditing" class="info-value">
+                  {{ getCurrentUser?.age || 'Not specified' }}
+                </div>
+                <v-text-field :disabled="getCurrentUser?.age" v-else v-model="editedUser.age" label="Age" type="number"
+                  class="edit-field" outlined dense hint="Age can only be set one time" persistent-hint />
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+
+          <!-- My Rooms Section -->
+          <v-expansion-panel class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
+              <div class="d-flex align-center justify-space-between" style="width: 100%;">
+                <div class="d-flex align-center">
+                  <v-icon class="mr-2">mdi-home-group</v-icon>
+                  My Rooms
+                </div>
+                <v-chip small :color="canCreateRoom ? 'success' : 'warning'" text-color="white">
+                  {{ ownedRoomsCount }}/{{ roomLimit }} rooms
                 </v-chip>
               </div>
-              <v-combobox v-if="isEditing" closable-chips v-model="editedUser.selectedHobbies" :items="categories"
-                item-title="name" item-value="name" multiple chips clearable :disabled="loading" label="Search & Select"
-                hide-selectedHobbies>
-                <!-- Chips inside the field -->
-                <template v-slot:selection="{ item, index }">
-                  <v-chip :prepend-icon="item.icon" :key="index" closable :disabled="loading" :color="item.color"
-                    @click:close="remove(item)">
-                    {{ item.name }}
-                  </v-chip>
-                </template>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <ProfileRooms :headless="true" />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
 
-                <!-- Dropdown item rendering -->
-                <template v-slot:item="{ props, item }">
-                  <v-list-item v-bind="props">
-                    <template #prepend>
-                      <v-icon :icon="item.raw.icon"></v-icon>
-                    </template>
-                    <v-list-item-title>{{ item.name }}</v-list-item-title>
-                  </v-list-item>
-                </template>
-              </v-combobox>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Description:</span>
-              <span class="info-value description">
-                <!-- Description -->
-                <div v-if="!isEditing" class="d-flex justify-end flex-wrap">
-                  {{ getCurrentUser?.description || 'Not specified' }}
+          <!-- Subscription Section -->
+          <v-expansion-panel class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
+              <v-icon class="mr-2">mdi-crown</v-icon>
+              Subscription
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div class="subscription-info">
+                <!-- Current Tier -->
+                <div class="subscription-tier-display">
+                  <div class="tier-badge-container">
+                    <v-chip :color="subscriptionTierColor" size="large" class="tier-badge"
+                      prepend-icon="mdi-star-circle">
+                      {{ subscriptionTierName }}
+                    </v-chip>
+                    <!-- Recently Upgraded Indicator -->
+                    <v-chip v-if="isRecentlyUpgraded" color="success" size="small" class="upgrade-badge ml-2"
+                      prepend-icon="mdi-arrow-up-circle">
+                      {{ upgradeDisplayText }}
+                    </v-chip>
+                  </div>
+                  <p v-if="subscriptionData.status" class="subscription-status">
+                    Status: <strong>{{ subscriptionData.status }}</strong>
+                    <span v-if="subscriptionData.cancelAtPeriodEnd" class="cancel-warning">
+                      (Cancels on {{ formatDate(subscriptionData.currentPeriodEnd) }})
+                    </span>
+                  </p>
+                  <p v-if="subscriptionData.currentPeriodEnd && !subscriptionData.cancelAtPeriodEnd"
+                    class="subscription-renewal">
+                    Renews on {{ formatDate(subscriptionData.currentPeriodEnd) }}
+                  </p>
                 </div>
-                <v-textarea v-else v-model="editedUser.description" :rules="descriptionRules" label="Description"
-                  :disabled="!isEditing" hint="Let people know more about you" persistent-hint outlined dense
-                  :counter="200" rows="3" class="mb-4" />
-              </span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Age:</span>
-              <div v-if="!isEditing" class="info-value">
-                {{ getCurrentUser?.age || 'Not specified' }}
-              </div>
-              <v-text-field :disabled="getCurrentUser?.age" v-else v-model="editedUser.age" label="Age" type="number"
-                class="edit-field" outlined dense hint="Age can only be set one time" persistent-hint />
-            </div>
 
-          </v-card-text>
-        </v-card>
+                <!-- Action Buttons -->
+                <div class="subscription-actions">
+                  <!-- Manage Subscription (for paid tiers) -->
+                  <v-btn v-if="subscriptionData.tier !== 'free' && subscriptionData.stripeCustomerId" color="primary"
+                    variant="flat" size="large" prepend-icon="mdi-cog" @click="manageSubscription"
+                    :loading="loadingPortal" block class="mb-3">
+                    Manage Subscription
+                  </v-btn>
 
-        <!-- Subscription Section -->
-        <v-card class="profile-section themed-card d-block" elevation="2">
-          <v-card-title class="section-title">
-            <v-icon class="mr-2">mdi-crown</v-icon>
-            Subscription
-          </v-card-title>
-          <v-card-text>
-            <div class="subscription-info">
-              <!-- Current Tier -->
-              <div class="subscription-tier-display">
-                <div class="tier-badge-container">
-                  <v-chip
-                    :color="subscriptionTierColor"
-                    size="large"
-                    class="tier-badge"
-                    prepend-icon="mdi-star-circle"
-                  >
-                    {{ subscriptionTierName }}
-                  </v-chip>
+                  <!-- Upgrade Button (for free or landlord) -->
+                  <v-btn v-if="subscriptionData.tier === 'free' || subscriptionData.tier === 'landlord'"
+                    :color="subscriptionData.tier === 'free' ? 'success' : 'purple'" variant="outlined" size="large"
+                    :prepend-icon="subscriptionData.tier === 'free' ? 'mdi-rocket-launch' : 'mdi-arrow-up-bold'"
+                    @click="goToSubscription" block>
+                    {{ subscriptionData.tier === 'free' ? 'Upgrade to Premium' : 'Upgrade to Creator' }}
+                  </v-btn>
                 </div>
-                <p v-if="subscriptionData.status" class="subscription-status">
-                  Status: <strong>{{ subscriptionData.status }}</strong>
-                  <span v-if="subscriptionData.cancelAtPeriodEnd" class="cancel-warning">
-                    (Cancels on {{ formatDate(subscriptionData.currentPeriodEnd) }})
-                  </span>
-                </p>
-                <p v-if="subscriptionData.currentPeriodEnd && !subscriptionData.cancelAtPeriodEnd" class="subscription-renewal">
-                  Renews on {{ formatDate(subscriptionData.currentPeriodEnd) }}
-                </p>
-              </div>
 
-              <!-- Action Buttons -->
-              <div class="subscription-actions">
-                <!-- Manage Subscription (for paid tiers) -->
-                <v-btn
-                  v-if="subscriptionData.tier !== 'free' && subscriptionData.stripeCustomerId"
-                  color="primary"
-                  variant="flat"
-                  size="large"
-                  prepend-icon="mdi-cog"
-                  @click="manageSubscription"
-                  :loading="loadingPortal"
-                  block
-                  class="mb-3"
-                >
-                  Manage Subscription
-                </v-btn>
-
-                <!-- Upgrade Button (for free or landlord) -->
-                <v-btn
-                  v-if="subscriptionData.tier === 'free' || subscriptionData.tier === 'landlord'"
-                  :color="subscriptionData.tier === 'free' ? 'success' : 'purple'"
-                  variant="outlined"
-                  size="large"
-                  :prepend-icon="subscriptionData.tier === 'free' ? 'mdi-rocket-launch' : 'mdi-arrow-up-bold'"
-                  @click="goToSubscription"
-                  block
-                >
-                  {{ subscriptionData.tier === 'free' ? 'Upgrade to Premium' : 'Upgrade to Creator' }}
-                </v-btn>
-              </div>
-
-              <!-- Feature Summary -->
-              <div class="feature-summary">
-                <div class="feature-item-inline" v-if="subscriptionData.tier === 'free'">
-                  <v-icon size="small" color="grey">mdi-home</v-icon>
-                  <span>1 room</span>
-                </div>
-                <div class="feature-item-inline" v-else-if="subscriptionData.tier === 'landlord'">
-                  <v-icon size="small" color="primary">mdi-home-group</v-icon>
-                  <span>5 rooms, custom backgrounds</span>
-                </div>
-                <div class="feature-item-inline" v-else-if="subscriptionData.tier === 'creator'">
-                  <v-icon size="small" color="purple">mdi-infinity</v-icon>
-                  <span>Unlimited rooms, creator badge</span>
+                <!-- Feature Summary -->
+                <div class="feature-summary">
+                  <div class="feature-item-inline" v-if="subscriptionData.tier === 'free'">
+                    <v-icon size="small" color="grey">mdi-home</v-icon>
+                    <span>1 room</span>
+                  </div>
+                  <div class="feature-item-inline" v-else-if="subscriptionData.tier === 'landlord'">
+                    <v-icon size="small" color="primary">mdi-home-group</v-icon>
+                    <span>5 rooms, custom backgrounds</span>
+                  </div>
+                  <div class="feature-item-inline" v-else-if="subscriptionData.tier === 'creator'">
+                    <v-icon size="small" color="purple">mdi-infinity</v-icon>
+                    <span>Unlimited rooms, creator badge</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </v-card-text>
-        </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
 
-        <!-- Privacy Settings Section -->
-        <v-card class="profile-section themed-card d-block" elevation="2">
-          <v-card-title class="section-title">
-            <v-icon class="mr-2">mdi-shield-account</v-icon>
-            Privacy Settings
-          </v-card-title>
-          <v-card-text>
-            <p class="privacy-subtitle mb-4">Control what information is visible to other users</p>
+          <!-- Privacy Settings Section -->
+          <v-expansion-panel class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
+              <v-icon class="mr-2">mdi-shield-account</v-icon>
+              Privacy Settings
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <p class="privacy-subtitle mb-4">Control what information is visible to other users</p>
 
-            <div class="preference-item">
-              <div class="preference-info">
-                <v-icon class="mr-2" :color="privacySettings.showAvatar ? 'success' : 'grey'">
-                  {{ privacySettings.showAvatar ? 'mdi-eye' : 'mdi-eye-off' }}
-                </v-icon>
-                <div>
-                  <h4>Show Avatar</h4>
-                  <p>Allow others to see your profile picture</p>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <v-icon class="mr-2" :color="privacySettings.showAvatar ? 'success' : 'grey'">
+                    {{ privacySettings.showAvatar ? 'mdi-eye' : 'mdi-eye-off' }}
+                  </v-icon>
+                  <div>
+                    <h4>Show Avatar</h4>
+                    <p>Allow others to see your profile picture</p>
+                  </div>
                 </div>
+                <v-switch v-model="privacySettings.showAvatar" :disabled="!isEditing" color="primary" hide-details />
               </div>
-              <v-switch v-model="privacySettings.showAvatar" :disabled="!isEditing" color="primary" hide-details />
-            </div>
 
-            <div class="preference-item">
-              <div class="preference-info">
-                <v-icon class="mr-2" :color="privacySettings.showNickname ? 'success' : 'grey'">
-                  {{ privacySettings.showNickname ? 'mdi-eye' : 'mdi-eye-off' }}
-                </v-icon>
-                <div>
-                  <h4>Show Nickname</h4>
-                  <p>Display your username to other users</p>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <v-icon class="mr-2" :color="privacySettings.showNickname ? 'success' : 'grey'">
+                    {{ privacySettings.showNickname ? 'mdi-eye' : 'mdi-eye-off' }}
+                  </v-icon>
+                  <div>
+                    <h4>Show Nickname</h4>
+                    <p>Display your username to other users</p>
+                  </div>
                 </div>
+                <v-switch v-model="privacySettings.showNickname" :disabled="!isEditing" color="primary" hide-details />
               </div>
-              <v-switch v-model="privacySettings.showNickname" :disabled="!isEditing" color="primary" hide-details />
-            </div>
 
-            <div class="preference-item">
-              <div class="preference-info">
-                <v-icon class="mr-2" :color="privacySettings.showLevel ? 'success' : 'grey'">
-                  {{ privacySettings.showLevel ? 'mdi-eye' : 'mdi-eye-off' }}
-                </v-icon>
-                <div>
-                  <h4>Show Level</h4>
-                  <p>Let others see your experience level</p>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <v-icon class="mr-2" :color="privacySettings.showLevel ? 'success' : 'grey'">
+                    {{ privacySettings.showLevel ? 'mdi-eye' : 'mdi-eye-off' }}
+                  </v-icon>
+                  <div>
+                    <h4>Show Level</h4>
+                    <p>Let others see your experience level</p>
+                  </div>
                 </div>
+                <v-switch v-model="privacySettings.showLevel" :disabled="!isEditing" color="primary" hide-details />
               </div>
-              <v-switch v-model="privacySettings.showLevel" :disabled="!isEditing" color="primary" hide-details />
-            </div>
 
-            <div class="preference-item">
-              <div class="preference-info">
-                <v-icon class="mr-2" :color="privacySettings.showAge ? 'success' : 'grey'">
-                  {{ privacySettings.showAge ? 'mdi-eye' : 'mdi-eye-off' }}
-                </v-icon>
-                <div>
-                  <h4>Show Age</h4>
-                  <p>Display your age on your profile</p>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <v-icon class="mr-2" :color="privacySettings.showAge ? 'success' : 'grey'">
+                    {{ privacySettings.showAge ? 'mdi-eye' : 'mdi-eye-off' }}
+                  </v-icon>
+                  <div>
+                    <h4>Show Age</h4>
+                    <p>Display your age on your profile</p>
+                  </div>
                 </div>
+                <v-switch v-model="privacySettings.showAge" :disabled="!isEditing" color="primary" hide-details />
               </div>
-              <v-switch v-model="privacySettings.showAge" :disabled="!isEditing" color="primary" hide-details />
-            </div>
 
-            <div class="preference-item">
-              <div class="preference-info">
-                <v-icon class="mr-2" :color="privacySettings.showHobbies ? 'success' : 'grey'">
-                  {{ privacySettings.showHobbies ? 'mdi-eye' : 'mdi-eye-off' }}
-                </v-icon>
-                <div>
-                  <h4>Show Hobbies</h4>
-                  <p>Share your interests with others</p>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <v-icon class="mr-2" :color="privacySettings.showHobbies ? 'success' : 'grey'">
+                    {{ privacySettings.showHobbies ? 'mdi-eye' : 'mdi-eye-off' }}
+                  </v-icon>
+                  <div>
+                    <h4>Show Hobbies</h4>
+                    <p>Share your interests with others</p>
+                  </div>
                 </div>
+                <v-switch v-model="privacySettings.showHobbies" :disabled="!isEditing" color="primary" hide-details />
               </div>
-              <v-switch v-model="privacySettings.showHobbies" :disabled="!isEditing" color="primary" hide-details />
-            </div>
 
-            <div class="preference-item">
-              <div class="preference-info">
-                <v-icon class="mr-2" :color="privacySettings.showDescription ? 'success' : 'grey'">
-                  {{ privacySettings.showDescription ? 'mdi-eye' : 'mdi-eye-off' }}
-                </v-icon>
-                <div>
-                  <h4>Show Description</h4>
-                  <p>Allow others to read your profile description</p>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <v-icon class="mr-2" :color="privacySettings.showDescription ? 'success' : 'grey'">
+                    {{ privacySettings.showDescription ? 'mdi-eye' : 'mdi-eye-off' }}
+                  </v-icon>
+                  <div>
+                    <h4>Show Description</h4>
+                    <p>Allow others to read your profile description</p>
+                  </div>
                 </div>
+                <v-switch v-model="privacySettings.showDescription" :disabled="!isEditing" color="primary"
+                  hide-details />
               </div>
-              <v-switch v-model="privacySettings.showDescription" :disabled="!isEditing" color="primary" hide-details />
-            </div>
-          </v-card-text>
-        </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
 
-        <!-- Preferences Section -->
-        <v-card class="profile-section themed-card d-block" elevation="2">
-          <v-card-title class="section-title">
-            <v-icon class="mr-2">mdi-cog</v-icon>
-            Preferences
-          </v-card-title>
-          <v-card-text>
-            <div class="preference-item">
-              <div class="preference-info">
-                <h4>Notifications</h4>
-                <p>Receive notifications for room activities</p>
-              </div>
-              <v-switch v-model="preferences.notifications" :disabled="!isEditing" color="primary" />
-            </div>
-
-            <div class="preference-item">
-              <div class="preference-info">
-                <h4>Auto-join favorite rooms</h4>
-                <p>Automatically join your favorite rooms when available</p>
-              </div>
-              <v-switch v-model="preferences.autoJoinFavorites" :disabled="!isEditing" color="primary" />
-            </div>
-          </v-card-text>
-        </v-card>
-
-        <!-- My Rooms Section -->
-        <ProfileRooms />
-
-        <!-- Admin Dashboard Link (Only for Admin Users) -->
-        <v-card v-if="getCurrentUser?.isAdmin" class="profile-section themed-card" elevation="2">
-          <v-card-title class="section-title">
-            <v-icon class="mr-2" color="error">mdi-shield-crown</v-icon>
-            Admin Dashboard
-          </v-card-title>
-          <v-card-text>
-            <p class="mb-4">Access the admin dashboard to manage assets, users, and system settings.</p>
-            <v-btn color="error" variant="outlined" size="large" @click="goToAdmin" block>
+          <!-- Preferences Section -->
+          <!-- <v-expansion-panel class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
               <v-icon class="mr-2">mdi-cog</v-icon>
-              Open Admin Dashboard
-            </v-btn>
-          </v-card-text>
-        </v-card>
+              Preferences
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <h4>Notifications</h4>
+                  <p>Receive notifications for room activities</p>
+                </div>
+                <v-switch v-model="preferences.notifications" :disabled="!isEditing" color="primary" />
+              </div>
 
-        <!-- Actions Section -->
-        <v-card v-if="!getCurrentUser?.isAnonymous" class="profile-section themed-card" elevation="2">
-          <v-card-title class="section-title">
-            <v-icon class="mr-2">mdi-shield-account</v-icon>
-            Account Actions
-          </v-card-title>
-          <v-card-text>
-            <div class="linked-accounts">
-              <template v-for="provider in availableProviders" :key="provider.id">
-                <v-btn small outlined :color="linkedProviders.includes(provider.id) ? 'success' : 'primary'"
-                  class="mr-2 mb-2" :disabled="linkedProviders.includes(provider.id) && linkedProviders.length === 1"
-                  @click="linkedProviders.includes(provider.id) ? unlinkAccount(provider.id) : linkAccount(provider.id)">
-                  <v-icon class="mr-2">{{ provider.icon }}</v-icon>
-                  {{ provider.name }}
-                  <v-icon v-if="linkedProviders.includes(provider.id)" class="ml-1">mdi-check</v-icon>
-                </v-btn>
-              </template>
-            </div>
-            <small v-if="linkedProviders.length === 1 && getCurrentUser?.providerData?.length === 1"
-              class="text-caption">
-              You must keep at least one linked account
-            </small>
-            <v-btn outlined color="primary" class="action-btn" @click="exportData">
-              <v-icon class="mr-2">mdi-download</v-icon>
-              Export My Data
-            </v-btn>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <h4>Auto-join favorite rooms</h4>
+                  <p>Automatically join your favorite rooms when available</p>
+                </div>
+                <v-switch v-model="preferences.autoJoinFavorites" :disabled="!isEditing" color="primary" />
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel> -->
 
-            <v-btn outlined color="error" class="action-btn ml-2" @click="showDeleteDialog = true">
-              <v-icon class="mr-2">mdi-delete</v-icon>
-              Delete Account
-            </v-btn>
-          </v-card-text>
-        </v-card>
+          <!-- Friends Section -->
+          <v-expansion-panel v-if="!getCurrentUser?.isAnonymous" class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
+              <div class="d-flex align-center justify-space-between" style="width: 100%;">
+                <div class="d-flex align-center">
+                  <v-icon class="mr-2">mdi-account-group</v-icon>
+                  Friends
+                </div>
+                <div class="d-flex align-center gap-2">
+                  <v-chip v-if="friendsCount > 0" size="small" color="success">
+                    {{ friendsCount }}
+                  </v-chip>
+                  <v-btn v-if="friendRequestsCount > 0" variant="tonal" color="primary" size="small"
+                    @click.stop="showFriendRequestsDialog = true">
+                    <v-badge :content="friendRequestsCount" color="error" overlap>
+                      <v-icon size="small">mdi-account-clock</v-icon>
+                    </v-badge>
+                    <span class="ml-2">Requests</span>
+                  </v-btn>
+                </div>
+              </div>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <FriendsList :headless="true" @show-requests="showFriendRequestsDialog = true" />
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+
+          <!-- Admin Dashboard Link (Only for Admin Users) -->
+          <v-expansion-panel v-if="getCurrentUser?.isAdmin" class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
+              <v-icon class="mr-2" color="error">mdi-shield-crown</v-icon>
+              Admin Dashboard
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <p class="mb-4">Access the admin dashboard to manage assets, users, and system settings.</p>
+              <v-btn color="error" variant="outlined" size="large" @click="goToAdmin" block>
+                <v-icon class="mr-2">mdi-cog</v-icon>
+                Open Admin Dashboard
+              </v-btn>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+
+          <!-- Actions Section -->
+          <v-expansion-panel v-if="!getCurrentUser?.isAnonymous" class="themed-card" elevation="2">
+            <v-expansion-panel-title class="section-title">
+              <v-icon class="mr-2">mdi-shield-account</v-icon>
+              Account Actions
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div class="linked-accounts">
+                <template v-for="provider in availableProviders" :key="provider.id">
+                  <v-btn small outlined :color="linkedProviders.includes(provider.id) ? 'success' : 'primary'"
+                    class="mr-2 mb-2" :disabled="linkedProviders.includes(provider.id) && linkedProviders.length === 1"
+                    @click="linkedProviders.includes(provider.id) ? unlinkAccount(provider.id) : linkAccount(provider.id)">
+                    <v-icon class="mr-2">{{ provider.icon }}</v-icon>
+                    {{ provider.name }}
+                    <v-icon v-if="linkedProviders.includes(provider.id)" class="ml-1">mdi-check</v-icon>
+                  </v-btn>
+                </template>
+              </div>
+              <small v-if="linkedProviders.length === 1 && getCurrentUser?.providerData?.length === 1"
+                class="text-caption">
+                You must keep at least one linked account
+              </small>
+              <v-btn outlined color="primary" class="action-btn" @click="exportData">
+                <v-icon class="mr-2">mdi-download</v-icon>
+                Export My Data
+              </v-btn>
+
+              <v-btn outlined color="error" class="action-btn ml-2" @click="showDeleteDialog = true">
+                <v-icon class="mr-2">mdi-delete</v-icon>
+                Delete Account
+              </v-btn>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </div>
     </div>
 
@@ -417,6 +448,45 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Downgrade Confirmation Dialog -->
+    <v-dialog v-model="showDowngradeDialog" max-width="600">
+      <v-card>
+        <v-card-title class="warning--text">
+          <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+          Confirm Subscription Change
+        </v-card-title>
+        <v-card-text v-if="pendingDowngrade">
+          <p><strong>You're about to downgrade from {{ pendingDowngrade.from }} to {{ pendingDowngrade.to }}.</strong>
+          </p>
+
+          <v-alert type="info" class="my-4">
+            <strong>When does this take effect?</strong><br>
+            This change will happen at the <strong>end of your current billing period</strong>
+            on {{ formatDate(subscriptionData.currentPeriodEnd) }}.<br><br>
+            You'll keep all your {{ pendingDowngrade.from }} features until then.
+          </v-alert>
+
+          <p><strong>What you'll lose:</strong></p>
+          <ul v-if="pendingDowngrade.from === 'Creator'">
+            <li>Unlimited rooms (reduced to 5 rooms on Landlord)</li>
+            <li>Creator badge on your profile</li>
+            <li>Host up to 30 users (reduced to 20)</li>
+            <li>Unlimited custom avatars/backgrounds</li>
+          </ul>
+
+          <p class="mt-4"><strong>Note:</strong> If you currently have more than 5 rooms, you'll need to delete or
+            archive
+            some before creating new ones after the downgrade.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="showDowngradeDialog = false">Cancel</v-btn>
+          <v-btn color="warning" @click="confirmDowngrade">Confirm Downgrade</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="showSuccess" color="success" timeout="3000">
       {{ successMessage }}
     </v-snackbar>
@@ -425,12 +495,21 @@
       {{ errorMessage }}
     </v-snackbar>
 
+    <!-- Floating Action Button for Edit/Save -->
+    <v-fab :icon="isEditing ? 'mdi-content-save' : 'mdi-pencil'" :color="isEditing ? 'success' : 'purple'" size="large"
+      location="bottom end" app @click="toggleEdit" class="profile-fab">
+      <v-icon v-if="isEditing">mdi-content-save</v-icon>
+      <v-icon v-else>mdi-pencil</v-icon>
+      <v-tooltip activator="parent" location="left">
+        {{ isEditing ? 'Save Changes' : 'Edit Profile' }}
+      </v-tooltip>
+    </v-fab>
+
     <!-- Feedback Dialog -->
-    <FeedbackDialog
-      v-model="showFeedbackDialog"
-      @success="handleFeedbackSuccess"
-      @error="handleFeedbackError"
-    />
+    <FeedbackDialog v-model="showFeedbackDialog" @success="handleFeedbackSuccess" @error="handleFeedbackError" />
+
+    <!-- Friend Requests Dialog -->
+    <FriendRequestsDialog v-model="showFriendRequestsDialog" />
   </div>
 </template>
 
@@ -439,53 +518,69 @@ import {
   ref, computed, watch, onMounted,
 } from 'vue';
 import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import useUserStore from '@/stores/user';
+import useRoomsStore from '@/stores/rooms';
 import useMainStore from '@/stores/main';
 import subscriptionService from '@/services/subscriptionService';
 import ProfileRooms from '@/components/ProfileRooms.vue';
 import FeedbackDialog from '@/components/FeedbackDialog';
+import NotificationBell from '@/components/NotificationBell';
+import FriendsList from '@/components/FriendsList';
+import FriendRequestsDialog from '@/components/FriendRequestsDialog';
+import ProfileCompletionCard from '@/components/ProfileCompletionCard';
+import ProfileMenu from '@/components/ProfileMenu.vue';
 import {
   getAuth, GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
 import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
-//TODO: Move to a separate file
+import { formatDate } from '@/utils/dateUtils';
+import { TIER_RANKS } from '@/constants/tiers';
+import { calculateTotalRoomLimit } from '@/utils/roomTypes';
+// TODO: Move to a separate file
 const hobbies = [
-  { name: "Football", icon: "mdi-soccer", color: "green" },
-  { name: "Basketball", icon: "mdi-basketball", color: "deep-orange" },
-  { name: "Gaming", icon: "mdi-gamepad-variant", color: "purple" },
-  { name: "Music", icon: "mdi-music", color: "blue" },
-  { name: "Reading", icon: "mdi-book-open-page-variant", color: "indigo" },
-  { name: "Drawing", icon: "mdi-pencil", color: "pink" },
-  { name: "Cooking", icon: "mdi-silverware-fork-knife", color: "red" },
-  { name: "Traveling", icon: "mdi-airplane", color: "cyan" },
-  { name: "Movies", icon: "mdi-movie-open", color: "teal" },
-  { name: "Fitness", icon: "mdi-dumbbell", color: "orange" },
-  { name: "Photography", icon: "mdi-camera", color: "light-blue" },
-  { name: "Coding", icon: "mdi-laptop", color: "grey darken-1" },
-  { name: "Anime & Manga", icon: "mdi-drama-masks", color: "deep-purple" },
-  { name: "Collecting", icon: "mdi-cards-variant", color: "brown" },
-  { name: "Nature", icon: "mdi-tree", color: "green darken-2" }
+  { name: 'Football', icon: 'mdi-soccer', color: 'green' },
+  { name: 'Basketball', icon: 'mdi-basketball', color: 'deep-orange' },
+  { name: 'Gaming', icon: 'mdi-gamepad-variant', color: 'purple' },
+  { name: 'Music', icon: 'mdi-music', color: 'blue' },
+  { name: 'Reading', icon: 'mdi-book-open-page-variant', color: 'indigo' },
+  { name: 'Drawing', icon: 'mdi-pencil', color: 'pink' },
+  { name: 'Cooking', icon: 'mdi-silverware-fork-knife', color: 'red' },
+  { name: 'Traveling', icon: 'mdi-airplane', color: 'cyan' },
+  { name: 'Movies', icon: 'mdi-movie-open', color: 'teal' },
+  { name: 'Fitness', icon: 'mdi-dumbbell', color: 'orange' },
+  { name: 'Photography', icon: 'mdi-camera', color: 'light-blue' },
+  { name: 'Coding', icon: 'mdi-laptop', color: 'grey darken-1' },
+  { name: 'Anime & Manga', icon: 'mdi-drama-masks', color: 'deep-purple' },
+  { name: 'Collecting', icon: 'mdi-cards-variant', color: 'brown' },
+  { name: 'Nature', icon: 'mdi-tree', color: 'green darken-2' },
 ];
 const availableProviders = [
   {
     id: 'google.com', name: 'Google', icon: 'mdi-google', provider: new GoogleAuthProvider(),
   },
-  {
-    id: 'yahoo.com', name: 'Yahoo', icon: 'mdi-yahoo', provider: null,
-  }, // placeholder, implement OAuth if you have it
-  {
-    id: 'github.com', name: 'GitHub', icon: 'mdi-github', provider: null,
-  }, // same
+  // {
+  //   id: 'yahoo.com', name: 'Yahoo', icon: 'mdi-yahoo', provider: null,
+  // }, // placeholder, implement OAuth if you have it
+  // {
+  //   id: 'github.com', name: 'GitHub', icon: 'mdi-github', provider: null,
+  // }, // same
 ];
 
 const router = useRouter();
 const userStore = useUserStore();
+const roomsStore = useRoomsStore();
 const mainStore = useMainStore();
+
+// Store refs
+const { profileCompletion } = storeToRefs(userStore);
 
 // state
 const isEditing = ref(false);
 const loadingPortal = ref(false);
 const showDeleteDialog = ref(false);
+const showDowngradeDialog = ref(false);
+const pendingDowngrade = ref(null);
 const editedUser = ref({
   nickname: '',
   age: null,
@@ -511,20 +606,31 @@ const showSuccess = ref(false);
 const showError = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
-const selectedHobbies = ref([])
-const loading = ref(false)
+const selectedHobbies = ref([]);
+const loading = ref(false);
 const showFeedbackDialog = ref(false);
+const showFriendRequestsDialog = ref(false);
+const expandedPanels = ref([0, 1]); // 0 = About Me, 1 = My Rooms (expanded by default)
 
 // computed
-const categories = computed(() =>
-  hobbies.filter(
-    (item) => !selectedHobbies.value.find((s) => s.name === item.name)
-  )
-)
+const categories = computed(() => hobbies.filter(
+  (item) => !selectedHobbies.value.find((s) => s.name === item.name),
+));
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const favoriteRoomsCount = computed(() => getCurrentUser.value?.favoriteRooms?.length || 0);
 const joinedDate = computed(() => 'Dec 2024'); // TODO: fetch from user data
 const linkedProviders = computed(() => userStore.linkedProviders);
+
+// Room and Friends counts for expansion panel titles
+const ownedRoomsCount = computed(() => roomsStore.getOwnedRooms?.length || 0);
+const roomLimit = computed(() => {
+  const currentUser = getCurrentUser.value;
+  return calculateTotalRoomLimit(currentUser);
+});
+const canCreateRoom = computed(() => roomsStore.canCreateRoom);
+
+const friendsCount = computed(() => userStore.friendsList?.length || 0);
+const friendRequestsCount = computed(() => userStore.friendRequestsList?.length || 0);
 const nicknameCooldownMessage = computed(() => {
   console.log(getCurrentUser.value);
   const updatedAt = getCurrentUser.value?.nickNameUpdatedAt;
@@ -557,24 +663,55 @@ const subscriptionData = computed(() => {
     stripeCustomerId: user?.subscription?.stripeCustomerId || null,
     currentPeriodEnd: user?.subscription?.currentPeriodEnd || null,
     cancelAtPeriodEnd: user?.subscription?.cancelAtPeriodEnd || false,
+    lastUpgradedAt: user?.subscription?.lastUpgradedAt || null,
+    previousTier: user?.subscription?.previousTier || null,
   };
 });
 
 const subscriptionTierName = computed(() => {
-  const tier = subscriptionData.value.tier;
+  const { tier } = subscriptionData.value;
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 });
 
 const subscriptionTierColor = computed(() => {
-  const tier = subscriptionData.value.tier;
+  const { tier } = subscriptionData.value;
   if (tier === 'creator') return 'purple';
   if (tier === 'landlord') return 'primary';
   return 'grey';
 });
 
+const isRecentlyUpgraded = computed(() => {
+  const { lastUpgradedAt } = subscriptionData.value;
+  if (!lastUpgradedAt) return false;
+
+  const now = Date.now();
+  const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+  return lastUpgradedAt > sevenDaysAgo;
+});
+
+const upgradeDisplayText = computed(() => {
+  if (!isRecentlyUpgraded.value) return '';
+
+  const { previousTier } = subscriptionData.value;
+  const currentTier = subscriptionData.value.tier;
+
+  if (!previousTier) return 'Recently Upgraded!';
+
+  const tierNames = {
+    free: 'Free',
+    owner: 'Owner',
+    landlord: 'Landlord',
+    creator: 'Creator',
+  };
+
+  const prevName = tierNames[previousTier] || previousTier;
+  const currName = tierNames[currentTier] || currentTier;
+
+  return `Upgraded from ${prevName}!`;
+});
+
 // redirect if not authenticated
 onMounted(() => {
-
   if (getCurrentUser.value && getCurrentUser.value?.isAnonymous) {
     console.log('Profile mounted', getCurrentUser.value.isAnonymous);
     router.push({ name: 'rooms' });
@@ -609,17 +746,42 @@ watch(getCurrentUser.value, (newVal) => {
     router.push({ name: 'rooms' });
   }
 });
-//rules 
+
+// Watch for subscription tier changes
+watch(() => subscriptionData.value.tier, (newTier, oldTier) => {
+  if (oldTier && newTier !== oldTier && !getCurrentUser.value?.isAnonymous) {
+    const tierNames = {
+      free: 'Free',
+      owner: 'Owner',
+      landlord: 'Landlord',
+      creator: 'Creator',
+    };
+
+    const tierName = tierNames[newTier] || newTier;
+
+    mainStore.setSnackbar({
+      type: 'success',
+      msg: `🎉 Subscription updated to ${tierName}!`,
+      timeout: 5000,
+    });
+
+    console.log(`✅ Subscription tier changed from ${oldTier} to ${newTier}`);
+  }
+});
+
+// rules
 const descriptionRules = [
   (v) => !v || v.length <= 200 || `Description must be less than ${200} characters`,
 ];
 
 // methods
+const toggleEdit = () => {
+  isEditing.value = !isEditing.value;
+};
 
 const remove = (item) => {
-  selectedHobbies.value = selectedHobbies.value.filter((s) => s.name !== item.raw.name)
-}
-
+  selectedHobbies.value = selectedHobbies.value.filter((s) => s.name !== item.raw.name);
+};
 
 const linkAccount = async (providerId) => {
   try {
@@ -650,10 +812,40 @@ const unlinkAccount = async (providerId) => {
     console.error('Failed to unlink provider:', error);
   }
 };
-const goBack = () => router.go(-1);
+const goBack = () => {
+  // Check if we have meaningful browser history
+  if (window.history.length > 1 && document.referrer) {
+    const referrer = new URL(document.referrer);
+    const currentHost = window.location.host;
+
+    // Only use router.back() if we came from the same app
+    if (referrer.host === currentHost) {
+      router.back();
+    } else {
+      // Came from external link or new tab, go to rooms
+      router.push({ name: 'rooms' });
+    }
+  } else {
+    // No history (new tab, direct link), go to rooms
+    router.push({ name: 'rooms' });
+  }
+};
 
 const goToAdmin = () => {
   router.push({ name: 'admin' });
+};
+
+const handleLogout = async () => {
+  try {
+    await userStore.userSignOut();
+    router.push({ name: 'rooms' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    mainStore.setSnackbar({
+      type: 'error',
+      msg: 'Failed to log out. Please try again.',
+    });
+  }
 };
 
 const saveProfile = async () => {
@@ -823,7 +1015,7 @@ const manageSubscription = async () => {
     });
 
     const portalUrl = await subscriptionService.createPortalSession();
-    window.location.href = portalUrl;
+    window.open(portalUrl, '_blank');
   } catch (error) {
     console.error('Error opening portal:', error);
     mainStore.setSnackbar({
@@ -835,14 +1027,97 @@ const manageSubscription = async () => {
   }
 };
 
-const goToSubscription = () => {
-  router.push({ name: 'pricing' });
+const goToSubscription = async () => {
+  // Check if this is a downgrade
+  const currentTier = subscriptionData.value.tier;
+  const targetTier = 'creator'; // Always targeting creator from this button
+
+  // Check tier hierarchy using shared constants
+  const isDowngradeFlow = TIER_RANKS[targetTier] < TIER_RANKS[currentTier];
+
+  if (isDowngradeFlow) {
+    // Show downgrade confirmation dialog
+    const tierNames = { landlord: 'Landlord', creator: 'Creator' };
+    pendingDowngrade.value = {
+      from: tierNames[currentTier] || currentTier,
+      to: tierNames[targetTier] || targetTier,
+      targetTier,
+    };
+    showDowngradeDialog.value = true;
+    return;
+  }
+
+  // For upgrades, proceed directly
+  if (currentTier === 'landlord') {
+    try {
+      loadingPortal.value = true;
+      mainStore.setSnackbar({
+        type: 'info',
+        msg: 'Processing upgrade to Creator...',
+      });
+
+      // Default to monthly billing for upgrade
+      const result = await subscriptionService.createCheckoutSession('creator', 'monthly');
+
+      if (result.updated) {
+        // Subscription was updated immediately (proration scenario)
+        mainStore.setSnackbar({
+          type: 'success',
+          msg: 'Successfully upgraded to Creator! Check your email for confirmation.',
+        });
+      } else {
+        // Redirect to Stripe Checkout
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Error upgrading to Creator:', error);
+      mainStore.setSnackbar({
+        type: 'error',
+        msg: error.message || 'Failed to upgrade. Please try again.',
+      });
+    } finally {
+      loadingPortal.value = false;
+    }
+  } else {
+    // For free/owner users, go to pricing page
+    router.push({ name: 'pricing' });
+  }
 };
 
-const formatDate = (timestamp) => {
-  if (!timestamp) return '';
-  const date = new Date(timestamp);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+const confirmDowngrade = async () => {
+  try {
+    loadingPortal.value = true;
+    showDowngradeDialog.value = false;
+
+    mainStore.setSnackbar({
+      type: 'info',
+      msg: 'Processing downgrade...',
+    });
+
+    const result = await subscriptionService.createCheckoutSession(
+      pendingDowngrade.value.targetTier,
+      'monthly',
+    );
+
+    if (result.updated) {
+      mainStore.setSnackbar({
+        type: 'success',
+        msg: `Downgrade scheduled for ${formatDate(subscriptionData.value.currentPeriodEnd)}. Check your email for details.`,
+        timeout: 7000,
+      });
+    } else {
+      window.location.href = result.url;
+    }
+  } catch (error) {
+    console.error('Error processing downgrade:', error);
+    mainStore.setSnackbar({
+      type: 'error',
+      msg: error.message || 'Failed to process downgrade. Please try again.',
+    });
+  } finally {
+    loadingPortal.value = false;
+    pendingDowngrade.value = null;
+  }
 };
 </script>
 <style scoped lang="scss">
@@ -920,7 +1195,6 @@ const formatDate = (timestamp) => {
     justify-content: space-between;
   }
 
-
 }
 
 .description {
@@ -985,6 +1259,35 @@ const formatDate = (timestamp) => {
 
 .profile-section {
   border-radius: 12px !important;
+}
+
+/* Expansion Panel Styling */
+:deep(.v-expansion-panels) {
+  gap: 16px;
+}
+
+:deep(.v-expansion-panel) {
+  margin-bottom: 16px !important;
+  border-radius: 12px !important;
+  background-color: var(--card-background) !important;
+  border: 1px solid var(--card-border) !important;
+}
+
+:deep(.v-expansion-panel::before) {
+  box-shadow: none !important;
+}
+
+:deep(.v-expansion-panel-title) {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  font-size: 1.1rem !important;
+  padding: 20px !important;
+  min-height: auto !important;
+}
+
+:deep(.v-expansion-panel-text__wrapper) {
+  padding: 0 20px 20px 20px !important;
 }
 
 .section-title {
@@ -1148,7 +1451,7 @@ const formatDate = (timestamp) => {
   gap: 8px;
 }
 
-.preference-item .preference-info > div {
+.preference-item .preference-info>div {
   flex: 1;
 }
 
@@ -1180,6 +1483,11 @@ const formatDate = (timestamp) => {
 
 .tier-badge-container {
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .tier-badge {
@@ -1187,6 +1495,28 @@ const formatDate = (timestamp) => {
   font-weight: 600 !important;
   padding: 8px 20px !important;
   height: auto !important;
+}
+
+.upgrade-badge {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 4px 12px !important;
+  height: auto !important;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  }
+
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+  }
 }
 
 .subscription-status {

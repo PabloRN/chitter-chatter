@@ -7,7 +7,7 @@
       <v-img height="250" :src="nani"></v-img>
       <!-- Login Form -->
       <template v-if="!showWelcomeForm">
-        <v-card-title>Naniii!?You are not logged in?</v-card-title>
+        <v-card-title>What!? You are not logged in?</v-card-title>
         <v-card-text>
           <div class="text-subtitle-1 no-scroll">Hey, you need to log in to use this feature.</div>
         </v-card-text>

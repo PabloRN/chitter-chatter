@@ -38,8 +38,8 @@
         class="pa-5 ma-5 private-dialog">
         <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
       </v-dialog>
-      <TimeMachine style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
-      <div class="room-menu-container">
+      <TimeMachine v-model="isShown" style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
+      <div class="room-menu-container" :class="{ 'hidden': isHidden }">
         <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
           <template v-slot:activator="{ props: activatorProps }">
             <v-fab v-bind="activatorProps" size="large" icon="mdi-dots-vertical"></v-fab>
@@ -66,7 +66,7 @@
           <v-btn key="1" class="mx-2 speed-dial-menu-item" fab dark small
             @click.prevent.stop="handleEmit('showMessages')" @touchstart.native.prevent="handleEmit('showMessages')">
             <div>
-              <v-icon class="manga-icon"> mdi-message-text-fast-outline </v-icon>
+              <v-icon class="manga-icon"> mdi-card-account-details-outline </v-icon>
             </div>
           </v-btn>
 
@@ -102,6 +102,8 @@
       :target-room-name="reportTargetRoomName" @success="handleReportSuccess" @already-reported="handleAlreadyReported"
       @limit-reached="handleLimitReached" />
 
+    <RoomInfoDialog v-model="showRoomInfo" :room="currentRoom" @view-profile="handleViewProfile" />
+
     <!-- Auth Dialog for Login/Signup -->
     <v-dialog persistent scrollable v-model="showAuthDialog" width="600" min-height="80vh"
       class="pa-5 ma-5 private-dialog">
@@ -112,7 +114,7 @@
 
 <script setup>
 import {
-  ref, computed, onMounted, onBeforeUnmount, watch, nextTick,
+  ref, computed, onMounted, onBeforeUnmount, onUnmounted, watch, nextTick,
 } from 'vue';
 import { getDatabase, ref as dbRef, set } from 'firebase/database';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
@@ -125,6 +127,7 @@ import useMessagesStore from '@/stores/messages';
 import useMainStore from '@/stores/main';
 import useTheme from '@/composables/useTheme';
 import ReportRoomDialog from '@/components/ReportRoomDialog.vue';
+import RoomInfoDialog from '@/components/RoomInfoDialog.vue';
 import LoginDialogBubble from '@/components/LoginDialogBubble';
 
 // Props
@@ -159,6 +162,9 @@ const showReportDialog = ref(false);
 const reportTargetRoomId = ref('');
 const reportTargetRoomName = ref('');
 const showAuthDialog = ref(false);
+const showRoomInfo = ref(false);
+const isHidden = ref(false);
+const isShown = ref(false);
 
 // Computed properties
 const userAdded = computed(() => roomsStore.userAdded);
@@ -210,6 +216,16 @@ function handleLimitReached() {
   mainStore.setSnackbar({
     type: 'error',
     msg: 'You have reached the daily report limit (3 reports/day).',
+  });
+}
+
+function handleViewProfile(userId) {
+  // TODO: Implement user profile viewing
+  // This could open a UserInfoCard dialog or navigate to a profile page
+  console.log('View profile for user:', userId);
+  mainStore.setSnackbar({
+    type: 'info',
+    msg: 'Profile viewing feature coming soon!',
   });
 }
 const toggleMessages = () => {
@@ -315,11 +331,7 @@ const handleEmit = (item) => {
       break;
     case 'roomInfo':
       if (isUserAuthenticated.value) {
-        // TODO: Show room info dialog
-        mainStore.setSnackbar({
-          type: 'info',
-          msg: 'Room info coming soon!',
-        });
+        showRoomInfo.value = true;
       } else {
         showAuthDialog.value = true;
       }
@@ -420,9 +432,26 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateWindowSize);
 });
 
+onUnmounted(() => {
+  // Cleanup listener if component is unmounted unexpectedly
+  if (route.params.roomId) {
+    messagesStore.removeDialogs(route.params.roomId);
+    messagesStore.cleanMessages();
+  }
+});
+
 onBeforeRouteLeave((from, to, next) => {
+  console.log('BEFORE ROUTE LEAVE FROM ROOM');
+
+  // Unsubscribe from Firebase listener FIRST
+  if (route.params.roomId) {
+    messagesStore.removeDialogs(route.params.roomId);
+  }
+
+  // Then clean local messages
+  messagesStore.cleanMessages();
+
   if (currentUser.value && currentUser.value.userId) {
-    console.log('currentUser.value', currentUser.value);
     const { roomId } = route.params;
     const { userId } = currentUser.value;
 
@@ -481,7 +510,18 @@ watch(() => userStore.otherUserUpgraded, async (newVal) => {
     }
   }
 });
+watch(() => messagesStore.showMessagesStatus, async (newVal) => {
+  console.log('showMessagesStatus', newVal);
+  // Another user in the room has upgraded, update their data
+  isHidden.value = newVal;
+});
 
+watch(userExit, ({ roomId, userId }) => {
+  if (roomId === route.params.roomId) {
+    chatters.value.delete(userId);
+    chattersCounter.value -= 1;
+  }
+});
 watch(userExit, ({ roomId, userId }) => {
   if (roomId === route.params.roomId) {
     chatters.value.delete(userId);
@@ -672,5 +712,9 @@ watch(
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+.hidden {
+  display: none;
 }
 </style>

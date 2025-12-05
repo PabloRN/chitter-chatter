@@ -1,64 +1,97 @@
 <!-- eslint-disable max-len -->
 <template>
   <v-scroll-y-reverse-transition>
-    <div class="room-card-container" @mouseenter="showPreview = true" @mouseleave="showPreview = false"
-      @focusin="showPreview = true" @focusout="showPreview = false">
+    <div class="room-card-container">
       <v-card @click="enterRoom(room, id)" class="mx-auto room-card">
         <v-img :src="room?.thumbnail || room?.backgroundImage" class="room-image" height="200px" :cover="true">
-          <!-- Subtle gradient overlay for text visibility -->
+          <!-- Default overlay (always visible) -->
           <div class="gradient-overlay"></div>
-          <!-- Heart icon for favorites (top right) -->
+
+          <!-- Favorite button (top right) -->
           <v-btn @click.stop="toggleFavorite" class="favorite-btn" icon small :disabled="!isUserAuthenticated"
             :color="isFavorite ? 'red' : 'white'">
             <v-icon>{{ isFavorite ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
           </v-btn>
-          <!-- Text overlay content -->
-          <div class="text-overlay">
-            <!-- Title and created by (left bottom) -->
-            <div class="left-content">
-              <div class="room-title">{{ room?.name }}</div>
-              <div class="created-by">Created by {{ room?.createdBy || 'ToonsTalk' }}</div>
-            </div>
 
-            <!-- User count (right bottom) -->
-            <div class="right-content">
-              <div class="user-count">
-                <v-icon class="user-icon" size="16">mdi-account-group</v-icon>
-                <span>{{ usersOnline || 0 }}/{{ room?.maxUsers || 10 }}</span>
+          <!-- Title and subtitle (always visible at bottom, animates up) -->
+          <div class="text-overlay">
+            <div class="room-title">{{ room?.name }}</div>
+            <div class="created-by">Created by {{ room?.createdBy || 'ToonsTalk' }}</div>
+          </div>
+
+          <!-- User count badge (always visible, fades out on hover) -->
+          <div class="user-count-badge" :class="{ 'has-friends': hasFriendsInRoom }">
+            <v-icon v-if="hasFriendsInRoom" class="friend-indicator" size="12" color="success">
+              mdi-account-heart
+            </v-icon>
+            <v-icon v-else class="user-icon" size="16">mdi-account-group</v-icon>
+            <span>{{ usersOnline || 0 }}/{{ room?.maxUsers || 10 }}</span>
+            <v-tooltip v-if="hasFriendsInRoom" activator="parent" location="top">
+              {{ friendsInRoom.length }} {{ friendsInRoom.length === 1 ? 'friend' : 'friends' }} in this room
+            </v-tooltip>
+          </div>
+
+          <!-- Hover overlay (description + actions) -->
+          <div class="hover-overlay" @click.stop="enterRoom(room, id)">
+            <div class="hover-content">
+              <!-- Duplicate title/subtitle at top of hover overlay -->
+              <div class="hover-header">
+                <div class="room-title-hover">{{ room?.name }}</div>
+                <div class="created-by-hover">Created by {{ room?.createdBy || 'ToonsTalk' }}</div>
+              </div>
+
+              <!-- Description in middle -->
+              <div v-if="room?.description" class="description-hover">
+                {{ room.description }}
+              </div>
+
+              <!-- Action icons at bottom -->
+              <div class="hover-actions">
+                <!-- Enter Room -->
+                <div class="action-icon-wrapper" @click.stop="enterRoom(room, id)">
+                  <v-avatar size="32" color="blue" class="action-icon">
+                    <v-icon size="18" color="white">mdi-door-open</v-icon>
+                  </v-avatar>
+                  <v-tooltip activator="parent" location="top">Enter Room</v-tooltip>
+                </div>
+
+                <!-- Room Details -->
+                <div class="action-icon-wrapper" @click.stop="showExpanded = true">
+                  <v-avatar size="32" color="orange" class="action-icon">
+                    <v-icon size="18" color="white">mdi-information-outline</v-icon>
+                  </v-avatar>
+                  <v-tooltip activator="parent" location="top">Room Details</v-tooltip>
+                </div>
+
+                <!-- Favorite -->
+                <div class="action-icon-wrapper" @click.stop="toggleFavorite">
+                  <v-avatar size="32" :color="isFavorite ? 'red' : 'grey'" class="action-icon"
+                    :class="{ 'disabled': !isUserAuthenticated }">
+                    <v-icon size="18" color="white">{{ isFavorite ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
+                  </v-avatar>
+                  <v-tooltip v-if="isUserAuthenticated" activator="parent" location="top">
+                    {{ isFavorite ? 'Remove from Favorites' : 'Add to Favorites' }}
+                  </v-tooltip>
+                </div>
               </div>
             </div>
           </div>
         </v-img>
       </v-card>
+
+      <!-- Room Preview Card (Phase 2) -->
+      <RoomPreviewCard v-model="showExpanded" :room="room" />
     </div>
   </v-scroll-y-reverse-transition>
-
-  <!-- TODO: Netflix-style hover preview - z-index conflicts with Vuetify components
-       Need to investigate Vuetify's z-index system and find proper solution
-       Current implementation works but may appear behind some Vuetify elements -->
-  <!-- <v-card v-if="showPreview" class="hover-preview" elevation="8" @click="enterRoom(room, id)">
-    <v-img :src="room?.thumbnail ? room.thumbnail : room.picture" height="120" cover>
-      <div class="preview-gradient"></div>
-    </v-img>
-    <v-card-text class="preview-content">
-      <div class="preview-title">{{ room?.nombre }}</div>
-      <div class="preview-description">{{ room?.description || 'Join this amazing room and chat with other users!' }}</div>
-      <div class="preview-stats">
-        <span><v-icon size="14">mdi-account-group</v-icon> {{ usersOnline || 0 }}/{{ room?.maxUsers || 10 }}</span>
-        <span class="ml-2">{{ room?.category || 'General' }}</span>
-      </div>
-    </v-card-text>
-  </v-card> -->
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
-import {
-  getDatabase, ref as dbRef, update, get,
-} from 'firebase/database';
-import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
+import friendsService from '@/services/friendsService';
+import RoomPreviewCard from '@/components/RoomPreviewCard.vue';
 
 // ✅ Props
 const props = defineProps({
@@ -67,17 +100,13 @@ const props = defineProps({
 });
 
 // ✅ Stores
-const roomsStore = useRoomsStore();
 const userStore = useUserStore();
 const router = useRouter();
 
-// ✅ Local state
-const showPreview = ref(false);
+// Store refs
+const { friendsList } = storeToRefs(userStore);
 
 // ✅ Computed
-const roomList = computed(() => roomsStore.roomList);
-const usersOnlineNow = computed(() => roomsStore.usersOnlineNow);
-
 const isUserAuthenticated = computed(() => userStore.currentUser?.userId && !userStore.currentUser?.isAnonymous);
 
 const isFavorite = computed(() => {
@@ -88,6 +117,21 @@ const isFavorite = computed(() => {
 const usersOnline = computed(() => props.room?.usersOnline || 0);
 
 const roomIsFull = computed(() => usersOnline.value >= (props.room?.maxUsers || 20));
+
+// Check if friends are in the room
+const friendsInRoom = computed(() => {
+  if (!usersOnline.value || !friendsList.value || friendsList.value.length === 0) {
+    return [];
+  }
+
+  const roomUsers = props.room.users;
+  return friendsService.getFriendsInRoom(friendsList.value, roomUsers);
+});
+
+const hasFriendsInRoom = computed(() => friendsInRoom.value.length > 0);
+
+// Expanded card state
+const showExpanded = ref(false);
 
 // ✅ Methods
 const enterRoom = (room, key) => {
@@ -134,25 +178,19 @@ const toggleFavorite = async () => {
   position: relative;
 }
 
+/* Gradient overlay (subtle, always visible) */
 .gradient-overlay {
   position: absolute;
-  top: 120px;
+  top: 0;
   left: 0;
   right: 0;
-  bottom: 0px;
-  background: linear-gradient(to bottom, transparent 0%, transparent 20%, rgba(0, 0, 0, 0.2) 20%, rgba(0, 0, 0, 0.2) 100%);
-  pointer-events: none;
-  transition: top 0.3s ease, background 0.3s ease;
-}
-
-.room-card:hover .gradient-overlay {
-  top: -50px;
-  /* grow upwards */
+  bottom: 0;
   background: linear-gradient(to bottom,
       transparent 0%,
-      transparent 20%,
-      rgba(0, 0, 0, 0.2) 20%,
-      rgba(0, 0, 0, 0.2) 100%);
+      transparent 50%,
+      rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .favorite-btn {
@@ -188,21 +226,26 @@ const toggleFavorite = async () => {
   transform: scale(1.1);
 }
 
-.text-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  z-index: 1;
+/* Hide favorite button on card hover (action icon available in overlay) */
+.room-card:hover .favorite-btn {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.left-content {
-  flex: 1;
+/* Text overlay (fades out on hover, no translateY) */
+.text-overlay {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 56px;
+  z-index: 2;
   color: white;
+  transition: opacity 0.3s ease;
+}
+
+.room-card:hover .text-overlay {
+  opacity: 0;
+  /* Simple fade out, no translateY */
 }
 
 .room-title {
@@ -210,7 +253,6 @@ const toggleFavorite = async () => {
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.2;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   margin-bottom: 2px;
 }
 
@@ -222,11 +264,11 @@ const toggleFavorite = async () => {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
-.right-content {
-  color: white;
-}
-
-.user-count {
+/* User count badge (always visible, fades out on hover) */
+.user-count-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 0.85rem;
   font-weight: 500;
@@ -238,100 +280,168 @@ const toggleFavorite = async () => {
   padding: 4px 8px;
   border-radius: 12px;
   backdrop-filter: blur(10px);
+  color: white;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.user-count-badge.has-friends {
+  background: rgba(76, 175, 80, 0.5);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.room-card:hover .user-count-badge {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .user-icon {
   color: white;
 }
 
-/* Netflix-style hover preview */
-.hover-preview {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  width: 300px;
-  z-index: 2147483647 !important;
-  cursor: pointer;
-  animation: fadeInUp 0.3s ease-out;
-  background: var(--card-background) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--card-border) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16) !important;
-  pointer-events: auto !important;
+.friend-indicator {
+  margin-left: 4px;
+  animation: pulse 12s ease-in-out infinite;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
+@keyframes pulse {
+  0% {
+    transform: scale(1);
   }
 
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+  5% {
+    transform: scale(1.15);
+  }
+
+  10% {
+    transform: scale(1);
+  }
+
+  15% {
+    transform: scale(1.15);
+  }
+
+  20%,
+  100% {
+    transform: scale(1);
   }
 }
 
-.preview-gradient {
+/* Hover overlay (description + actions) */
+.hover-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: linear-gradient(to bottom,
-      transparent 0%,
-      rgba(0, 0, 0, 0.4) 100%);
-}
-
-.preview-content {
-  padding: 12px !important;
-}
-
-.preview-title {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: var(--text-primary) !important;
-}
-
-.preview-description {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 0.85rem;
-  color: var(--text-secondary) !important;
-  line-height: 1.3;
-  margin-bottom: 8px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.preview-stats {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 0.8rem;
-  color: var(--text-secondary) !important;
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.7) 100%);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 5;
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.room-card:hover .hover-overlay {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.hover-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.preview-stats span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+/* Duplicate title/subtitle inside hover overlay */
+.hover-header {
+  color: white;
 }
 
-/* Responsive adjustments */
+.room-title-hover {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.created-by-hover {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Description (middle section with ellipsis) */
+.description-hover {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.4;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+}
+
+/* Action icons (bottom) */
+.hover-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 8px;
+  z-index: 10;
+  position: relative;
+}
+
+.action-icon-wrapper {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.action-icon-wrapper:hover {
+  transform: scale(1.15);
+}
+
+.action-icon {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.action-icon.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Mobile responsive */
 @media (max-width: 768px) {
-  .hover-preview {
-    display: none;
+  .text-overlay {
+    bottom: 12px;
+    left: 12px;
+    right: 48px;
   }
 
-  .text-overlay {
-    padding: 12px;
-  }
 
   .room-title {
     font-size: 1rem;
@@ -339,6 +449,19 @@ const toggleFavorite = async () => {
 
   .created-by {
     font-size: 0.75rem;
+  }
+
+  .hover-overlay {
+    padding: 12px;
+  }
+
+  .description-hover {
+    font-size: 0.8rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .hover-actions {
+    gap: 8px;
   }
 }
 </style>

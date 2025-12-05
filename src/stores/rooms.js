@@ -39,14 +39,27 @@ const useRoomsStore = defineStore('rooms', {
       const user = userStore.getCurrentUser;
       if (!user || user.isAnonymous) return false;
 
-      // TODO: Add paid user check when payment system is implemented
-
-      if (user.isPaid) return true;
-      if (user.isAdmin) return true;
-
-      // Free users can create only 1 room
-      // Use the rooms store as the authoritative source for owned rooms count
       const ownedRoomsCount = state.ownedRooms.length;
+
+      // Admin: 100 rooms
+      if (user.isAdmin) return ownedRoomsCount < 100;
+
+      // Creator: 100 rooms (unlimited)
+      if (user.isCreator) return ownedRoomsCount < 100;
+
+      // Landlord: 5 rooms max + purchased slots
+      if (user.isLandlord) {
+        const limit = 5 + (user.purchasedRoomSlots || 0);
+        return ownedRoomsCount < limit;
+      }
+
+      // Owner: 1 room + purchased slots
+      if (user.isOwner) {
+        const limit = 1 + (user.purchasedRoomSlots || 0);
+        return ownedRoomsCount < limit;
+      }
+
+      // Free: 1 room max
       return ownedRoomsCount < USER_ROOM_LIMITS.free;
     },
   },
@@ -63,12 +76,23 @@ const useRoomsStore = defineStore('rooms', {
         Object.keys(snapshot.val()).forEach((singleRoom) => {
           const usersRoom = ref(db, `rooms/${singleRoom}/users/`);
 
-          onChildAdded(usersRoom, () => {
+          onChildAdded(usersRoom, (userSnapshot) => {
             this.addOnline1({ roomId: singleRoom });
+            // Update room users object for real-time friend indicator
+            if (this.roomList[singleRoom]) {
+              if (!this.roomList[singleRoom].users) {
+                this.roomList[singleRoom].users = {};
+              }
+              this.roomList[singleRoom].users[userSnapshot.key] = userSnapshot.val();
+            }
           });
 
-          onChildRemoved(usersRoom, () => {
+          onChildRemoved(usersRoom, (userSnapshot) => {
             this.subOnline1({ roomId: singleRoom });
+            // Update room users object for real-time friend indicator
+            if (this.roomList[singleRoom]?.users) {
+              delete this.roomList[singleRoom].users[userSnapshot.key];
+            }
           });
         });
 
@@ -150,7 +174,6 @@ const useRoomsStore = defineStore('rooms', {
           if (defaultAvatar) {
             defaultUrl = defaultAvatar.url || defaultAvatar.avatarURL;
             defaultMiniUrl = defaultAvatar.miniUrl || defaultAvatar.miniAvatarURL;
-            console.log('Found default avatar from room data:', { defaultUrl, defaultMiniUrl });
           } else {
             console.log('No default avatar found in room data');
           }
@@ -176,6 +199,7 @@ const useRoomsStore = defineStore('rooms', {
         onDisconnect(refRoom).remove();
 
         await update(ref(db), updates);
+        // await set(ref(db, `friends/${userId}/roomIn/`), roomId);
         this.pushUserSuccess();
       } catch (error) {
         console.error(error);
@@ -208,7 +232,7 @@ const useRoomsStore = defineStore('rooms', {
         }
 
         await update(ref(db), updates);
-
+        // await set(ref(db, `friends/${userId}/roomIn/`), null);
         this.exitRoom({ roomId, userId, roomUsersKey });
       } catch (error) {
         console.error(error);

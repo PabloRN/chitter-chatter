@@ -44,8 +44,8 @@ async function sendEmail(data) {
         other: 'Other Reasons',
       };
 
-      const feedback = data.cancellationDetails.feedback;
-      const comment = data.cancellationDetails.comment;
+      const { feedback } = data.cancellationDetails;
+      const { comment } = data.cancellationDetails;
 
       cancellationDetailsHtml = '<div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">';
 

@@ -1,5 +1,5 @@
-const { createTransporter } = require('./nodemailer-config');
 const { defineString } = require('firebase-functions/params');
+const { createTransporter } = require('./nodemailer-config');
 
 const appUrl = defineString('APP_URL', { default: 'http://localhost:8080' });
 
@@ -123,7 +123,7 @@ async function sendEmail(email, data) {
 
               <div class="feature-list">
                 <h3 style="margin-top: 0;">Your ${tierName} Features:</h3>
-                ${features.map(feature => `<div class="feature-item">${feature}</div>`).join('')}
+                ${features.map((feature) => `<div class="feature-item">${feature}</div>`).join('')}
               </div>
 
               <p>You can manage your subscription anytime from your profile:</p>

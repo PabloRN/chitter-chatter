@@ -43,6 +43,7 @@ export const DEFAULT_ROOM_VALUES = {
   minAge: 13,
   backgroundImage: '',
   isPrivate: false,
+  isFanArt: false,
   publicAvatars: [],
   defaultAvatar: null, // Avatar that new users get when entering room
   createdBy: '',
@@ -51,8 +52,8 @@ export const DEFAULT_ROOM_VALUES = {
 // Room creation limits by tier
 export const USER_ROOM_LIMITS = {
   free: 1,
-  landlord: 10,
-  creator: -1, // -1 means unlimited
+  landlord: 5,
+  creator: 100, // -1 means unlimited
   admin: 100,
 };
 
@@ -74,7 +75,7 @@ export function calculateTotalRoomLimit(user) {
   let baseLimit = USER_ROOM_LIMITS.free;
 
   if (user.subscriptionTier === 'creator' || user.isCreator) {
-    return -1; // Unlimited for creator tier
+    return 100; // Unlimited for creator tier
   }
 
   if (user.subscriptionTier === 'landlord') {
@@ -111,6 +112,7 @@ export function createRoom(data = {}) {
     description: data.description || DEFAULT_ROOM_VALUES.description,
     maxUsers: data.maxUsers || DEFAULT_ROOM_VALUES.maxUsers,
     minAge: data.minAge || DEFAULT_ROOM_VALUES.minAge,
+    isFanArt: data.isFanArt || DEFAULT_ROOM_VALUES.isFanArt,
     backgroundImage: data.backgroundImage || DEFAULT_ROOM_VALUES.backgroundImage,
     isPrivate: data.isPrivate || DEFAULT_ROOM_VALUES.isPrivate,
     publicAvatars: data.publicAvatars || DEFAULT_ROOM_VALUES.publicAvatars,
