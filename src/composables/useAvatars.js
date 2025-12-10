@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue';
-import { useUserStore } from '@/stores/user';
+import useUserStore from '@/stores/user';
 
 /**
  * Avatars Composable
@@ -37,6 +37,52 @@ export function useAvatars() {
   /**
    * Upload personal avatar
    */
+  const validateAvatarFile = (file) => {
+    if (!file) {
+      return {
+        isValid: false,
+        error: 'No file selected',
+      };
+    }
+
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      return {
+        isValid: false,
+        error: 'Please select a valid image file (JPEG, PNG, or WebP)',
+      };
+    }
+
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return {
+        isValid: false,
+        error: 'File size must be less than 5MB',
+      };
+    }
+
+    // Check image dimensions (optional validation)
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        // You can add dimension checks here if needed
+        resolve({
+          isValid: true,
+          width: img.width,
+          height: img.height,
+        });
+      };
+      img.onerror = () => {
+        resolve({
+          isValid: false,
+          error: 'Invalid image file',
+        });
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
   const uploadPersonalAvatar = async (file) => {
     try {
       isUploadingAvatar.value = true;
@@ -111,53 +157,6 @@ export function useAvatars() {
   /**
    * Validate avatar file
    */
-  const validateAvatarFile = (file) => {
-    if (!file) {
-      return {
-        isValid: false,
-        error: 'No file selected',
-      };
-    }
-
-    // Check file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      return {
-        isValid: false,
-        error: 'Please select a valid image file (JPEG, PNG, or WebP)',
-      };
-    }
-
-    // Check file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return {
-        isValid: false,
-        error: 'File size must be less than 5MB',
-      };
-    }
-
-    // Check image dimensions (optional validation)
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        // You can add dimension checks here if needed
-        resolve({
-          isValid: true,
-          width: img.width,
-          height: img.height,
-        });
-      };
-      img.onerror = () => {
-        resolve({
-          isValid: false,
-          error: 'Invalid image file',
-        });
-      };
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
   /**
    * Get avatar URL for a specific user
    */
@@ -278,13 +277,9 @@ export function useAvatarSelector() {
       throw new Error('No avatar selected');
     }
 
-    try {
-      const result = await changeAvatar(selectedAvatar.value, roomId);
-      exitSelectionMode();
-      return result;
-    } catch (err) {
-      throw err;
-    }
+    const result = await changeAvatar(selectedAvatar.value, roomId);
+    exitSelectionMode();
+    return result;
   };
 
   /**
@@ -337,6 +332,26 @@ export function useAvatarUpload() {
   /**
    * Handle file drop
    */
+  const clearPreview = () => {
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value);
+      previewUrl.value = '';
+    }
+  };
+  const handleFileUpload = async (file) => {
+    try {
+      // Create preview
+      previewUrl.value = URL.createObjectURL(file);
+      // Upload file
+      const result = await uploadPersonalAvatar(file);
+      // Clear preview after successful upload
+      clearPreview();
+      return result;
+    } catch (err) {
+      clearPreview();
+      throw err;
+    }
+  };
   const handleDrop = async (e) => {
     e.preventDefault();
     dragOver.value = false;
@@ -360,31 +375,6 @@ export function useAvatarUpload() {
   /**
    * Handle file upload
    */
-  const handleFileUpload = async (file) => {
-    try {
-      // Create preview
-      previewUrl.value = URL.createObjectURL(file);
-      // Upload file
-      const result = await uploadPersonalAvatar(file);
-      // Clear preview after successful upload
-      clearPreview();
-      return result;
-    } catch (err) {
-      clearPreview();
-      throw err;
-    }
-  };
-
-  /**
-   * Clear preview
-   */
-  const clearPreview = () => {
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value);
-      previewUrl.value = '';
-    }
-  };
-
   return {
     // State
     dragOver,

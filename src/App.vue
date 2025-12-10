@@ -9,11 +9,12 @@
         </v-fade-transition>
       </router-view>
     </v-main>
-    <snack-bar />
+    <SnackBar v-if="path.name !== 'loading'" />
     <cookie-consent />
 
     <!-- Connection overlay -->
-    <div v-if="!mainStore.isConnected && mainStore.connectionChecked" class="connection-overlay">
+    <div v-if="!mainStore.isConnected && mainStore.connectionChecked && path.name !== 'loading'"
+      class="connection-overlay">
       <div class="connection-overlay-content">
         <v-icon size="64" color="red">mdi-wifi-off</v-icon>
         <h2>Connection Lost</h2>
@@ -41,7 +42,7 @@
 
 <script setup>
 import {
-  ref, onMounted, onUnmounted, watch,
+  ref, onMounted, onUnmounted, watch, computed
 } from 'vue';
 import SnackBar from './components/Snackbar';
 import CookieConsent from './components/CookieConsent';
@@ -50,17 +51,20 @@ import useLanguageSwitcherStore from './stores/languageswitcher';
 import useUserStore from './stores/user';
 import useMainStore from './stores/main';
 import useTheme from './composables/useTheme';
+import { useRoute } from 'vue-router'
 
 const languageSwitcherStore = useLanguageSwitcherStore();
 const userStore = useUserStore();
 const mainStore = useMainStore();
 const { initTheme } = useTheme();
-
+const route = useRoute();
 const showSurveyPopup = ref(false);
 const SURVEY_DELAY = 1 * 60 * 1000; // 5 minutes in milliseconds
 const SURVEY_STORAGE_KEY = 'toonstalk_survey_completed';
 const SURVEY_DISMISSED_KEY = 'toonstalk_survey_dismissed';
 let surveyTimer = null;
+
+const path = computed(() => route)
 
 function lockLandscapeOrientation() {
   if (window.screen && window.screen.orientation && window.screen.orientation.lock) {

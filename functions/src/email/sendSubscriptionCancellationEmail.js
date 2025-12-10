@@ -104,7 +104,7 @@ async function sendEmail(email, data) {
               <ul>
                 <li>Your subscription will remain active until ${formattedEndDate}</li>
                 <li>After that date, your account will revert to the Free tier</li>
-                <li>All your rooms and data will be preserved</li>
+                <li>Room created under this tier will be deleted</li>
                 <li>You won't be charged again</li>
               </ul>
 

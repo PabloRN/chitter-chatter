@@ -48,6 +48,14 @@
               <v-text-field v-model.number="formData.maxUsers" :rules="maxUsersRules" label="Max Users" type="number"
                 :hint="`Maximum users allowed (up to ${maxUsersAllowed})`" persistent-hint outlined dense :min="2"
                 :max="maxUsersAllowed" />
+
+              <!-- Upgrade Alert for Max Users -->
+              <v-alert v-if="isAtMaxUsersTierLimit" type="info" density="compact" class="mt-2">
+                <div class="d-flex align-center justify-space-between">
+                  <span class="text-caption">Want more users per room? Upgrade your tier!</span>
+                  <v-btn size="small" color="primary" variant="text" to="/pricing">View Plans</v-btn>
+                </div>
+              </v-alert>
             </v-col>
             <v-col cols="12" sm="6">
             </v-col>
@@ -58,7 +66,7 @@
 
           <!-- Private Room Toggle -->
           <v-switch v-model="formData.isPrivate" :disabled="!canCreatePrivateRoom" label="Private Room" color="primary"
-            :hint="canCreatePrivateRoom ? 'Private rooms are only visible to you and invited users' : 'Upgrade to Owner ($2.99) to create private rooms'"
+            :hint="canCreatePrivateRoom ? 'Private rooms are only visible to you and invited users' : 'Unlock private rooms with Owner tier ($2.99 one-time) - Create exclusive spaces for your community!'"
             persistent-hint class="mb-4">
             <template v-if="!canCreatePrivateRoom" #label>
               <div class="d-flex align-center">
@@ -70,8 +78,8 @@
 
           <!-- Fan Art Room Toggle -->
 
-          <v-switch v-model="formData.isFanArt" label="Fan Art" color="primary"
-            hint="Mark your room as Fan Art if you want to upload your own designs. Please don’t upload sexual content — all uploads are your responsibility"
+          <v-switch v-model="formData.isFanArt" :disabled="!canCreatePrivateRoom" label="Fan Art" color="primary"
+            :hint="canCreatePrivateRoom ? 'Mark your room as Fan Art if you want to upload your own designs. Please don\'t upload sexual content — all uploads are your responsibility' : 'Enable Fan Art mode with Owner tier ($2.99 one-time) - Showcase your creative designs in custom rooms!'"
             persistent-hint class="mb-4" />
 
           <!-- Background Selector -->
@@ -251,6 +259,12 @@ const canCreatePrivateRoom = computed(() => {
 const maxUsersAllowed = computed(() => {
   const user = userStore.getCurrentUser;
   return subscriptionService.getMaxUsersForRoom(user);
+});
+
+const isAtMaxUsersTierLimit = computed(() => {
+  const currentMax = formData.maxUsers;
+  const tierMax = maxUsersAllowed.value;
+  return currentMax >= tierMax;
 });
 
 // Validation rules

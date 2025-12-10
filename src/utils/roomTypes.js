@@ -26,7 +26,7 @@ export const ROOM_CONSTRAINTS = {
     maxLength: 50,
   },
   description: {
-    maxLength: 200,
+    maxLength: 500,
   },
   maxUsers: {
     min: 2,

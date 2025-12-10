@@ -304,7 +304,8 @@ const useRoomsStore = defineStore('rooms', {
       if (!this.roomList[roomId]) return;
 
       const currentOnline = this.roomList[roomId].usersOnline || 0;
-      this.roomList[roomId].usersOnline = currentOnline + 1;
+      const newOnlineCount = currentOnline + 1;
+      this.roomList[roomId].usersOnline = newOnlineCount;
       this.usersOnlineNow += 1;
     },
 
@@ -312,7 +313,8 @@ const useRoomsStore = defineStore('rooms', {
       if (!this.roomList[roomId]) return;
 
       const currentOnline = this.roomList[roomId].usersOnline || 1;
-      this.roomList[roomId].usersOnline = Math.max(0, currentOnline - 1);
+      const newOnlineCount = Math.max(0, currentOnline - 1);
+      this.roomList[roomId].usersOnline = newOnlineCount;
       this.usersOnlineNow = Math.max(0, this.usersOnlineNow - 1);
     },
 
@@ -385,13 +387,12 @@ const useRoomsStore = defineStore('rooms', {
               const roomData = roomSnapshot.val();
 
               if (roomData) {
-                // If room doesn't have a picture/background, try to load it from storage
-                if (!roomData.picture && !roomData.backgroundImage && !roomData.thumbnail) {
+                // If room doesn't have a background/thumbnail, try to load it from storage
+                if (!roomData.backgroundImage && !roomData.thumbnail) {
                   try {
                     const storage = getStorage();
-                    const backgroundRef = storageRef(storage, `${roomId}/places/L1/background.jpg`);
+                    const backgroundRef = storageRef(storage, `rooms/${roomId}/places/L1/background.jpg`);
                     const backgroundURL = await getDownloadURL(backgroundRef);
-                    roomData.picture = backgroundURL;
                     roomData.backgroundImage = backgroundURL;
                     roomData.thumbnail = backgroundURL;
                   } catch (error) {
@@ -578,10 +579,9 @@ const useRoomsStore = defineStore('rooms', {
           }
         }
 
-        // For compatibility with existing components, also set picture field
-        if (roomData.backgroundImage) {
-          updatedRoom.picture = roomData.backgroundImage;
-          updatedRoom.thumbnail = roomData.backgroundImage; // Set thumbnail too for RoomThumbnail compatibility
+        // Ensure thumbnail is set (removed deprecated picture field)
+        if (roomData.backgroundImage && !updatedRoom.thumbnail) {
+          updatedRoom.thumbnail = roomData.backgroundImage;
         }
 
         await update(roomRef, updatedRoom);

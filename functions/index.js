@@ -27,6 +27,7 @@ const { purchaseOwnerUpgrade } = require('./src/stripe/purchaseOwnerUpgrade');
 const { cleanupAnonymousUsers } = require('./src/cleanup/cleanupAnonymousUsers');
 const { removeGhostUsers } = require('./src/cleanup/removeGhostUsers');
 const { manualCleanupNow } = require('./src/cleanup/manualCleanupNow');
+const { forceOfflineStaleUsers } = require('./src/cleanup/forceOfflineStaleUsers');
 
 // ============================================================================
 // TRACKING FUNCTIONS - Import from src/tracking/
@@ -68,6 +69,7 @@ exports.purchaseOwnerUpgrade = purchaseOwnerUpgrade;
 exports.cleanupAnonymousUsers = cleanupAnonymousUsers;
 exports.removeGhostUsers = removeGhostUsers;
 exports.manualCleanupNow = manualCleanupNow; // For testing - call anytime
+exports.forceOfflineStaleUsers = forceOfflineStaleUsers; // Runs every 10 minutes
 
 // Tracking Functions
 exports.trackOnlineTime = trackOnlineTime;

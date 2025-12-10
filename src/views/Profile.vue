@@ -10,6 +10,11 @@
       </v-toolbar-title>
       <v-spacer></v-spacer>
 
+      <!-- Pricing Button -->
+      <v-btn variant="text" size="large" color="primary" prepend-icon="mdi-diamond-stone" to="/pricing" class="mr-2">
+        Pricing
+      </v-btn>
+
       <!-- Notification Bell -->
       <NotificationBell v-if="!getCurrentUser?.isAnonymous" class="mr-2" />
 
@@ -71,10 +76,7 @@
               <div class="stat-divider"></div>
               <div class="stat-item">
                 <span class="stat-number">
-                  {{ getCurrentUser?.client ? 'Client' :
-                    getCurrentUser?.isCreator ? 'Creator' :
-                      getCurrentUser?.isLandlord ? 'Landlord' :
-                        getCurrentUser?.isOwner ? 'Owner' : 'Registered' }}
+                  {{ getCurrentUser?.client ? 'Client' : subscriptionTierName }}
                 </span>
                 <span class="stat-label">Account Type</span>
               </div>
@@ -136,7 +138,7 @@
                   </div>
                   <v-textarea v-else v-model="editedUser.description" :rules="descriptionRules" label="Description"
                     :disabled="!isEditing" hint="Let people know more about you" persistent-hint outlined dense
-                    :counter="200" rows="3" class="mb-4" />
+                    :counter="500" rows="3" class="mb-4" />
                 </span>
               </div>
               <div class="info-row">
@@ -220,7 +222,7 @@
                 </div>
 
                 <!-- Feature Summary -->
-                <div class="feature-summary">
+                <!-- <div class="feature-summary">
                   <div class="feature-item-inline" v-if="subscriptionData.tier === 'free'">
                     <v-icon size="small" color="grey">mdi-home</v-icon>
                     <span>1 room</span>
@@ -233,7 +235,7 @@
                     <v-icon size="small" color="purple">mdi-infinity</v-icon>
                     <span>Unlimited rooms, creator badge</span>
                   </div>
-                </div>
+                </div> -->
               </div>
             </v-expansion-panel-text>
           </v-expansion-panel>
@@ -771,7 +773,7 @@ watch(() => subscriptionData.value.tier, (newTier, oldTier) => {
 
 // rules
 const descriptionRules = [
-  (v) => !v || v.length <= 200 || `Description must be less than ${200} characters`,
+  (v) => !v || v.length <= 500 || `Description must be less than ${500} characters`,
 ];
 
 // methods
@@ -889,7 +891,7 @@ const onAvatarFileChange = async (fileOrEvent) => {
     errorMessage.value = 'Please select a valid image file';
     return;
   }
-  if (file.size > 0.2 * 1024 * 1024) {
+  if (file.size > 2 * 1024 * 1024) {
     showError.value = true;
     errorMessage.value = 'Image file is too large';
     return;

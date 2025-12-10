@@ -8,6 +8,11 @@
 
       <v-spacer></v-spacer>
 
+      <!-- Pricing Button -->
+      <v-btn variant="text" size="large" color="primary" prepend-icon="mdi-diamond-stone" to="/pricing" class="mr-2">
+        Pricing
+      </v-btn>
+
       <!-- Notification Bell (for authenticated users) -->
       <NotificationBell v-if="isUserAuthenticated" class="mr-2" />
 

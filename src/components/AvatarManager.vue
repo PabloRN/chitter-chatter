@@ -8,7 +8,12 @@
     <!-- Avatars Grid with Add Button -->
     <v-card outlined>
       <v-tabs v-model="activeTab" grow>
-        <v-tab>Manage Avatars</v-tab>
+        <v-tab>
+          Manage Avatars
+          <v-chip size="x-small" :color="isAtAvatarLimit ? 'warning' : 'primary'" class="ml-2">
+            {{ currentAvatarCount }}/{{ avatarLimit }}
+          </v-chip>
+        </v-tab>
         <v-tab>Add from Collection</v-tab>
       </v-tabs>
 
@@ -66,15 +71,20 @@
 
               <!-- Add Avatar Card -->
               <div class="avatar-item add-avatar-card"
-                   @click="canUpload ? triggerFileUpload() : null"
-                   :class="{ disabled: !canUpload }">
+                @click="canUpload && !isAtAvatarLimit ? triggerFileUpload() : null"
+                :class="{ disabled: !canUpload || isAtAvatarLimit }">
                 <div class="add-avatar-content">
-                  <v-icon size="48" :color="canUpload ? 'primary' : 'grey'" class="mb-2">
-                    {{ canUpload ? 'mdi-plus' : 'mdi-lock' }}
+                  <v-icon size="48" :color="(canUpload && !isAtAvatarLimit) ? 'primary' : 'grey'" class="mb-2">
+                    {{ (!canUpload || isAtAvatarLimit) ? 'mdi-lock' : 'mdi-plus' }}
                   </v-icon>
-                  <div class="add-avatar-text">{{ canUpload ? 'Upload' : 'Upload' }}</div>
+                  <div class="add-avatar-text">
+                    {{ isAtAvatarLimit ? 'Limit Reached' : 'Upload' }}
+                  </div>
                   <v-tooltip v-if="!canUpload" activator="parent" location="bottom">
-                    Upgrade to Owner ($2.99) to upload custom avatars
+                    Create custom avatars with Owner tier ($2.99 one-time) - Bring your characters to life!
+                  </v-tooltip>
+                  <v-tooltip v-else-if="isAtAvatarLimit" activator="parent" location="bottom">
+                    You've reached your avatar limit ({{ currentAvatarCount }}/{{ avatarLimit }}). Upgrade for more!
                   </v-tooltip>
                 </div>
 
@@ -83,6 +93,42 @@
                   @change="onAvatarFileChange" />
               </div>
             </div>
+
+            <!-- Upgrade Card for Custom Avatar Upload -->
+            <v-alert v-if="!canUpload" type="info" variant="tonal" prominent class="mt-4">
+              <div class="d-flex align-center justify-space-between">
+                <div>
+                  <div class="text-h6 mb-1">Create Custom Avatars</div>
+                  <div class="text-body-2">Upgrade to Owner tier to upload custom avatars and bring your characters to
+                    life!</div>
+                </div>
+                <v-btn color="primary" variant="elevated" to="/subscription" size="large">
+                  Upgrade ($2.99)
+                </v-btn>
+              </div>
+            </v-alert>
+
+            <!-- Avatar Limit Warning -->
+            <v-alert v-if="isAtAvatarLimit && canUpload" type="warning" variant="tonal" class="mt-4">
+              <div class="d-flex align-center justify-space-between">
+                <div>
+                  <div class="text-subtitle-2 mb-1">
+                    Avatar Limit Reached ({{ currentAvatarCount }}/{{ avatarLimit }})
+                  </div>
+                  <div class="text-body-2">
+                    <template v-if="!userStore.isCreatorUser">
+                      Upgrade your tier to add more avatars and expand your creative options!
+                    </template>
+                    <template v-else>
+                      You've reached the maximum avatar limit for Creator tier.
+                    </template>
+                  </div>
+                </div>
+                <v-btn v-if="!userStore.isCreatorUser" color="primary" variant="elevated" to="/pricing" size="large">
+                  View Plans
+                </v-btn>
+              </div>
+            </v-alert>
 
             <!-- No Default Warning -->
             <v-alert v-if="roomAvatars.length > 0 && !hasDefaultAvatar" type="warning" class="mt-4">
@@ -156,12 +202,7 @@
     </v-card>
 
     <!-- Floating Ready Button (for preloaded avatar selection) -->
-    <v-fab v-if="showReadyButton"
-           app
-           location="bottom end"
-           color="primary"
-           size="large"
-           @click="onReadyClick">
+    <v-fab v-if="showReadyButton" app location="bottom end" color="primary" size="large" @click="onReadyClick">
       <v-icon start>mdi-check</v-icon>
       Done Selecting ({{ preloadedAvatarsSelected }})
     </v-fab>
@@ -171,7 +212,7 @@
       {{ successMessage }}
     </v-snackbar>
 
-    <v-snackbar v-model="showError" color="error" timeout="5000">
+    <v-snackbar v-model="showError" color="red" timeout="5000">
       {{ errorMessage }}
     </v-snackbar>
   </div>
@@ -182,9 +223,11 @@ import {
   ref, computed, watch, onMounted, onUnmounted,
 } from 'vue';
 import useRoomsStore from '@/stores/rooms';
+import useUserStore from '@/stores/user';
 import {
   cropToMiniAvatar, resizeImage, createPreviewURL, revokePreviewURL,
 } from '@/utils/imageUtils';
+import { getAvatarLimit } from '@/constants/avatarLimits';
 
 const props = defineProps({
   roomId: {
@@ -204,6 +247,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const roomsStore = useRoomsStore();
+const userStore = useUserStore();
 
 // State
 const activeTab = ref(1);
@@ -229,8 +273,27 @@ const preloadedAvatarsSelected = computed(() => roomAvatars.value.filter((a) => 
 // Show Ready button when on preloaded tab and avatars are selected
 const showReadyButton = computed(() => activeTab.value === 1 && preloadedAvatarsSelected.value > 0);
 
+// Avatar limit computeds
+const avatarLimit = computed(() => {
+  const user = userStore.getCurrentUser;
+  return getAvatarLimit(user);
+});
+
+const currentAvatarCount = computed(() => roomAvatars.value.length);
+
+const isAtAvatarLimit = computed(() => currentAvatarCount.value >= avatarLimit.value);
+
+const remainingAvatars = computed(() => Math.max(0, avatarLimit.value - currentAvatarCount.value));
+
 // Methods
 const onAvatarFileChange = async (fileOrEvent) => {
+  // Check avatar limit FIRST
+  if (isAtAvatarLimit.value) {
+    showError.value = true;
+    errorMessage.value = `Avatar limit reached (${avatarLimit.value}). Upgrade your tier for more avatars!`;
+    return;
+  }
+
   // Handle different ways the file can be passed
   let file = fileOrEvent;
   if (fileOrEvent && fileOrEvent.length) {
@@ -404,6 +467,13 @@ const loadPreloadedAvatars = async () => {
 const isPreloadedAlreadyAdded = (preloadedId) => roomAvatars.value.some((avatar) => avatar.preloadedId === preloadedId);
 
 const addPreloadedAvatar = (preloadedAvatar) => {
+  // Check avatar limit FIRST
+  if (isAtAvatarLimit.value) {
+    showError.value = true;
+    errorMessage.value = `Avatar limit reached (${avatarLimit.value}). Upgrade your tier for more avatars!`;
+    return;
+  }
+
   // Check if already added
   if (isPreloadedAlreadyAdded(preloadedAvatar.id)) {
     showError.value = true;

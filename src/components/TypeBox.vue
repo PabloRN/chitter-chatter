@@ -53,7 +53,7 @@ export default {
   },
   data: () => ({
     message: '',
-    hideKeyboard: true,
+    hideKeyboard: false,
     inputFocused: false,
   }),
   computed: {

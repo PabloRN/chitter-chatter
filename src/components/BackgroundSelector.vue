@@ -13,7 +13,7 @@
             <v-icon v-if="!canUpload" class="ml-2" size="small">mdi-lock</v-icon>
           </div>
           <v-tooltip v-if="!canUpload" activator="parent" location="bottom">
-            Upgrade to Owner ($2.99) to upload custom backgrounds
+            Unlock custom backgrounds with Owner tier ($2.99 one-time) - Make your rooms truly unique!
           </v-tooltip>
         </v-tab>
         <v-tab>Select Preloaded</v-tab>
@@ -25,16 +25,24 @@
           <v-tabs-window-item>
             <div class="upload-section">
               <!-- Custom Upload Card -->
-              <div class="upload-card" @click="triggerFileUpload">
+              <div class="upload-card"
+                   :class="{ 'disabled-upload': !canUpload }"
+                   @click="canUpload ? triggerFileUpload() : null">
                 <div class="upload-content">
-                  <v-icon size="64" color="primary" class="mb-3">mdi-cloud-upload</v-icon>
-                  <div class="upload-title">Upload Background Image</div>
-                  <div class="upload-hint">Click to browse or drag & drop</div>
-                  <div class="upload-specs">Recommended: 1920x1080px • Max 5MB</div>
+                  <v-icon size="64" :color="canUpload ? 'primary' : 'grey'" class="mb-3">
+                    {{ canUpload ? 'mdi-cloud-upload' : 'mdi-lock' }}
+                  </v-icon>
+                  <div class="upload-title" :class="{ 'text-grey': !canUpload }">
+                    {{ canUpload ? 'Upload Background Image' : 'Custom Upload Locked' }}
+                  </div>
+                  <div class="upload-hint" :class="{ 'text-grey': !canUpload }">
+                    {{ canUpload ? 'Click to browse or drag & drop' : 'Upgrade to Owner tier to upload custom backgrounds' }}
+                  </div>
+                  <div v-if="canUpload" class="upload-specs">Recommended: 1920x1080px • Max 5MB</div>
                 </div>
 
                 <!-- Hidden file input -->
-                <input ref="fileInput" type="file" accept="image/*" style="display: none" @change="onFileChange" />
+                <input ref="fileInput" type="file" accept="image/*" style="display: none" :disabled="!canUpload" @change="onFileChange" />
               </div>
             </div>
           </v-tabs-window-item>
@@ -284,6 +292,19 @@ onMounted(() => {
   background: rgba(var(--primary-rgb), 0.05);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.upload-card.disabled-upload {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: var(--background-secondary);
+}
+
+.upload-card.disabled-upload:hover {
+  border-color: var(--card-border);
+  background: var(--background-secondary);
+  transform: none;
+  box-shadow: none;
 }
 
 .upload-content {

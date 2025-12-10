@@ -50,7 +50,8 @@
         <!-- Rooms List -->
         <div v-else>
           <div class="rooms-grid">
-            <v-card v-for="room in ownedRooms" :key="room.id" class="room-card" elevation="2">
+            <v-card v-for="room in ownedRooms" :key="room.id" class="room-card" elevation="2"
+              @click.stop="editRoom(room.id)">
               <!-- Room Background -->
               <div class="room-background">
                 <v-img v-if="room.thumbnail || room.backgroundImage" :src="room.thumbnail || room.backgroundImage"
@@ -127,15 +128,132 @@
             </v-card>
           </div>
 
-          <!-- Create Room Button -->
+          <!-- Create Room Button / Upgrade Options -->
           <div class="create-room-section">
+            <!-- Case 1: Can create room -->
             <v-btn v-if="canCreateRoom" color="primary" large block outlined
               @click="$router.push('/profile/room/create')">
               <v-icon left>mdi-plus</v-icon>
               Create New Room
             </v-btn>
 
-            <!-- Room Limit Reached - Upgrade Options -->
+            <!-- Case 2: Free user with 1 room - Show upgrade to Owner first -->
+            <v-card v-else-if="hasOneRoomAndIsFree" class="upgrade-card" elevation="3">
+              <v-card-title class="upgrade-header">
+                <v-icon color="primary" class="mr-2">mdi-trophy</v-icon>
+                Upgrade Your Room
+              </v-card-title>
+
+              <v-card-text>
+                <p class="text-body-2 mb-4">
+                  You've created your first room! Unlock premium features to take it to the next level:
+                </p>
+
+                <!-- Owner Upgrade Card -->
+                <v-card class="option-card one-time mb-4" elevation="2" @click="handleUpgradeToOwner">
+                  <div class="option-badge">One-time Payment</div>
+                  <div class="option-content">
+                    <v-icon size="40" color="primary" class="mb-2">mdi-crown</v-icon>
+                    <h3 class="option-title">Become a Room Owner</h3>
+                    <div class="price">
+                      <span class="price-amount">$2.99</span>
+                      <span class="price-period">one-time</span>
+                    </div>
+                    <ul class="feature-list">
+                      <li><v-icon small color="success">mdi-check</v-icon> Upload custom backgrounds & avatars</li>
+                      <li><v-icon small color="success">mdi-check</v-icon> Host up to 20 users per room</li>
+                      <li><v-icon small color="success">mdi-check</v-icon> Create private rooms</li>
+                      <li><v-icon small color="success">mdi-check</v-icon> Advanced moderation tools</li>
+                    </ul>
+                    <v-btn color="primary" block :loading="upgradingToOwner" class="mt-3">
+                      <v-icon left>mdi-crown</v-icon>
+                      Upgrade to Owner
+                    </v-btn>
+                  </div>
+                </v-card>
+
+                <v-divider class="my-4" />
+
+                <p class="text-body-2 text-center">
+                  <strong>Want even more rooms?</strong> Check out our subscription plans
+                </p>
+                <v-btn color="secondary" block outlined @click="goToPricing" class="mt-2">
+                  <v-icon left>mdi-diamond-stone</v-icon>
+                  View All Plans
+                </v-btn>
+              </v-card-text>
+            </v-card>
+
+            <!-- Case 3: Owner user at limit - Show buy room slot -->
+            <v-card v-else-if="canBuyRoomSlot" class="upgrade-card" elevation="3">
+              <v-card-title class="upgrade-header">
+                <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+                Room Limit Reached
+              </v-card-title>
+
+              <v-card-text>
+                <p class="text-body-2 mb-4">
+                  You've reached your limit of {{ roomLimit }} room{{ roomLimit === 1 ? '' : 's' }}.
+                  Choose an option below:
+                </p>
+
+                <div class="upgrade-options">
+                  <!-- Buy Extra Room Option -->
+                  <v-card class="option-card one-time" elevation="2" @click="handleBuyRoomSlot">
+                    <div class="option-badge">Quick Purchase</div>
+                    <div class="option-content">
+                      <v-icon size="40" color="success" class="mb-2">mdi-home-plus</v-icon>
+                      <h3 class="option-title">Buy 1 Extra Room</h3>
+                      <div class="price">
+                        <span class="price-amount">${{ subscriptionService.ROOM_SLOT_PRICE }}</span>
+                        <span class="price-period">one-time</span>
+                      </div>
+                      <p class="option-description">
+                        Perfect if you just need one more room
+                      </p>
+                      <div style="text-align: center; margin-top: 8px;">
+                        <v-chip :color="canPurchaseMoreSlots ? 'primary' : 'success'" size="small">
+                          Extra Rooms: {{ slotCountText }}
+                        </v-chip>
+                      </div>
+                      <v-btn color="success" block :loading="purchasingRoomSlot" :disabled="!canPurchaseMoreSlots"
+                        class="mt-3">
+                        <v-icon left>mdi-cart</v-icon>
+                        {{ canPurchaseMoreSlots ? 'Purchase Now' : 'Max Slots Purchased' }}
+                      </v-btn>
+                    </div>
+                  </v-card>
+
+                  <!-- Landlord Subscription Option -->
+                  <v-card class="option-card subscription" elevation="2" @click="goToPricing">
+                    <div class="option-badge popular">Most Popular</div>
+                    <div class="option-content">
+                      <v-icon size="40" class="mb-2"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        mdi-crown
+                      </v-icon>
+                      <h3 class="option-title">Upgrade to Landlord</h3>
+                      <div class="price">
+                        <span class="price-amount">$9.99</span>
+                        <span class="price-period">/month</span>
+                      </div>
+                      <ul class="feature-list">
+                        <li><v-icon small color="success">mdi-check</v-icon> Up to 5 rooms and 20 users per room</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> Custom backgrounds & avatars</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> Moderation tools</li>
+                        <li><v-icon small color="success">mdi-check</v-icon> No ads</li>
+                      </ul>
+                      <v-btn color="primary" block class="mt-3 gradient-btn">
+                        <v-icon left>mdi-diamond-stone</v-icon>
+                        View Plans
+                      </v-btn>
+                    </div>
+                  </v-card>
+                </div>
+              </v-card-text>
+            </v-card>
+
+            <!-- Case 4: Landlord/Creator at limit -->
             <v-card v-else class="upgrade-card" elevation="3">
               <v-card-title class="upgrade-header">
                 <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
@@ -149,54 +267,7 @@
                 </p>
 
                 <div class="upgrade-options">
-                  <!-- Quick Purchase Option -->
-                  <v-card class="option-card one-time" elevation="2" @click="handleBuyRoomSlot">
-                    <div class="option-badge">Quick Purchase</div>
-                    <div class="option-content">
-                      <v-icon size="40" color="success" class="mb-2">mdi-home-plus</v-icon>
-                      <h3 class="option-title">Buy 1 Extra Room</h3>
-                      <div class="price">
-                        <span class="price-amount">${{ subscriptionService.ROOM_SLOT_PRICE }}</span>
-                        <span class="price-period">one-time</span>
-                      </div>
-                      <p class="option-description">
-                        Perfect if you just need one more room
-                      </p>
-                      <v-btn color="success" block :loading="purchasingRoomSlot" class="mt-3">
-                        <v-icon left>mdi-cart</v-icon>
-                        Purchase Now
-                      </v-btn>
-                    </div>
-                  </v-card>
-
-                  <!-- Subscription Options -->
-                  <v-card v-if="userTier === 'free'" class="option-card subscription" elevation="2"
-                    @click="goToPricing">
-                    <div class="option-badge popular">Most Popular</div>
-                    <div class="option-content">
-                      <v-icon size="40" class="mb-2"
-                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                        mdi-crown
-                      </v-icon>
-                      <h3 class="option-title">Upgrade to Landlord</h3>
-                      <div class="price">
-                        <span class="price-amount">$9.99</span>
-                        <span class="price-period">/month</span>
-                      </div>
-                      <ul class="feature-list">
-                        <li><v-icon small color="success">mdi-check</v-icon> Up to 10 rooms</li>
-                        <li><v-icon small color="success">mdi-check</v-icon> Custom backgrounds</li>
-                        <li><v-icon small color="success">mdi-check</v-icon> Moderation tools</li>
-                        <li><v-icon small color="success">mdi-check</v-icon> No ads</li>
-                      </ul>
-                      <v-btn color="primary" block class="mt-3 gradient-btn">
-                        <v-icon left>mdi-diamond-stone</v-icon>
-                        View Plans
-                      </v-btn>
-                    </div>
-                  </v-card>
-
-                  <v-card v-else-if="userTier === 'landlord'" class="option-card subscription" elevation="2"
+                  <v-card v-if="userTier === 'landlord'" class="option-card subscription" elevation="2"
                     @click="goToPricing">
                     <div class="option-badge premium">Premium</div>
                     <div class="option-content">
@@ -353,15 +424,132 @@
           </v-card>
         </div>
 
-        <!-- Create Room Button -->
+        <!-- Create Room Button / Upgrade Options -->
         <div class="create-room-section">
+          <!-- Case 1: Can create room -->
           <v-btn v-if="canCreateRoom" color="primary" large block outlined
             @click="$router.push('/profile/room/create')">
             <v-icon left>mdi-plus</v-icon>
             Create New Room
           </v-btn>
 
-          <!-- Room Limit Reached - Upgrade Options -->
+          <!-- Case 2: Free user with 1 room - Show upgrade to Owner first -->
+          <v-card v-else-if="hasOneRoomAndIsFree" class="upgrade-card" elevation="3">
+            <v-card-title class="upgrade-header">
+              <v-icon color="primary" class="mr-2">mdi-trophy</v-icon>
+              Upgrade Your Room
+            </v-card-title>
+
+            <v-card-text>
+              <p class="text-body-2 mb-4">
+                You've created your first room! Unlock premium features to take it to the next level:
+              </p>
+
+              <!-- Owner Upgrade Card -->
+              <v-card class="option-card one-time mb-4" elevation="2" @click="handleUpgradeToOwner">
+                <div class="option-badge">One-time Payment</div>
+                <div class="option-content">
+                  <v-icon size="40" color="primary" class="mb-2">mdi-crown</v-icon>
+                  <h3 class="option-title">Become a Room Owner</h3>
+                  <div class="price">
+                    <span class="price-amount">$2.99</span>
+                    <span class="price-period">one-time</span>
+                  </div>
+                  <ul class="feature-list">
+                    <li><v-icon small color="success">mdi-check</v-icon> Upload custom backgrounds & avatars</li>
+                    <li><v-icon small color="success">mdi-check</v-icon> Host up to 20 users per room</li>
+                    <li><v-icon small color="success">mdi-check</v-icon> Create private rooms</li>
+                    <li><v-icon small color="success">mdi-check</v-icon> Advanced moderation tools</li>
+                  </ul>
+                  <v-btn color="primary" block :loading="upgradingToOwner" class="mt-3">
+                    <v-icon left>mdi-crown</v-icon>
+                    Upgrade to Owner
+                  </v-btn>
+                </div>
+              </v-card>
+
+              <v-divider class="my-4" />
+
+              <p class="text-body-2 text-center">
+                <strong>Want even more rooms?</strong> Check out our subscription plans
+              </p>
+              <v-btn color="secondary" block outlined @click="goToPricing" class="mt-2">
+                <v-icon left>mdi-diamond-stone</v-icon>
+                View All Plans
+              </v-btn>
+            </v-card-text>
+          </v-card>
+
+          <!-- Case 3: Owner user at limit - Show buy room slot -->
+          <v-card v-else-if="canBuyRoomSlot" class="upgrade-card" elevation="3">
+            <v-card-title class="upgrade-header">
+              <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
+              Room Limit Reached
+            </v-card-title>
+
+            <v-card-text>
+              <p class="text-body-2 mb-4">
+                You've reached your limit of {{ roomLimit }} room{{ roomLimit === 1 ? '' : 's' }}.
+                Choose an option below:
+              </p>
+
+              <div class="upgrade-options">
+                <!-- Buy Extra Room Option -->
+                <v-card class="option-card one-time" elevation="2" @click="handleBuyRoomSlot">
+                  <div class="option-badge">Quick Purchase</div>
+                  <div class="option-content">
+                    <v-icon size="40" color="success" class="mb-2">mdi-home-plus</v-icon>
+                    <h3 class="option-title">Buy 1 Extra Room</h3>
+                    <div class="price">
+                      <span class="price-amount">${{ subscriptionService.ROOM_SLOT_PRICE }}</span>
+                      <span class="price-period">one-time</span>
+                    </div>
+                    <p class="option-description">
+                      Perfect if you just need one more room
+                    </p>
+                    <div style="text-align: center; margin-top: 8px;">
+                      <v-chip :color="canPurchaseMoreSlots ? 'primary' : 'success'" size="small">
+                        Extra Rooms: {{ slotCountText }}
+                      </v-chip>
+                    </div>
+                    <v-btn color="success" block :loading="purchasingRoomSlot" :disabled="!canPurchaseMoreSlots"
+                      class="mt-3">
+                      <v-icon left>mdi-cart</v-icon>
+                      {{ canPurchaseMoreSlots ? 'Purchase Now' : 'Max Slots Purchased' }}
+                    </v-btn>
+                  </div>
+                </v-card>
+
+                <!-- Landlord Subscription Option -->
+                <v-card class="option-card subscription" elevation="2" @click="goToPricing">
+                  <div class="option-badge popular">Most Popular</div>
+                  <div class="option-content">
+                    <v-icon size="40" class="mb-2"
+                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                      mdi-crown
+                    </v-icon>
+                    <h3 class="option-title">Upgrade to Landlord</h3>
+                    <div class="price">
+                      <span class="price-amount">$9.99</span>
+                      <span class="price-period">/month</span>
+                    </div>
+                    <ul class="feature-list">
+                      <li><v-icon small color="success">mdi-check</v-icon> Up to 5 rooms and 20 users per room</li>
+                      <li><v-icon small color="success">mdi-check</v-icon> Custom backgrounds & avatars</li>
+                      <li><v-icon small color="success">mdi-check</v-icon> Moderation tools</li>
+                      <li><v-icon small color="success">mdi-check</v-icon> No ads</li>
+                    </ul>
+                    <v-btn color="primary" block class="mt-3 gradient-btn">
+                      <v-icon left>mdi-diamond-stone</v-icon>
+                      View Plans
+                    </v-btn>
+                  </div>
+                </v-card>
+              </div>
+            </v-card-text>
+          </v-card>
+
+          <!-- Case 4: Landlord/Creator at limit -->
           <v-card v-else class="upgrade-card" elevation="3">
             <v-card-title class="upgrade-header">
               <v-icon color="warning" class="mr-2">mdi-alert-circle</v-icon>
@@ -375,53 +563,7 @@
               </p>
 
               <div class="upgrade-options">
-                <!-- Quick Purchase Option -->
-                <v-card class="option-card one-time" elevation="2" @click="handleBuyRoomSlot">
-                  <div class="option-badge">Quick Purchase</div>
-                  <div class="option-content">
-                    <v-icon size="40" color="success" class="mb-2">mdi-home-plus</v-icon>
-                    <h3 class="option-title">Buy 1 Extra Room</h3>
-                    <div class="price">
-                      <span class="price-amount">${{ subscriptionService.ROOM_SLOT_PRICE }}</span>
-                      <span class="price-period">one-time</span>
-                    </div>
-                    <p class="option-description">
-                      Perfect if you just need one more room
-                    </p>
-                    <v-btn color="success" block :loading="purchasingRoomSlot" class="mt-3">
-                      <v-icon left>mdi-cart</v-icon>
-                      Purchase Now
-                    </v-btn>
-                  </div>
-                </v-card>
-
-                <!-- Subscription Options -->
-                <v-card v-if="userTier === 'free'" class="option-card subscription" elevation="2" @click="goToPricing">
-                  <div class="option-badge popular">Most Popular</div>
-                  <div class="option-content">
-                    <v-icon size="40" class="mb-2"
-                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                      mdi-crown
-                    </v-icon>
-                    <h3 class="option-title">Upgrade to Landlord</h3>
-                    <div class="price">
-                      <span class="price-amount">$9.99</span>
-                      <span class="price-period">/month</span>
-                    </div>
-                    <ul class="feature-list">
-                      <li><v-icon small color="success">mdi-check</v-icon> Up to 10 rooms</li>
-                      <li><v-icon small color="success">mdi-check</v-icon> Custom backgrounds</li>
-                      <li><v-icon small color="success">mdi-check</v-icon> Moderation tools</li>
-                      <li><v-icon small color="success">mdi-check</v-icon> No ads</li>
-                    </ul>
-                    <v-btn color="primary" block class="mt-3 gradient-btn">
-                      <v-icon left>mdi-diamond-stone</v-icon>
-                      View Plans
-                    </v-btn>
-                  </div>
-                </v-card>
-
-                <v-card v-else-if="userTier === 'landlord'" class="option-card subscription" elevation="2"
+                <v-card v-if="userTier === 'landlord'" class="option-card subscription" elevation="2"
                   @click="goToPricing">
                   <div class="option-badge premium">Premium</div>
                   <div class="option-content">
@@ -539,6 +681,32 @@ const userTier = computed(() => {
   return currentUser?.subscriptionTier || 'free';
 });
 
+// More granular tier checks
+const isFreeUser = computed(() => {
+  const user = userStore.getCurrentUser;
+  return !user?.isOwner && !user?.isLandlord && !user?.isCreator && !user?.isAnonymous;
+});
+
+const hasOneRoomAndIsFree = computed(() => {
+  return ownedRooms.value.length === 1 && isFreeUser.value;
+});
+
+const canBuyRoomSlot = computed(() => {
+  const user = userStore.getCurrentUser;
+  return user?.isOwner && !user?.isLandlord && !user?.isCreator;
+});
+
+const slotCountText = computed(() => {
+  const purchased = userStore.getCurrentUser?.purchasedRoomSlots || 0;
+  const max = subscriptionService.MAX_PURCHASABLE_SLOTS;
+  return `${purchased}/${max}`;
+});
+
+const canPurchaseMoreSlots = computed(() => {
+  const purchased = userStore.getCurrentUser?.purchasedRoomSlots || 0;
+  return purchased < subscriptionService.MAX_PURCHASABLE_SLOTS;
+});
+
 // Methods
 const loadOwnedRooms = async (forceRefresh = false) => {
   const currentUser = userStore.getCurrentUser;
@@ -610,9 +778,17 @@ const confirmDelete = async () => {
 };
 
 const handleBuyRoomSlot = async () => {
+  const currentUser = userStore.getCurrentUser;
+
+  // Frontend validation for better UX
+  if (!currentUser?.isOwner) {
+    showError.value = true;
+    errorMessage.value = 'Only Room Owners can purchase extra room slots. Please upgrade to Owner tier first!';
+    return;
+  }
+
   purchasingRoomSlot.value = true;
   try {
-    const currentUser = userStore.getCurrentUser;
     const checkoutUrl = await subscriptionService.purchaseRoomSlot(currentUser.userId);
     // Redirect to Stripe Checkout
     window.location.href = checkoutUrl;
@@ -620,6 +796,20 @@ const handleBuyRoomSlot = async () => {
     showError.value = true;
     errorMessage.value = `Failed to start purchase: ${error.message}`;
     purchasingRoomSlot.value = false;
+  }
+};
+
+const upgradingToOwner = ref(false);
+
+const handleUpgradeToOwner = async () => {
+  upgradingToOwner.value = true;
+  try {
+    const checkoutUrl = await subscriptionService.purchaseOwnerUpgrade();
+    window.location.href = checkoutUrl;
+  } catch (error) {
+    showError.value = true;
+    errorMessage.value = `Failed to start upgrade: ${error.message}`;
+    upgradingToOwner.value = false;
   }
 };
 

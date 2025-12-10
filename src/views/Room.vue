@@ -42,43 +42,71 @@
       <div class="room-menu-container" :class="{ 'hidden': isHidden }">
         <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
           <template v-slot:activator="{ props: activatorProps }">
-            <v-fab v-bind="activatorProps" size="large" icon="mdi-dots-vertical"></v-fab>
+            <v-fab v-bind="activatorProps" color="black" variant="flat" icon="mdi-room-service-outline" fab dark small>
+            </v-fab>
           </template>
-          <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('exitRoom')"
-            @touchstart.native.prevent="handleEmit('exitRoom')">
-            <div>
-              <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
-            </div>
-          </v-btn>
-          <v-btn key="3" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('reportRoom')"
-            @touchstart.native.prevent="handleEmit('reportRoom')">
-            <div>
-              <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
-            </div>
-          </v-btn>
-          <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small @click.prevent.stop="handleEmit('roomInfo')"
-            @touchstart.native.prevent="handleEmit('roomInfo')">
-            <div>
-              <v-icon class="manga-icon"> mdi-information </v-icon>
-            </div>
-          </v-btn>
+          <v-tooltip left>
+            <template v-slot:activator="{ props }">
+              <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                @click.prevent.stop="handleEmit('exitRoom')" @touchstart.native.prevent="handleEmit('exitRoom')">
+                <div>
+                  <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
+                </div>
+              </v-btn>
+            </template>
+            <span>Exit Room</span>
+          </v-tooltip>
 
-          <v-btn key="1" class="mx-2 speed-dial-menu-item" fab dark small
-            @click.prevent.stop="handleEmit('showMessages')" @touchstart.native.prevent="handleEmit('showMessages')">
-            <div>
-              <v-icon class="manga-icon"> mdi-card-account-details-outline </v-icon>
-            </div>
-          </v-btn>
+          <v-tooltip left>
+            <template v-slot:activator="{ props }">
+              <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                @click.prevent.stop="handleEmit('reportRoom')" @touchstart.native.prevent="handleEmit('reportRoom')">
+                <div>
+                  <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
+                </div>
+              </v-btn>
+            </template>
+            <span>Report Room</span>
+          </v-tooltip>
 
-          <v-btn key="2" class="mx-2 speed-dial-menu-item" fab dark small
-            @click.prevent.stop="handleEmit('toggleFavorite')"
-            @touchstart.native.prevent="handleEmit('toggleFavorite')">
-            <div>
-              <v-icon v-if="isFavorite" class="manga-icon"> mdi-heart-minus </v-icon>
-              <v-icon v-else class="manga-icon">
-                mdi-heart-plus </v-icon>
-            </div>
-          </v-btn>
+          <v-tooltip left>
+            <template v-slot:activator="{ props }">
+              <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                @click.prevent.stop="handleEmit('roomInfo')" @touchstart.native.prevent="handleEmit('roomInfo')">
+                <div>
+                  <v-icon class="manga-icon"> mdi-information </v-icon>
+                </div>
+              </v-btn>
+            </template>
+            <span>Room Info</span>
+          </v-tooltip>
+          <v-tooltip left>
+            <template v-slot:activator="{ props }">
+              <v-btn key="0" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                @click.prevent.stop="handleEmit('showMessages')" @touchstart.native.prevent="handleEmit('showProfile')">
+                <div>
+                  <v-icon class="manga-icon"> mdi-message-text-outline</v-icon>
+                </div>
+              </v-btn>
+            </template>
+            <span>Room Messages</span>
+          </v-tooltip>
+
+          <v-tooltip left>
+            <template v-slot:activator="{ props }">
+              <v-btn key="0" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                @click.prevent.stop="handleEmit('toggleFavorite')"
+                @touchstart.native.prevent="handleEmit('toggleFavorite')">
+                <div>
+                  <v-icon v-if="isFavorite" class="manga-icon"> mdi-heart-minus </v-icon>
+                  <v-icon v-else class="manga-icon">
+                    mdi-heart-plus </v-icon>
+                </div>
+              </v-btn>
+            </template>
+            <span v-if="!isFavorite">Add to Favorites</span>
+            <span v-else>Remove from Favorites</span>
+          </v-tooltip>
         </v-speed-dial>
         <!-- <v-btn icon size="small" @click="showThemeSelector = !showThemeSelector" class="theme-toggle-btn">
           <v-icon>mdi-palette</v-icon>

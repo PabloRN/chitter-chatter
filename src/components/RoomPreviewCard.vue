@@ -57,7 +57,7 @@
       <div class="stats-section">
         <div class="stat">
           <v-icon>mdi-account-multiple</v-icon>
-          <span>{{ room.usersOnline || 0 }} / {{ room.maxUsers }} online</span>
+          <span>Max users {{ room.maxUsers }}</span>
         </div>
         <div class="stat">
           <v-icon>mdi-calendar</v-icon>
