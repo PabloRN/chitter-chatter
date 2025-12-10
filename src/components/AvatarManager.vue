@@ -102,7 +102,7 @@
                   <div class="text-body-2">Upgrade to Owner tier to upload custom avatars and bring your characters to
                     life!</div>
                 </div>
-                <v-btn color="primary" variant="elevated" to="/subscription" size="large">
+                <v-btn color="primary" variant="elevated" to="/pricing" size="large">
                   Upgrade ($2.99)
                 </v-btn>
               </div>
