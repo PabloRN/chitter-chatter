@@ -3,31 +3,34 @@
   <div style="text-align: center" :class="isCurrentUser ? 'current-user' : 'user'" :id="actualUserId"
     :ref="actualUserId" @click="chatterClicked" tabindex="0" @keydown.enter="chatterClicked"
     @keydown.space="handleSpaceKey" role="button">
-    <DialogBubble :ref="`$bubble_${actualUserId}`" :id="`$bubble_${actualUserId}`" :message="message"
-      :class="dialogSide" />
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
       <div class="nickname">{{ nickname }}</div>
     </div>
-    <v-img fill :id="`img-${actualUserId}`" class="avatar-image" :class="{ 'avatar-dragging': isActuallyMoving }"
-      :src="avatar"></v-img>
-    <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" :nickname="props.nickname" v-on="{
-      ['privateMessage']: () => invitePrivate(),
-      ['showUserMessages']: () => toggleUserMessages(),
-      ['blockUser']: () => toggleBlockUser(),
-      ['showLoginDialog']: () => showLoginDialogHandler(),
-      ['userInfo']: () => showUserInfo(),
-      ['addFriend']: () => onAddFriendClicked(),
-    }" ref="roundedmenu" />
-    <RoundedMenuCurrent v-else :moving="mouseMoved" ref="roundedmenucurrent" v-on="{
-      ['exitRoom']: leaveRoom,
-      ['signOut']: () => userSignOutCall(),
-      ['showAvatarList']: () => (showAvatarSelector = !showAvatarSelector),
-      ['showMessages']: () => toggleMessages(),
-      ['showProfile']: () => showProfile(),
-      ['showLoginDialog']: () => showLoginDialogHandler(),
-    }" />
+    <div class="avatar-with-bubble">
+      <DialogBubble :ref="`$bubble_${actualUserId}`" :id="`$bubble_${actualUserId}`" :message="message"
+        :class="dialogSide" />
+      <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :class="{ 'avatar-dragging': isActuallyMoving }"
+        :src="avatar"></v-img>
+      <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" :nickname="props.nickname" v-on="{
+        ['privateMessage']: () => invitePrivate(),
+        ['showUserMessages']: () => toggleUserMessages(),
+        ['blockUser']: () => toggleBlockUser(),
+        ['showLoginDialog']: () => showLoginDialogHandler(),
+        ['userInfo']: () => showUserInfo(),
+        ['addFriend']: () => onAddFriendClicked(),
+      }" ref="roundedmenu" />
+      <RoundedMenuCurrent v-else :moving="mouseMoved" ref="roundedmenucurrent" v-on="{
+        ['exitRoom']: leaveRoom,
+        ['signOut']: () => userSignOutCall(),
+        ['showAvatarList']: () => (showAvatarSelector = !showAvatarSelector),
+        ['showMessages']: () => toggleMessages(),
+        ['showProfile']: () => showProfile(),
+        ['showLoginDialog']: () => showLoginDialogHandler(),
+      }" />
+    </div>
+
     <TypeBox :ref="`keyboard_${actualUserId}`" :id="`keyboard_${actualUserId}`" v-if="isCurrentUser"
-      :moving="mouseMoved" />
+      :moving="mouseMoved" :avatar-dimensions="avatarDimensions" />
     <AvatarSelector :ref="`avatar-selector_${actualUserId}`" :id="`avatar-selector_${actualUserId}`"
       :showAvatarSelector="showAvatarSelector" :roomId="route.params.roomId" @onClose="closeAvatarSelector"
       @onShowLoginDialog="showLoginDialogHandler" />
@@ -128,6 +131,7 @@ const windowWidth = ref(0);
 const showAvatarSelector = ref(false);
 const actualUserId = ref('');
 const lastPosition = ref({ left: '', top: '' });
+const avatarDimensions = ref({ width: 100, height: 240 });
 
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const roomMessages = computed(() => messagesStore.roomMessages);
@@ -467,12 +471,25 @@ const addEventListeners = () => {
   );
 };
 
-const getAvatarWidth = () => 80;
-const getAvatarHeight = () => 220;
+const getAvatarWidth = () => avatarDimensions.value.width;
+const getAvatarHeight = () => avatarDimensions.value.height;
+
+const updateAvatarDimensions = () => {
+  const imgElement = document.getElementById(`img-${actualUserId.value}`);
+  if (imgElement) {
+    const rect = imgElement.getBoundingClientRect();
+    avatarDimensions.value = {
+      width: Math.max(50, Math.ceil(rect.width)),
+      height: Math.max(120, Math.ceil(rect.height)),
+    };
+  }
+};
 
 const updateWindowSize = () => {
   windowHeight.value = window.innerHeight;
   windowWidth.value = window.innerWidth;
+
+  updateAvatarDimensions();
 
   if (chatterManager.value && usersPosition.value?.[actualUserId.value]?.position) {
     const currentLeft = parseInt(usersPosition.value[actualUserId.value].position.left, 10);
@@ -546,6 +563,20 @@ watch(userPositionModified, () => {
       : 'position-left';
   }
 });
+
+watch(() => props.avatar, async (newAvatar) => {
+  if (newAvatar) {
+    await nextTick();
+    const imgElement = document.getElementById(`img-${actualUserId.value}`);
+    if (imgElement) {
+      if (imgElement.complete) {
+        updateAvatarDimensions();
+      } else {
+        imgElement.addEventListener('load', updateAvatarDimensions, { once: true });
+      }
+    }
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -572,13 +603,17 @@ watch(userPositionModified, () => {
 }
 
 .avatar-image {
-  filter: drop-shadow(1px 2px 1px #424242);
+  filter: drop-shadow(0.1px 0.2px 0.1px #c1c0c0);
   position: relative;
-  object-fit: fill !important;
+  /* Flexible sizing within bounds */
+  height: auto;
+  width: auto;
+  min-height: 140px;
+  max-height: 240px;
+  min-width: 100px;
+  max-width: min(180px, 12vw);
+  object-fit: contain !important;
   z-index: 10;
-  width: 80px;
-  height: 220px;
-  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -589,18 +624,24 @@ watch(userPositionModified, () => {
   animation: southpark-wobble 0.4s ease-in-out infinite;
 }
 
-/* .v-image--cover {
+.avatar-with-bubble {
+  position: relative;
+  display: inline-block;
+}
+
+.v-image--cover {
   background-size: contain;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-} */
+}
+
 .chatter:hover {
   cursor: pointer;
 }
 
 .chatter {
-  object-fit: fill !important;
+  object-fit: contain !important;
 }
 
 .private-dialog {
@@ -639,9 +680,10 @@ watch(userPositionModified, () => {
   }
 
   .avatar-image {
-    width: 60px;
-    height: 165px;
-    min-height: 150px;
+    min-height: 100px;
+    max-height: 180px;
+    min-width: 40px;
+    max-width: 140px;
   }
 }
 
@@ -651,9 +693,10 @@ watch(userPositionModified, () => {
   }
 
   .avatar-image {
-    width: 45px;
-    height: 124px;
-    min-height: 110px;
+    min-height: 80px;
+    max-height: 140px;
+    min-width: 30px;
+    max-width: 100px;
   }
 }
 </style>

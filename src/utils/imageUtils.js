@@ -8,62 +8,110 @@
  * @param {number} cropRatio - Ratio of height to keep (0.3 = top 30%)
  * @returns {Promise<Blob>} - Cropped image as blob
  */
-export async function cropToMiniAvatar(imageFile, cropRatio = 0.35) {
+// export async function cropToMiniAvatar(imageFile, cropRatio = 0.35) {
+//   return new Promise((resolve, reject) => {
+//     const canvas = document.createElement('canvas');
+//     const ctx = canvas.getContext('2d');
+//     const img = new Image();
+
+//     img.onload = function imgOnLoad() {
+//       try {
+//         // Calculate crop dimensions - take top portion of image
+//         const sourceWidth = img.width;
+//         const sourceHeight = img.height;
+//         const cropHeight = Math.floor(sourceHeight * cropRatio);
+
+//         // Set canvas size to square (64x64 is good for mini avatars)
+//         const targetSize = 64;
+//         canvas.width = targetSize;
+//         canvas.height = targetSize;
+
+//         // Draw the cropped and resized image
+//         ctx.drawImage(
+//           img,
+//           0,
+//           0,
+//           sourceWidth,
+//           cropHeight, // source: full width, top portion
+//           0,
+//           0,
+//           targetSize,
+//           targetSize, // destination: square canvas
+//         );
+
+//         // Convert canvas to blob
+//         canvas.toBlob((blob) => {
+//           if (blob) {
+//             resolve(blob);
+//           } else {
+//             reject(new Error('Failed to create blob from canvas'));
+//           }
+//         }, 'image/png', 0.9);
+//       } catch (error) {
+//         reject(error);
+//       } finally {
+//         URL.revokeObjectURL(img.src);
+//       }
+//     };
+
+//     img.onerror = () => {
+//       URL.revokeObjectURL(img.src);
+//       reject(new Error('Failed to load image'));
+//     };
+
+//     try {
+//       img.src = URL.createObjectURL(imageFile);
+//     } catch (error) {
+//       reject(new Error(`Failed to create object URL: ${error.message}`));
+//     }
+//   });
+// }
+
+export async function cropHeadMiniAvatar(
+  avatarBlob,
+  headRatio = 0.35,
+  size = 64,
+) {
   return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
     const img = new Image();
 
-    img.onload = function imgOnLoad() {
+    img.onload = () => {
       try {
-        // Calculate crop dimensions - take top portion of image
-        const sourceWidth = img.width;
-        const sourceHeight = img.height;
-        const cropHeight = Math.floor(sourceHeight * cropRatio);
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
 
-        // Set canvas size to square (64x64 is good for mini avatars)
-        const targetSize = 64;
-        canvas.width = targetSize;
-        canvas.height = targetSize;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
-        // Draw the cropped and resized image
+        const cropHeight = img.height * headRatio;
+
         ctx.drawImage(
           img,
           0,
           0,
-          sourceWidth,
-          cropHeight, // source: full width, top portion
+          img.width,
+          cropHeight, // top = head
           0,
           0,
-          targetSize,
-          targetSize, // destination: square canvas
+          size,
+          size,
         );
 
-        // Convert canvas to blob
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create blob from canvas'));
-          }
-        }, 'image/png', 0.9);
-      } catch (error) {
-        reject(error);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Blob failed'))),
+          'image/png',
+        );
+      } catch (e) {
+        reject(e);
       } finally {
         URL.revokeObjectURL(img.src);
       }
     };
 
-    img.onerror = () => {
-      URL.revokeObjectURL(img.src);
-      reject(new Error('Failed to load image'));
-    };
-
-    try {
-      img.src = URL.createObjectURL(imageFile);
-    } catch (error) {
-      reject(new Error(`Failed to create object URL: ${error.message}`));
-    }
+    img.onerror = () => reject(new Error('Image load failed'));
+    img.src = URL.createObjectURL(avatarBlob);
   });
 }
 
@@ -74,76 +122,159 @@ export async function cropToMiniAvatar(imageFile, cropRatio = 0.35) {
  * @param {number} height - Target height
  * @returns {Promise<Blob>} - Resized image as blob
  */
-export async function resizeImage(imageFile, maxWidth = 256, maxHeight = 256, maintainAspectRatio = true) {
+// export async function resizeImage(imageFile, maxWidth = 256, maxHeight = 256, maintainAspectRatio = true) {
+//   return new Promise((resolve, reject) => {
+//     const canvas = document.createElement('canvas');
+//     const ctx = canvas.getContext('2d');
+//     ctx.imageSmoothingEnabled = true;
+//     ctx.imageSmoothingQuality = 'high';
+//     const img = new Image();
+
+//     img.onload = function imgOnLoad() {
+//       try {
+//         let { width, height } = img;
+
+//         if (maintainAspectRatio) {
+//           // Calculate new dimensions while maintaining aspect ratio
+//           const aspectRatio = width / height;
+
+//           if (width > height) {
+//             if (width > maxWidth) {
+//               width = maxWidth;
+//               height = width / aspectRatio;
+//             }
+//           } else if (height > maxHeight) {
+//             height = maxHeight;
+//             width = height * aspectRatio;
+//           }
+
+//           // Ensure we don't exceed max dimensions
+//           if (height > maxHeight) {
+//             height = maxHeight;
+//             width = height * aspectRatio;
+//           }
+//           if (width > maxWidth) {
+//             width = maxWidth;
+//             height = width / aspectRatio;
+//           }
+//         } else {
+//           width = maxWidth;
+//           height = maxHeight;
+//         }
+
+//         canvas.width = width;
+//         canvas.height = height;
+
+//         // Draw the resized image
+//         ctx.drawImage(img, 0, 0, width, height);
+
+//         // Convert canvas to blob
+//         canvas.toBlob((blob) => {
+//           if (blob) {
+//             resolve(blob);
+//           } else {
+//             reject(new Error('Failed to create blob from canvas'));
+//           }
+//         }, 'image/png', 0.9);
+//       } catch (error) {
+//         reject(error);
+//       } finally {
+//         URL.revokeObjectURL(img.src);
+//       }
+//     };
+
+//     img.onerror = () => {
+//       URL.revokeObjectURL(img.src);
+//       reject(new Error('Failed to load image'));
+//     };
+
+//     try {
+//       img.src = URL.createObjectURL(imageFile);
+//     } catch (error) {
+//       reject(new Error(`Failed to create object URL: ${error.message}`));
+//     }
+//   });
+// }
+
+export async function resizeCharacterAvatar(
+  imageFile,
+  minHeight = 220,
+  maxHeight = 220,
+  maxWidth = 180,
+) {
   return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
     const img = new Image();
 
-    img.onload = function imgOnLoad() {
+    img.onload = () => {
       try {
-        let { width, height } = img;
+        let targetWidth = img.width;
+        let targetHeight = img.height;
 
-        if (maintainAspectRatio) {
-          // Calculate new dimensions while maintaining aspect ratio
-          const aspectRatio = width / height;
-
-          if (width > height) {
-            if (width > maxWidth) {
-              width = maxWidth;
-              height = width / aspectRatio;
-            }
-          } else if (height > maxHeight) {
-            height = maxHeight;
-            width = height * aspectRatio;
-          }
-
-          // Ensure we don't exceed max dimensions
-          if (height > maxHeight) {
-            height = maxHeight;
-            width = height * aspectRatio;
-          }
-          if (width > maxWidth) {
-            width = maxWidth;
-            height = width / aspectRatio;
-          }
-        } else {
-          width = maxWidth;
-          height = maxHeight;
+        // Scale to meet minHeight first
+        if (targetHeight < minHeight) {
+          const scale = minHeight / targetHeight;
+          targetWidth = Math.round(targetWidth * scale);
+          targetHeight = minHeight;
         }
 
-        canvas.width = width;
-        canvas.height = height;
+        // Check if width exceeds maximum
+        if (targetWidth > maxWidth) {
+          const scale = maxWidth / targetWidth;
+          targetWidth = maxWidth;
+          targetHeight = Math.round(targetHeight * scale);
+        }
 
-        // Draw the resized image
-        ctx.drawImage(img, 0, 0, width, height);
+        // Check if height exceeds maximum
+        if (targetHeight > maxHeight) {
+          const scale = maxHeight / targetHeight;
+          targetHeight = maxHeight;
+          targetWidth = Math.round(targetWidth * scale);
+        }
 
-        // Convert canvas to blob
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create blob from canvas'));
-          }
-        }, 'image/png', 0.9);
-      } catch (error) {
-        reject(error);
+        // Ensure minimum dimensions
+        targetWidth = Math.max(50, targetWidth);
+        targetHeight = Math.max(120, targetHeight);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          targetWidth,
+          targetHeight,
+        );
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to create blob'));
+            }
+          },
+          'image/png',
+        );
+      } catch (err) {
+        reject(err);
       } finally {
         URL.revokeObjectURL(img.src);
       }
     };
 
-    img.onerror = () => {
-      URL.revokeObjectURL(img.src);
-      reject(new Error('Failed to load image'));
-    };
-
-    try {
-      img.src = URL.createObjectURL(imageFile);
-    } catch (error) {
-      reject(new Error(`Failed to create object URL: ${error.message}`));
-    }
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(imageFile);
   });
+}
+
+export async function createAvatarMaster(imageFile, masterHeight = 440) {
+  return resizeCharacterAvatar(imageFile, masterHeight, masterHeight * 0.6);
 }
 
 /**

@@ -364,6 +364,7 @@ const handleSubmit = async () => {
 
   try {
     const roomData = { ...formData };
+    console.log('roomData', roomData);
     let { roomId } = props;
 
     // For new rooms, create room first to get roomId
@@ -445,6 +446,7 @@ const handleSubmit = async () => {
 
 // Lifecycle
 onMounted(() => {
+  console.log('form data on mounted', formData);
   // Check if user can create room (for create mode)
   if (!props.isEdit && !roomsStore.canCreateRoom) {
     showError.value = true;

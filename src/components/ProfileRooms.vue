@@ -342,7 +342,7 @@
       <!-- Rooms List -->
       <div v-else>
         <div class="rooms-grid">
-          <v-card v-for="room in ownedRooms" :key="room.id" class="room-card" elevation="2">
+          <v-card v-for="room in ownedRooms" @click="editRoom(room.id)" :key="room.id" class="room-card" elevation="2">
             <!-- Room Background -->
             <div class="room-background">
               <v-img v-if="room.thumbnail || room.backgroundImage" :src="room.thumbnail || room.backgroundImage"
@@ -364,6 +364,13 @@
                   </template>
 
                   <v-list class="profile-dropdown pa-0">
+
+                    <v-list-item @click="$router.push('rooms/' + room.id)" class="pl-1">
+                      <template #prepend>
+                        <v-icon class="text-main">mdi-eye-outline</v-icon>
+                      </template>
+                      <v-list-item-title class="text-main">Go to Room</v-list-item-title>
+                    </v-list-item>
 
                     <v-list-item @click="editRoom(room.id)" class="pl-1">
                       <template #prepend>

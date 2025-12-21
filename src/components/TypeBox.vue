@@ -1,6 +1,6 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div style="text-align:center" ref="buttonK">
+  <div :style="{ ...typeBoxPosition, textAlign: 'center' }" ref="buttonK">
     <v-btn class="mx-2 manga-keyboard-icon" fab size="small" :ripple="false" @click="toggleKeyBoard"
       @touchstart.stop="toggleKeyBoard">
       <v-icon v-if="hideKeyboard" size="20">
@@ -41,6 +41,10 @@ export default {
       default: false,
       type: Boolean,
     },
+    avatarDimensions: {
+      type: Object,
+      default: () => ({ width: 80, height: 220 }),
+    },
   },
   setup() {
     const userStore = useUserStore();
@@ -59,6 +63,16 @@ export default {
   computed: {
     getCurrentUser() {
       return this.userStore.getCurrentUser;
+    },
+    typeBoxPosition() {
+      const avatarWidth = this.avatarDimensions.width;
+      const typeBoxWidth = window.innerWidth <= 768 ? 280 : 300;
+      const leftOffset = (avatarWidth - typeBoxWidth) / 2;
+
+      return {
+        left: `${leftOffset}px`,
+        bottom: '-70px',
+      };
     },
   },
   methods: {
@@ -149,14 +163,13 @@ export default {
 .manga-typebox {
   z-index: 1100;
   -webkit-transform: translate3d(0, 0, 0);
-  left: -120px;
-  bottom: -70px;
   position: absolute;
   color: #ffffff !important;
   width: 300px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 1px !important;
+  right: -115%;
 
   .input-section {
     background: rgba(255, 255, 255, 0.1);

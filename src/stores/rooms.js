@@ -516,6 +516,7 @@ const useRoomsStore = defineStore('rooms', {
     },
 
     async updateRoom(roomId, roomData) {
+      console.log('roomData', roomData);
       const db = getDatabase();
       const userStore = useUserStore();
 
@@ -989,6 +990,52 @@ const useRoomsStore = defineStore('rooms', {
       }
     },
 
+    // async uploadPreloadedAvatar(file, adminUserId) {
+    //   const storage = getStorage();
+    //   const db = getDatabase();
+
+    //   try {
+    //     const avatarId = `avatar_${Date.now()}`;
+
+    //     // Generate resized avatar and mini avatar
+    //     const { resizeImage, cropToMiniAvatar } = await import('@/utils/imageUtils');
+    //     const resizedBlob = await resizeImage(file, 80, 220, true);
+    //     const miniBlob = await cropToMiniAvatar(file, 0.35);
+
+    //     const avatarRef = storageRef(storage, `preloaded/avatars/L1/${avatarId}.png`);
+    //     const miniAvatarRef = storageRef(storage, `preloaded/avatars/L1/miniavatars/${avatarId}.png`);
+
+    //     // Upload both files
+    //     const [avatarSnapshot, miniSnapshot] = await Promise.all([
+    //       uploadBytes(avatarRef, resizedBlob),
+    //       uploadBytes(miniAvatarRef, miniBlob),
+    //     ]);
+
+    //     // Get download URLs
+    //     const [avatarURL, miniAvatarURL] = await Promise.all([
+    //       getDownloadURL(avatarSnapshot.ref),
+    //       getDownloadURL(miniSnapshot.ref),
+    //     ]);
+
+    //     // Save to database
+    //     const avatarData = {
+    //       id: avatarId,
+    //       originalPath: avatarURL,
+    //       miniPath: miniAvatarURL,
+    //       uploadedAt: new Date().toISOString(),
+    //       uploadedBy: adminUserId,
+    //     };
+
+    //     const avatarDbRef = ref(db, `preloadedAvatars/${avatarId}`);
+    //     await set(avatarDbRef, avatarData);
+
+    //     console.log('Preloaded avatar uploaded:', avatarId);
+    //     return avatarData;
+    //   } catch (error) {
+    //     console.error('Error uploading preloaded avatar:', error);
+    //     throw error;
+    //   }
+    // },
     async uploadPreloadedAvatar(file, adminUserId) {
       const storage = getStorage();
       const db = getDatabase();
@@ -996,27 +1043,37 @@ const useRoomsStore = defineStore('rooms', {
       try {
         const avatarId = `avatar_${Date.now()}`;
 
-        // Generate resized avatar and mini avatar
-        const { resizeImage, cropToMiniAvatar } = await import('@/utils/imageUtils');
-        const resizedBlob = await resizeImage(file, 80, 220, true);
-        const miniBlob = await cropToMiniAvatar(file, 0.35);
+        const {
+          createAvatarMaster,
+          resizeCharacterAvatar,
+          cropHeadMiniAvatar,
+        } = await import('@/utils/imageUtils');
+
+        // 1. Create master
+        const masterBlob = await createAvatarMaster(file);
+
+        // 2. Display avatar
+        const avatarBlob = await resizeCharacterAvatar(masterBlob, 220, 120);
+
+        // 3. Mini avatar (head)
+        const miniBlob = await cropHeadMiniAvatar(masterBlob);
 
         const avatarRef = storageRef(storage, `preloaded/avatars/L1/${avatarId}.png`);
-        const miniAvatarRef = storageRef(storage, `preloaded/avatars/L1/miniavatars/${avatarId}.png`);
+        const miniAvatarRef = storageRef(
+          storage,
+          `preloaded/avatars/L1/miniavatars/${avatarId}.png`,
+        );
 
-        // Upload both files
-        const [avatarSnapshot, miniSnapshot] = await Promise.all([
-          uploadBytes(avatarRef, resizedBlob),
+        const [avatarSnap, miniSnap] = await Promise.all([
+          uploadBytes(avatarRef, avatarBlob),
           uploadBytes(miniAvatarRef, miniBlob),
         ]);
 
-        // Get download URLs
         const [avatarURL, miniAvatarURL] = await Promise.all([
-          getDownloadURL(avatarSnapshot.ref),
-          getDownloadURL(miniSnapshot.ref),
+          getDownloadURL(avatarSnap.ref),
+          getDownloadURL(miniSnap.ref),
         ]);
 
-        // Save to database
         const avatarData = {
           id: avatarId,
           originalPath: avatarURL,
@@ -1025,13 +1082,10 @@ const useRoomsStore = defineStore('rooms', {
           uploadedBy: adminUserId,
         };
 
-        const avatarDbRef = ref(db, `preloadedAvatars/${avatarId}`);
-        await set(avatarDbRef, avatarData);
-
-        console.log('Preloaded avatar uploaded:', avatarId);
+        await set(ref(db, `preloadedAvatars/${avatarId}`), avatarData);
         return avatarData;
       } catch (error) {
-        console.error('Error uploading preloaded avatar:', error);
+        console.error('Avatar upload failed:', error);
         throw error;
       }
     },

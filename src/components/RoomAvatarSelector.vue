@@ -138,7 +138,7 @@ import {
 } from 'vue';
 import useRoomsStore from '@/stores/rooms';
 import {
-  resizeImage, cropToMiniAvatar, createPreviewURL, revokePreviewURL,
+  resizeCharacterAvatar, cropHeadMiniAvatar, createPreviewURL, revokePreviewURL,
 } from '@/utils/imageUtils';
 
 const props = defineProps({
@@ -250,11 +250,11 @@ const onFileChange = async (fileOrEvent) => {
 
     try {
       // Resize main avatar
-      const resizedMainBlob = await resizeImage(file, 80, 220, true);
+      const resizedMainBlob = await resizeCharacterAvatar(file, 80, 220, true);
       const mainUrl = createPreviewURL(resizedMainBlob);
 
       // Auto-crop mini avatar
-      const miniBlob = await cropToMiniAvatar(file, 0.35);
+      const miniBlob = await cropHeadMiniAvatar(file, 0.35);
       const miniUrl = createPreviewURL(miniBlob);
 
       uploadedPreviews.value.push({

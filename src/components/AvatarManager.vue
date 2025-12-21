@@ -215,6 +215,10 @@
     <v-snackbar v-model="showError" color="red" timeout="5000">
       {{ errorMessage }}
     </v-snackbar>
+
+    <v-snackbar v-model="showWarning" color="orange" timeout="5000">
+      {{ warningMessage }}
+    </v-snackbar>
   </div>
 </template>
 
@@ -225,7 +229,7 @@ import {
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 import {
-  cropToMiniAvatar, resizeImage, createPreviewURL, revokePreviewURL,
+  cropHeadMiniAvatar, resizeCharacterAvatar, createPreviewURL, revokePreviewURL,
 } from '@/utils/imageUtils';
 import { getAvatarLimit } from '@/constants/avatarLimits';
 
@@ -257,8 +261,10 @@ const preloadedAvatars = ref([]);
 const loadingPreloaded = ref(false);
 const showSuccess = ref(false);
 const showError = ref(false);
+const showWarning = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const warningMessage = ref('');
 const previewUrls = ref([]); // Keep track of preview URLs for cleanup
 
 // Computed
@@ -321,12 +327,31 @@ const onAvatarFileChange = async (fileOrEvent) => {
   }
 
   try {
+    // Check aspect ratio before processing
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+
+    const aspectRatio = img.width / img.height;
+    URL.revokeObjectURL(img.src);
+
+    // Warn if unusual ratio (< 0.3 = very tall, > 2.5 = very wide)
+    if (aspectRatio < 0.3 || aspectRatio > 2.5) {
+      const ratioType = aspectRatio < 0.3 ? 'tall' : 'wide';
+      console.warn(`Unusual aspect ratio detected: ${aspectRatio.toFixed(2)}`);
+      showWarning.value = true;
+      warningMessage.value = `This avatar is very ${ratioType} (ratio: ${aspectRatio.toFixed(2)}). It will be displayed within size bounds but may not look optimal.`;
+    }
+
     // Resize main avatar (maintain aspect ratio)
-    const resizedMainBlob = await resizeImage(file, 80, 220, true);
+    const resizedMainBlob = await resizeCharacterAvatar(file, 80, 220, true);
     const mainUrl = createPreviewURL(resizedMainBlob);
 
     // Auto-crop mini avatar from top portion
-    const miniBlob = await cropToMiniAvatar(file, 0.35); // Top 35% of image
+    const miniBlob = await cropHeadMiniAvatar(file, 0.35); // Top 35% of image
     const miniUrl = createPreviewURL(miniBlob);
 
     // Add directly to the avatar list

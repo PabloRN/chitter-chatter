@@ -535,7 +535,7 @@ import ProfileMenu from '@/components/ProfileMenu.vue';
 import {
   getAuth, GoogleAuthProvider, EmailAuthProvider, linkWithPopup, unlink,
 } from 'firebase/auth';
-import { resizeImage, createPreviewURL } from '@/utils/imageUtils';
+import { resizeCharacterAvatar, createPreviewURL } from '@/utils/imageUtils';
 import { formatDate } from '@/utils/dateUtils';
 import { TIER_RANKS } from '@/constants/tiers';
 import { calculateTotalRoomLimit } from '@/utils/roomTypes';
@@ -898,7 +898,7 @@ const onAvatarFileChange = async (fileOrEvent) => {
   }
 
   try {
-    const resizedBlob = await resizeImage(file, 50, 50, true);
+    const resizedBlob = await resizeCharacterAvatar(file, 50, 50, true);
     const previewUrl = createPreviewURL(resizedBlob);
 
     pendingAvatar.value = {

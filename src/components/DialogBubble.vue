@@ -90,6 +90,8 @@ export default {
   margin: 0.5em;
   padding: 0.5em 1em;
   position: absolute;
+  bottom: 100%;
+  margin-bottom: 10px;
   font-family: 'Nanum Pen Script', cursive !important;
   font-size: 1.3rem !important;
   line-height: 1.1 !important;
@@ -98,7 +100,6 @@ export default {
   background: var(--bubble-background);
   border-radius: var(--border-radius-small);
   color: var(--text-dark);
-  bottom: 230px;
   text-align: center;
   box-shadow: var(--shadow-light);
   z-index: 1000;
@@ -116,7 +117,7 @@ export default {
   &-current {
     @extend .bubble;
     z-index: 999;
-    bottom: 260px;
+    margin-bottom: 40px;
 
     &.position-left {
       @extend .bubble-current;
