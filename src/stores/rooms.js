@@ -683,6 +683,8 @@ const useRoomsStore = defineStore('rooms', {
     },
 
     async uploadRoomAvatars(roomId, avatarFiles, existingAvatarNames = []) {
+      console.log('📸 Uploading room avatars:', avatarFiles);
+      console.log('📸 existingAvatarNames:', existingAvatarNames);
       const storage = getStorage();
       this.roomUploadLoading = true;
 

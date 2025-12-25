@@ -391,14 +391,15 @@ const handleSubmit = async () => {
     // Handle avatar uploads from AvatarManager
     if (avatarManager.value && formData.publicAvatars.length > 0) {
       const uploadedAvatars = await avatarManager.value.uploadAllAvatars(roomId);
-
       // Merge uploaded avatars with existing/preloaded avatars
       if (uploadedAvatars && uploadedAvatars.length > 0) {
+        let uploadIndex = 0;
         // Replace preview avatars with uploaded ones
         formData.publicAvatars = formData.publicAvatars.map((avatar) => {
           if (avatar.isPreview && avatar.type !== 'preloaded') {
             // Find corresponding uploaded avatar
-            const uploaded = uploadedAvatars.find((ua) => ua.isDefault === avatar.isDefault);
+            const uploaded = uploadedAvatars[uploadIndex++];
+
             return uploaded || avatar;
           }
           return avatar;
@@ -407,7 +408,6 @@ const handleSubmit = async () => {
 
       roomData.publicAvatars = formData.publicAvatars;
     }
-
     if (props.isEdit) {
       await roomsStore.updateRoom(roomId, roomData);
 

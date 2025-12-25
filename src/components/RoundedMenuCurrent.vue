@@ -1,6 +1,6 @@
 <template>
-  <div class="rounded-menu" style="text-align: center; height: 200; z-index: 1000;">
-    <v-btn height="200" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-activator" dark
+  <div :style="{ ...typeBoxPosition }" class="rounded-menu" style="text-align: center; z-index: 1000;">
+    <v-btn :height="avatarDimensions.height" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-activator" dark
       @click.prevent.stop="toggleMenu" v-touch="{
         start: () => (movingTouch = false),
         end: () => toggleMenuTouch,
@@ -125,6 +125,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  avatarDimensions: {
+    type: Object,
+    default: () => ({ width: 80, height: 220 }),
+  },
 });
 
 // emits
@@ -153,6 +157,17 @@ const getCurrentUser = computed(() => userStore.getCurrentUser);
 const notifications = computed(() => notificationsList.value || []);
 const hasUnreadNotifications = computed(() => unreadCount.value > 0);
 const userId = computed(() => getCurrentUser.value?.userId);
+
+const typeBoxPosition = computed(() => {
+  const avatarHeight = props.avatarDimensions.height;
+  const typeBoxHeight = window.innerWidth <= 768 ? 200 : 220;
+  const bottomOffset = avatarHeight + typeBoxHeight;
+  console.log('avatar height', avatarHeight);
+  return {
+    left: `${0}px`,
+    bottom: `${bottomOffset - typeBoxHeight}px`,
+  };
+});
 
 // functions
 const toggleMenu = () => {

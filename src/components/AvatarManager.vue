@@ -89,7 +89,7 @@
                 </div>
 
                 <!-- Hidden file input -->
-                <input ref="fileInput" type="file" accept="image/*" style="display: none"
+                <input ref="fileInput" type="file" accept="image/*" style="display: none" multiple
                   @change="onAvatarFileChange" />
               </div>
             </div>
@@ -229,7 +229,7 @@ import {
 import useRoomsStore from '@/stores/rooms';
 import useUserStore from '@/stores/user';
 import {
-  cropHeadMiniAvatar, resizeCharacterAvatar, createPreviewURL, revokePreviewURL,
+  cropHeadMiniAvatar, createAvatarMaster, resizeCharacterAvatar, createPreviewURL, revokePreviewURL,
 } from '@/utils/imageUtils';
 import { getAvatarLimit } from '@/constants/avatarLimits';
 
@@ -293,104 +293,129 @@ const remainingAvatars = computed(() => Math.max(0, avatarLimit.value - currentA
 
 // Methods
 const onAvatarFileChange = async (fileOrEvent) => {
-  // Check avatar limit FIRST
-  if (isAtAvatarLimit.value) {
-    showError.value = true;
-    errorMessage.value = `Avatar limit reached (${avatarLimit.value}). Upgrade your tier for more avatars!`;
-    return;
+  // Normalize input → File[]
+  let files = [];
+
+  if (fileOrEvent instanceof File) {
+    files = [fileOrEvent];
+  } else if (fileOrEvent?.target?.files instanceof FileList) {
+    files = Array.from(fileOrEvent.target.files);
+  } else if (fileOrEvent instanceof FileList) {
+    files = Array.from(fileOrEvent);
+  } else if (Array.isArray(fileOrEvent)) {
+    // Vuetify sometimes emits an actual Array<File>
+    files = fileOrEvent.filter(f => f instanceof File);
   }
+  console.log(
+    'FILES DEBUG:',
+    files.map(f => `${f.name} (${f.size})`)
+  );
+  if (!files.length) return;
 
-  // Handle different ways the file can be passed
-  let file = fileOrEvent;
-  if (fileOrEvent && fileOrEvent.length) {
-    // If it's a FileList, get the first file
-    file = fileOrEvent[0];
-  } else if (fileOrEvent && fileOrEvent.target && fileOrEvent.target.files) {
-    // If it's an event object
-    file = fileOrEvent.target.files[0];
-  }
+  let addedCount = 0;
 
-  if (!file) return;
-
-  // Validate file type
-  if (!file.type || !file.type.startsWith('image/')) {
-    showError.value = true;
-    errorMessage.value = 'Please select a valid image file';
-    return;
-  }
-
-  // Validate file size (max 1MB)
-  if (file.size > 1 * 1024 * 1024) {
-    showError.value = true;
-    errorMessage.value = 'Image file is too large. Please select a file smaller than 1MB';
-    return;
-  }
-
-  try {
-    // Check aspect ratio before processing
-    const img = new Image();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
-    });
-
-    const aspectRatio = img.width / img.height;
-    URL.revokeObjectURL(img.src);
-
-    // Warn if unusual ratio (< 0.3 = very tall, > 2.5 = very wide)
-    if (aspectRatio < 0.3 || aspectRatio > 2.5) {
-      const ratioType = aspectRatio < 0.3 ? 'tall' : 'wide';
-      console.warn(`Unusual aspect ratio detected: ${aspectRatio.toFixed(2)}`);
-      showWarning.value = true;
-      warningMessage.value = `This avatar is very ${ratioType} (ratio: ${aspectRatio.toFixed(2)}). It will be displayed within size bounds but may not look optimal.`;
+  for (const file of files) {
+    // Enforce avatar limit PER FILE
+    if (isAtAvatarLimit.value) {
+      showError.value = true;
+      errorMessage.value = `Avatar limit reached (${avatarLimit.value}). Upgrade your tier for more avatars!`;
+      break;
     }
 
-    // Resize main avatar (maintain aspect ratio)
-    const resizedMainBlob = await resizeCharacterAvatar(file, 80, 220, true);
-    const mainUrl = createPreviewURL(resizedMainBlob);
+    // Validate file type
+    if (!file.type?.startsWith('image/')) {
+      console.warn('Skipped non-image file:', file.name);
+      continue;
+    }
 
-    // Auto-crop mini avatar from top portion
-    const miniBlob = await cropHeadMiniAvatar(file, 0.35); // Top 35% of image
-    const miniUrl = createPreviewURL(miniBlob);
+    // Validate size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      console.warn('Skipped oversized image:', file.name);
+      continue;
+    }
 
-    // Add directly to the avatar list
-    const avatarIndex = roomAvatars.value.length;
-    const avatarName = `avatar_${avatarIndex + 1}`;
+    try {
+      // ---- Aspect ratio check ----
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
 
-    const willBeDefault = roomAvatars.value.length === 0 || !roomAvatars.value.some((a) => a.isDefault);
+      const aspectRatio = img.width / img.height;
+      URL.revokeObjectURL(img.src);
 
-    const newAvatar = {
-      name: avatarName,
-      mainFile: new File([resizedMainBlob], `temp_main_${Date.now()}.png`, { type: 'image/png' }),
-      miniFile: new File([miniBlob], `temp_mini_${Date.now()}.png`, { type: 'image/png' }),
-      mainUrl,
-      miniUrl,
-      isDefault: willBeDefault, // Only default if no existing default
-      isPreview: true, // Flag to indicate this is not yet uploaded
-    };
+      if (aspectRatio < 0.3 || aspectRatio > 2.5) {
+        const ratioType = aspectRatio < 0.3 ? 'tall' : 'wide';
+        showWarning.value = true;
+        warningMessage.value =
+          `Some avatars are very ${ratioType}. They will be resized to fit but may not look optimal.`;
+      }
 
-    roomAvatars.value.push(newAvatar);
+      // 1. Create master
+      const masterBlob = await createAvatarMaster(file);
 
-    // Track URLs for cleanup
-    previewUrls.value.push(mainUrl, miniUrl);
+      // 2. Display avatar
+      const resizedMainBlob = await resizeCharacterAvatar(masterBlob, 220, 120);
 
-    // Emit update
+      // 3. Mini avatar (head)
+      const miniBlob = await cropHeadMiniAvatar(file, 0.35);
+
+      const mainUrl = createPreviewURL(resizedMainBlob);
+      const miniUrl = createPreviewURL(miniBlob);
+
+      const avatarIndex = roomAvatars.value.length;
+      const avatarName = `avatar_${avatarIndex + 1}`;
+
+      const willBeDefault =
+        roomAvatars.value.length === 0 ||
+        !roomAvatars.value.some((a) => a.isDefault);
+
+      const newAvatar = {
+        name: avatarName,
+        mainFile: new File(
+          [resizedMainBlob],
+          `temp_main_${Date.now()}_${avatarIndex}.png`,
+          { type: 'image/png' },
+        ),
+        miniFile: new File(
+          [miniBlob],
+          `temp_mini_${Date.now()}_${avatarIndex}.png`,
+          { type: 'image/png' },
+        ),
+        mainUrl,
+        miniUrl,
+        isDefault: willBeDefault,
+        isPreview: true,
+      };
+
+      roomAvatars.value.push(newAvatar);
+      previewUrls.value.push(mainUrl, miniUrl);
+
+      addedCount++;
+    } catch (err) {
+      console.error(`Failed processing ${file.name}`, err);
+      // continue with next image
+    }
+  }
+
+  // Emit once after batch
+  if (addedCount > 0) {
     emit('update:modelValue', roomAvatars.value);
-
-    // Clear file input
-    if (fileInput.value) {
-      fileInput.value.value = '';
-    }
-
     showSuccess.value = true;
-    successMessage.value = 'Avatar added! Will be uploaded when room is saved.';
-  } catch (error) {
-    console.error('Error processing image:', error);
-    showError.value = true;
-    errorMessage.value = `Failed to process image: ${error.message}`;
+    successMessage.value =
+      addedCount === 1
+        ? 'Avatar added! Will be uploaded when room is saved.'
+        : `${addedCount} avatars added! They will be uploaded when the room is saved.`;
+  }
+
+  // Clear input once
+  if (fileInput.value) {
+    fileInput.value.value = '';
   }
 };
+
 
 const triggerFileUpload = () => {
   fileInput.value?.click();
@@ -406,6 +431,7 @@ const uploadAllAvatars = async (roomId) => {
     if (newAvatars.length === 0) return [];
 
     const avatarFiles = newAvatars.map((avatar) => ({
+      tempId: crypto.randomUUID(),
       mainFile: avatar.mainFile,
       miniFile: avatar.miniFile,
       isDefault: avatar.isDefault,

@@ -891,7 +891,7 @@ const onAvatarFileChange = async (fileOrEvent) => {
     errorMessage.value = 'Please select a valid image file';
     return;
   }
-  if (file.size > 2 * 1024 * 1024) {
+  if (file.size > 10 * 1024 * 1024) {
     showError.value = true;
     errorMessage.value = 'Image file is too large';
     return;

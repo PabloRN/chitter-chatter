@@ -25,9 +25,8 @@
           <v-tabs-window-item>
             <div class="upload-section">
               <!-- Custom Upload Card -->
-              <div class="upload-card"
-                   :class="{ 'disabled-upload': !canUpload }"
-                   @click="canUpload ? triggerFileUpload() : null">
+              <div class="upload-card" :class="{ 'disabled-upload': !canUpload }"
+                @click="canUpload ? triggerFileUpload() : null">
                 <div class="upload-content">
                   <v-icon size="64" :color="canUpload ? 'primary' : 'grey'" class="mb-3">
                     {{ canUpload ? 'mdi-cloud-upload' : 'mdi-lock' }}
@@ -36,13 +35,15 @@
                     {{ canUpload ? 'Upload Background Image' : 'Custom Upload Locked' }}
                   </div>
                   <div class="upload-hint" :class="{ 'text-grey': !canUpload }">
-                    {{ canUpload ? 'Click to browse or drag & drop' : 'Upgrade to Owner tier to upload custom backgrounds' }}
+                    {{ canUpload ? 'Click to browse or drag & drop'
+                      : 'Upgrade to Owner tier to upload custom backgrounds' }}
                   </div>
                   <div v-if="canUpload" class="upload-specs">Recommended: 1920x1080px • Max 5MB</div>
                 </div>
 
                 <!-- Hidden file input -->
-                <input ref="fileInput" type="file" accept="image/*" style="display: none" :disabled="!canUpload" @change="onFileChange" />
+                <input ref="fileInput" type="file" accept="image/*" style="display: none" :disabled="!canUpload"
+                  @change="onFileChange" />
               </div>
             </div>
           </v-tabs-window-item>
@@ -185,9 +186,9 @@ const onFileChange = (fileOrEvent) => {
   }
 
   // Validate file size (max 5MB)
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > 10 * 1024 * 1024) {
     showError.value = true;
-    errorMessage.value = 'Image file is too large. Please select a file smaller than 5MB';
+    errorMessage.value = 'Image file is too large. Please select a file smaller than 10MB';
     uploadedFile.value = null;
     return;
   }

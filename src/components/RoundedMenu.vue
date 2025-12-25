@@ -1,5 +1,6 @@
 <template>
-  <div class="rounded-menu" style="text-align: center; height: 200; z-index: 1000; position: relative;">
+  <div :style="{ ...typeBoxPosition }" class="rounded-menu"
+    style="text-align: center;  z-index: 1000; position: relative;">
     <v-btn height="200" class="mx-2 menu-activator" dark @click.prevent.stop="toggleMenu"
       v-touch="{ end: () => toggleMenuTouch }">
     </v-btn>
@@ -88,6 +89,10 @@ import ReportUserDialog from '@/components/ReportUserDialog.vue';
 const props = defineProps({
   userId: String,
   nickname: String,
+  avatarDimensions: {
+    type: Object,
+    default: () => ({ width: 80, height: 220 }),
+  },
 });
 const userStore = useUserStore();
 // emits
@@ -103,7 +108,17 @@ const otherIsAnonymous = computed(() => userStore.userData[props.userId]?.isAnon
 const currentUserIsAnonymous = computed(() => userStore.getCurrentUser?.isAnonymous);
 const isBlocked = computed(() => userStore.isBlocked(props.userId));
 const isBlockedBy = computed(() => userStore.isBlockedBy(props.userId));
-
+const typeBoxPosition = computed(() => {
+  const avatarWidth = props.avatarDimensions.width;
+  const avatarHeight = props.avatarDimensions.height;
+  const typeBoxHeight = window.innerWidth <= 768 ? 200 : 220;
+  const bottomOffset = avatarHeight + typeBoxHeight;
+  console.log('avatar height', avatarHeight);
+  return {
+    left: `${0}px`,
+    bottom: `${bottomOffset - typeBoxHeight + 100}px`,
+  };
+});
 onMounted(() => {
   console.log('RoundedMenu mounted props', props);
 });

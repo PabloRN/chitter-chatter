@@ -132,7 +132,7 @@ const close = () => {
 };
 
 const enterRoom = () => {
-  router.push(`/room/${props.room.id}`);
+  router.push(`/rooms/${props.room.id}`);
   close();
 };
 </script>

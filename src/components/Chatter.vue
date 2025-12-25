@@ -11,14 +11,15 @@
         :class="dialogSide" />
       <v-img contain :id="`img-${actualUserId}`" class="avatar-image" :class="{ 'avatar-dragging': isActuallyMoving }"
         :src="avatar"></v-img>
-      <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" :nickname="props.nickname" v-on="{
-        ['privateMessage']: () => invitePrivate(),
-        ['showUserMessages']: () => toggleUserMessages(),
-        ['blockUser']: () => toggleBlockUser(),
-        ['showLoginDialog']: () => showLoginDialogHandler(),
-        ['userInfo']: () => showUserInfo(),
-        ['addFriend']: () => onAddFriendClicked(),
-      }" ref="roundedmenu" />
+      <RoundedMenu v-if="!isCurrentUser" :userId="props.userId" :nickname="props.nickname"
+        :avatar-dimensions="avatarDimensions" v-on="{
+          ['privateMessage']: () => invitePrivate(),
+          ['showUserMessages']: () => toggleUserMessages(),
+          ['blockUser']: () => toggleBlockUser(),
+          ['showLoginDialog']: () => showLoginDialogHandler(),
+          ['userInfo']: () => showUserInfo(),
+          ['addFriend']: () => onAddFriendClicked(),
+        }" ref="roundedmenu" />
       <RoundedMenuCurrent v-else :moving="mouseMoved" ref="roundedmenucurrent" v-on="{
         ['exitRoom']: leaveRoom,
         ['signOut']: () => userSignOutCall(),
@@ -28,6 +29,7 @@
         ['showLoginDialog']: () => showLoginDialogHandler(),
       }" />
     </div>
+
 
     <TypeBox :ref="`keyboard_${actualUserId}`" :id="`keyboard_${actualUserId}`" v-if="isCurrentUser"
       :moving="mouseMoved" :avatar-dimensions="avatarDimensions" />

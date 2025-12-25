@@ -8,100 +8,47 @@
  * @param {number} cropRatio - Ratio of height to keep (0.3 = top 30%)
  * @returns {Promise<Blob>} - Cropped image as blob
  */
-// export async function cropToMiniAvatar(imageFile, cropRatio = 0.35) {
-//   return new Promise((resolve, reject) => {
-//     const canvas = document.createElement('canvas');
-//     const ctx = canvas.getContext('2d');
-//     const img = new Image();
-
-//     img.onload = function imgOnLoad() {
-//       try {
-//         // Calculate crop dimensions - take top portion of image
-//         const sourceWidth = img.width;
-//         const sourceHeight = img.height;
-//         const cropHeight = Math.floor(sourceHeight * cropRatio);
-
-//         // Set canvas size to square (64x64 is good for mini avatars)
-//         const targetSize = 64;
-//         canvas.width = targetSize;
-//         canvas.height = targetSize;
-
-//         // Draw the cropped and resized image
-//         ctx.drawImage(
-//           img,
-//           0,
-//           0,
-//           sourceWidth,
-//           cropHeight, // source: full width, top portion
-//           0,
-//           0,
-//           targetSize,
-//           targetSize, // destination: square canvas
-//         );
-
-//         // Convert canvas to blob
-//         canvas.toBlob((blob) => {
-//           if (blob) {
-//             resolve(blob);
-//           } else {
-//             reject(new Error('Failed to create blob from canvas'));
-//           }
-//         }, 'image/png', 0.9);
-//       } catch (error) {
-//         reject(error);
-//       } finally {
-//         URL.revokeObjectURL(img.src);
-//       }
-//     };
-
-//     img.onerror = () => {
-//       URL.revokeObjectURL(img.src);
-//       reject(new Error('Failed to load image'));
-//     };
-
-//     try {
-//       img.src = URL.createObjectURL(imageFile);
-//     } catch (error) {
-//       reject(new Error(`Failed to create object URL: ${error.message}`));
-//     }
-//   });
-// }
-
 export async function cropHeadMiniAvatar(
-  avatarBlob,
-  headRatio = 0.35,
-  size = 64,
+  imageFile,
+  cropRatio = 0.45, // a bit more head room
+  verticalOffsetRatio = 0.18,
 ) {
   return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     const img = new Image();
 
     img.onload = () => {
       try {
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
+        const sourceWidth = img.width;
+        const sourceHeight = img.height;
 
-        const ctx = canvas.getContext('2d');
+        const cropHeight = Math.floor(sourceHeight * cropRatio);
+        const sourceY = Math.floor(sourceHeight * verticalOffsetRatio);
+
+        const targetSize = 64;
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-
-        const cropHeight = img.height * headRatio;
 
         ctx.drawImage(
           img,
           0,
+          sourceY,
+          sourceWidth,
+          cropHeight,
           0,
-          img.width,
-          cropHeight, // top = head
           0,
-          0,
-          size,
-          size,
+          targetSize,
+          targetSize,
         );
 
         canvas.toBlob(
           (blob) => (blob ? resolve(blob) : reject(new Error('Blob failed'))),
           'image/png',
+          0.9,
         );
       } catch (e) {
         reject(e);
@@ -110,10 +57,99 @@ export async function cropHeadMiniAvatar(
       }
     };
 
-    img.onerror = () => reject(new Error('Image load failed'));
-    img.src = URL.createObjectURL(avatarBlob);
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = URL.createObjectURL(imageFile);
   });
 }
+
+// function findTopVisibleY(ctx, width, height) {
+//   const imageData = ctx.getImageData(0, 0, width, height).data;
+
+//   for (let y = 0; y < height; y++) {
+//     for (let x = 0; x < width; x++) {
+//       const alpha = imageData[(y * width + x) * 4 + 3];
+//       if (alpha > 10) {
+//         return y;
+//       }
+//     }
+//   }
+//   return 0;
+// }
+// export async function cropHeadMiniAvatar(
+//   avatarBlob,
+//   size = 64,
+//   headBoxRatio = 0.45,
+// ) {
+//   return new Promise((resolve, reject) => {
+//     const img = new Image();
+
+//     img.onload = () => {
+//       try {
+//         // temp canvas to analyze pixels
+//         const tempCanvas = document.createElement('canvas');
+//         tempCanvas.width = img.width;
+//         tempCanvas.height = img.height;
+
+//         const tctx = tempCanvas.getContext('2d');
+//         tctx.drawImage(img, 0, 0);
+
+//         const topVisibleY = findTopVisibleY(
+//           tctx,
+//           img.width,
+//           img.height,
+//         );
+
+//         const headBoxSize = Math.min(
+//           Math.floor(img.width * headBoxRatio),
+//           img.height,
+//         );
+
+//         let sourceY = topVisibleY + Math.floor(headBoxSize * 0.15);
+//         if (sourceY + headBoxSize > img.height) {
+//           sourceY = img.height - headBoxSize;
+//         }
+
+//         const sourceX = Math.floor((img.width - headBoxSize) / 2);
+
+//         const canvas = document.createElement('canvas');
+//         canvas.width = size;
+//         canvas.height = size;
+
+//         const ctx = canvas.getContext('2d');
+//         ctx.imageSmoothingEnabled = true;
+//         ctx.imageSmoothingQuality = 'high';
+
+//         ctx.drawImage(
+//           img,
+//           sourceX,
+//           sourceY,
+//           headBoxSize,
+//           headBoxSize,
+//           0,
+//           0,
+//           size,
+//           size,
+//         );
+
+//         canvas.toBlob(
+//           (blob) => (blob ? resolve(blob) : reject(new Error('Blob failed'))),
+//           'image/png',
+//         );
+//       } catch (e) {
+//         reject(e);
+//       } finally {
+//         URL.revokeObjectURL(img.src);
+//       }
+//     };
+
+//     img.onerror = () => reject(new Error('Image load failed'));
+//     img.src = URL.createObjectURL(avatarBlob);
+//   });
+// }
 
 /**
  * Resizes an image to specific dimensions
@@ -198,71 +234,49 @@ export async function cropHeadMiniAvatar(
 
 export async function resizeCharacterAvatar(
   imageFile,
-  minHeight = 220,
-  maxHeight = 220,
-  maxWidth = 180,
+  maxHeight = 520,
+  maxWidth = 380,
 ) {
   return new Promise((resolve, reject) => {
     const img = new Image();
 
     img.onload = () => {
       try {
-        let targetWidth = img.width;
-        let targetHeight = img.height;
-
-        // Scale to meet minHeight first
-        if (targetHeight < minHeight) {
-          const scale = minHeight / targetHeight;
-          targetWidth = Math.round(targetWidth * scale);
-          targetHeight = minHeight;
+        // ✅ Already small enough → do nothing
+        if (img.height <= maxHeight && img.width <= maxWidth) {
+          resolve(imageFile);
+          return;
         }
 
-        // Check if width exceeds maximum
-        if (targetWidth > maxWidth) {
-          const scale = maxWidth / targetWidth;
-          targetWidth = maxWidth;
-          targetHeight = Math.round(targetHeight * scale);
-        }
+        const scale = Math.min(
+          maxHeight / img.height,
+          maxWidth / img.width,
+        );
 
-        // Check if height exceeds maximum
-        if (targetHeight > maxHeight) {
-          const scale = maxHeight / targetHeight;
-          targetHeight = maxHeight;
-          targetWidth = Math.round(targetWidth * scale);
-        }
+        const targetWidth = Math.round(img.width * scale);
+        const targetHeight = Math.round(img.height * scale);
 
-        // Ensure minimum dimensions
-        targetWidth = Math.max(50, targetWidth);
-        targetHeight = Math.max(120, targetHeight);
+        const dpr = window.devicePixelRatio || 1;
 
         const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
+        canvas.width = targetWidth * dpr;
+        canvas.height = targetHeight * dpr;
+        canvas.style.width = `${targetWidth}px`;
+        canvas.style.height = `${targetHeight}px`;
 
         const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        ctx.drawImage(
-          img,
-          0,
-          0,
-          targetWidth,
-          targetHeight,
-        );
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
         canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error('Failed to create blob'));
-            }
-          },
+          (blob) => (blob ? resolve(blob) : reject(new Error('Blob failed'))),
           'image/png',
         );
-      } catch (err) {
-        reject(err);
+      } catch (e) {
+        reject(e);
       } finally {
         URL.revokeObjectURL(img.src);
       }
@@ -273,7 +287,7 @@ export async function resizeCharacterAvatar(
   });
 }
 
-export async function createAvatarMaster(imageFile, masterHeight = 440) {
+export async function createAvatarMaster(imageFile, masterHeight = 640) {
   return resizeCharacterAvatar(imageFile, masterHeight, masterHeight * 0.6);
 }
 
@@ -313,60 +327,57 @@ export function revokePreviewURL(url) {
  * @param {number} maxHeight - Maximum height, default 1080
  * @returns {Promise<Blob>} - Compressed image as blob
  */
-export async function compressImage(imageFile, quality = 0.7, maxWidth = 1920, maxHeight = 1080) {
+export async function compressImage(
+  imageFile,
+  quality = 0.7,
+  maxWidth = 1920,
+  maxHeight = 1080,
+) {
   return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
     const img = new Image();
 
-    img.onload = function imgOnLoad() {
+    img.onload = () => {
       try {
-        let { width, height } = img;
-
-        // Calculate new dimensions while maintaining aspect ratio
-        const aspectRatio = width / height;
-
-        if (width > maxWidth || height > maxHeight) {
-          if (width > height) {
-            width = maxWidth;
-            height = width / aspectRatio;
-          } else {
-            height = maxHeight;
-            width = height * aspectRatio;
-          }
+        // ✅ nothing to do → return original
+        if (img.width <= maxWidth && img.height <= maxHeight) {
+          resolve(imageFile);
+          return;
         }
 
-        canvas.width = width;
-        canvas.height = height;
+        let { width, height } = img;
+        const aspectRatio = width / height;
 
-        // Draw the resized image
-        ctx.drawImage(img, 0, 0, width, height);
+        if (width > height) {
+          width = maxWidth;
+          height = width / aspectRatio;
+        } else {
+          height = maxHeight;
+          width = height * aspectRatio;
+        }
 
-        // Convert canvas to blob with compression
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create blob from canvas'));
-          }
-        }, 'image/jpeg', quality);
-      } catch (error) {
-        reject(error);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width);
+        canvas.height = Math.round(height);
+
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Blob failed'))),
+          'image/jpeg',
+          quality,
+        );
+      } catch (e) {
+        reject(e);
       } finally {
         URL.revokeObjectURL(img.src);
       }
     };
 
-    img.onerror = () => {
-      URL.revokeObjectURL(img.src);
-      reject(new Error('Failed to load image'));
-    };
-
-    try {
-      img.src = URL.createObjectURL(imageFile);
-    } catch (error) {
-      reject(new Error(`Failed to create object URL: ${error.message}`));
-    }
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(imageFile);
   });
 }
 
