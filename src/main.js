@@ -1,8 +1,11 @@
 import { createApp } from 'vue';
+import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
 import { VueReCaptcha } from 'vue-recaptcha-v3';
+import { initRoomAuthListener } from '@/stores/rooms';
 import App from './App';
 import './registerServiceWorker';
 import router from './router';
@@ -26,8 +29,10 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase (modular v10+)
-initializeApp(firebaseConfig);
+const firebaseApp = initializeApp(firebaseConfig);
+
+export const auth = getAuth(firebaseApp);
+export const db = getDatabase(firebaseApp);
 
 // Initialize Analytics
 analyticsService.initialize().then(() => {
@@ -99,3 +104,5 @@ app.mount('#app');
 // Initialize connection monitoring
 const mainStore = useMainStore();
 mainStore.startConnectionMonitoring();
+
+initRoomAuthListener();

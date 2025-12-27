@@ -10,8 +10,8 @@
  */
 export async function cropHeadMiniAvatar(
   imageFile,
-  cropRatio = 0.45, // a bit more head room
-  verticalOffsetRatio = 0.18,
+  cropRatio = 0.35, // a bit more head room
+  verticalOffsetRatio = 0,
 ) {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');

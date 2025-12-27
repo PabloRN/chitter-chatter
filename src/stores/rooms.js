@@ -1,13 +1,29 @@
 import { defineStore } from 'pinia';
 import {
-  getDatabase, ref, get, onValue, off, push, update, set, onDisconnect, onChildAdded, onChildRemoved,
+  getDatabase, ref, get, onValue, off, push, update, set, onDisconnect, onChildAdded, onChildRemoved, remove,
 } from 'firebase/database';
 import {
   getStorage, ref as storageRef, getDownloadURL, listAll, uploadBytes, deleteObject,
 } from 'firebase/storage';
 import { createRoom, validateRoom, USER_ROOM_LIMITS } from '@/utils/roomTypes';
 import analyticsService from '@/services/analyticsService';
+import { onIdTokenChanged } from 'firebase/auth';
+import { auth } from '@/main';
 import useUserStore from './user';
+
+let activeRoom = null;
+// { roomId, roomUsersKey }
+
+export function initRoomAuthListener() {
+  onIdTokenChanged(auth, async (user) => {
+    if (!user && activeRoom) {
+      const { roomId, roomUsersKey } = activeRoom;
+      console.log('Removing user from room', roomId, roomUsersKey);
+      await remove(ref(getDatabase(), `rooms/${roomId}/users/${roomUsersKey}`));
+      activeRoom = null;
+    }
+  });
+}
 
 const useRoomsStore = defineStore('rooms', {
   state: () => ({
@@ -199,6 +215,7 @@ const useRoomsStore = defineStore('rooms', {
         onDisconnect(refRoom).remove();
 
         await update(ref(db), updates);
+        activeRoom = { roomId, roomUsersKey };
         // await set(ref(db, `friends/${userId}/roomIn/`), roomId);
         this.pushUserSuccess();
       } catch (error) {
@@ -211,7 +228,7 @@ const useRoomsStore = defineStore('rooms', {
     }) {
       const db = getDatabase();
       const userStore = useUserStore();
-
+      activeRoom = null;
       try {
         const updates = {};
         updates[`/rooms/${roomId}/users/${roomUsersKey}`] = null;

@@ -373,7 +373,6 @@ const handleSubmit = async () => {
       const result = await roomsStore.createRoom(roomData);
       roomId = result.roomId;
     }
-
     // Handle background selection
     if (selectedBackground.value) {
       if (selectedBackground.value.type === 'uploaded' && selectedBackground.value.file) {

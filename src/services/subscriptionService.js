@@ -10,12 +10,12 @@ import { getAuth } from 'firebase/auth';
 
 // Stripe Price IDs - Replace with actual IDs from Stripe Dashboard
 const STRIPE_PRICE_IDS = {
-  landlord_monthly: 'price_1SWYYhBmoCe1wac3zCRqHSZE',
-  landlord_annual: 'price_1SWYsdBmoCe1wac3jyDTLTzt',
-  creator_monthly: 'price_1SWa3gBmoCe1wac3debRsl5V',
-  creator_annual: 'price_1SWa6BBmoCe1wac3BFuOc9ob',
-  room_slot: 'price_1SWaayBmoCe1wac3XEDCDgEQ', // One-time purchase
-  owner_upgrade: 'price_1SWi1vBmoCe1wac3f43Olfqn', // One-time purchase
+  landlord_monthly: 'price_1SelBABQJLdQf7hyUKWfhQGr',
+  landlord_annual: 'price_1SelBABQJLdQf7hyBLw5dC2G',
+  creator_monthly: 'price_1SelB5BQJLdQf7hyPwwwncH5',
+  creator_annual: 'price_1SelB5BQJLdQf7hyOdwhS5qc',
+  room_slot: 'price_1SelAyBQJLdQf7hyUeUVLqEv', // One-time purchase
+  owner_upgrade: 'price_1SelAqBQJLdQf7hyatV1Dpnr', // One-time purchase
 };
 
 // Room slot pricing

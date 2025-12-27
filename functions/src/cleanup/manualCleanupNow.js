@@ -44,128 +44,130 @@ exports.manualCleanupNow = onRequest(
       const errors = [];
       const deletedUsers = [];
 
-      for (const [userId, userData] of Object.entries(users)) {
-        try {
-          // ====== GHOST USER CHECK (Priority - check first) ======
-          // Ghost users are created when onDisconnect fires after user deletion
-          // They have ONLY minimal fields: onlineState, status, userId, and possibly welcome email metadata
-          const userFields = Object.keys(userData);
-          const ghostFields = [
-            'onlineState',
-            'status',
-            'userId',
-            'lastOnline',
-            'welcomeEmailSent',
-            'welcomeEmailAttemptedAt',
-            'welcomeEmailError',
-            'welcomeEmailSentAt',
-            'welcomeEmailMessageId',
-          ];
-          const hasOnlyGhostFields = userFields.every((field) => ghostFields.includes(field));
-          const hasMinimalFields = userFields.length <= 9; // Increased from 3 to account for welcome email fields
-          const isOffline = userData.onlineState === false && userData.status === 'offline';
+      await Promise.all(
+        Object.entries(users).map(async ([userId, userData]) => {
+          try {
+            // ====== GHOST USER CHECK (Priority - check first) ======
+            // Ghost users are created when onDisconnect fires after user deletion
+            // They have ONLY minimal fields: onlineState, status, userId, and possibly welcome email metadata
+            const userFields = Object.keys(userData);
+            const ghostFields = [
+              'onlineState',
+              'status',
+              'userId',
+              'lastOnline',
+              'welcomeEmailSent',
+              'welcomeEmailAttemptedAt',
+              'welcomeEmailError',
+              'welcomeEmailSentAt',
+              'welcomeEmailMessageId',
+            ];
+            const hasOnlyGhostFields = userFields.every((field) => ghostFields.includes(field));
+            const hasMinimalFields = userFields.length <= 9; // Increased from 3 to account for welcome email fields
+            const isOffline = userData.onlineState === false && userData.status === 'offline';
 
-          if (hasOnlyGhostFields && hasMinimalFields && isOffline) {
-            console.log(`👻 Found ghost user ${userId} with fields: ${userFields.join(', ')}`);
+            if (hasOnlyGhostFields && hasMinimalFields && isOffline) {
+              console.log(`👻 Found ghost user ${userId} with fields: ${userFields.join(', ')}`);
+
+              // Delete from Realtime Database
+              await db.ref(`users/${userId}`).remove();
+              deletedFromDatabase += 1;
+              console.log(`✅ Deleted ghost user ${userId} from DATABASE`);
+
+              // Delete from Firebase Auth
+              try {
+                await auth.deleteUser(userId);
+                deletedFromAuth += 1;
+                console.log(`✅ Deleted ghost user ${userId} from AUTHENTICATION`);
+              } catch (authError) {
+                if (authError.code === 'auth/user-not-found') {
+                  console.log(`ℹ️ Ghost user ${userId} not found in Auth`);
+                }
+              }
+
+              ghostCount += 1;
+              deletedUsers.push(userId);
+              return;
+            }
+
+            // SAFETY CHECK 1: Must be marked as anonymous
+            if (userData.isAnonymous !== true) {
+              return;
+            }
+
+            // SAFETY CHECK 2: Must be disconnected
+            if (userData.onlineState !== false || userData.status !== 'offline') {
+              skippedCount += 1;
+              return;
+            }
+
+            // SAFETY CHECK 3: Must not have active subscription
+            // Anonymous users don't have subscriptionTier field (undefined) - this is OK
+            // Only skip if user has a PAID subscription (landlord, creator, etc.)
+            if (userData.subscriptionTier && userData.subscriptionTier !== 'free') {
+              console.log(`⚠️ Skipping ${userId}: Has active subscription tier ${userData.subscriptionTier}`);
+              skippedCount += 1;
+              return;
+            }
+
+            // SAFETY CHECK 4: Must not own any rooms
+            if (userData.ownedRooms && Array.isArray(userData.ownedRooms) && userData.ownedRooms.length > 0) {
+              console.log(`⚠️ Skipping ${userId}: Owns ${userData.ownedRooms.length} rooms`);
+              skippedCount += 1;
+              return;
+            }
+
+            // SAFETY CHECK 5: Must not be currently in any rooms
+            if (userData.rooms && Object.keys(userData.rooms).length > 0) {
+              console.log(`⚠️ Skipping ${userId}: Currently in ${Object.keys(userData.rooms).length} rooms`);
+              skippedCount += 1;
+              return;
+            }
+
+            // SAFETY CHECK 6: Verify in Firebase Auth that user is anonymous
+            let authUserIsAnonymous = false;
+            try {
+              const authUser = await auth.getUser(userId);
+              authUserIsAnonymous = authUser.providerData.length === 0;
+            } catch (authError) {
+              console.log(`⚠️ User ${userId} not found in Firebase Auth (will clean database only)`);
+              authUserIsAnonymous = true;
+            }
+
+            if (!authUserIsAnonymous) {
+              console.log(`⚠️ Skipping ${userId}: Firebase Auth shows user is NOT anonymous`);
+              skippedCount += 1;
+              return;
+            }
+
+            // ALL CHECKS PASSED - DELETE
+            console.log(`✅ Deleting anonymous user ${userId}`);
+            deletedUsers.push(userId);
 
             // Delete from Realtime Database
             await db.ref(`users/${userId}`).remove();
-            deletedFromDatabase++;
-            console.log(`✅ Deleted ghost user ${userId} from DATABASE`);
+            deletedFromDatabase += 1;
+            console.log(`✅ Deleted ${userId} from DATABASE`);
 
             // Delete from Firebase Auth
             try {
               await auth.deleteUser(userId);
-              deletedFromAuth++;
-              console.log(`✅ Deleted ghost user ${userId} from AUTHENTICATION`);
+              deletedFromAuth += 1;
+              console.log(`✅ Deleted ${userId} from AUTHENTICATION`);
             } catch (authError) {
               if (authError.code === 'auth/user-not-found') {
-                console.log(`ℹ️ Ghost user ${userId} not found in Auth`);
+                console.log(`ℹ️ User ${userId} already deleted from Auth`);
+              } else {
+                console.error(`❌ Error deleting ${userId} from Auth:`, authError.message);
+                errors.push({ userId, error: authError.message, location: 'auth' });
               }
             }
-
-            ghostCount++;
-            deletedUsers.push(userId);
-            continue; // Skip to next user
+          } catch (error) {
+            console.error(`❌ Error processing ${userId}:`, error);
+            errors.push({ userId, error: error.message });
           }
-
-          // SAFETY CHECK 1: Must be marked as anonymous
-          if (userData.isAnonymous !== true) {
-            continue;
-          }
-
-          // SAFETY CHECK 2: Must be disconnected
-          if (userData.onlineState !== false || userData.status !== 'offline') {
-            skippedCount++;
-            continue;
-          }
-
-          // SAFETY CHECK 3: Must not have active subscription
-          // Anonymous users don't have subscriptionTier field (undefined) - this is OK
-          // Only skip if user has a PAID subscription (landlord, creator, etc.)
-          if (userData.subscriptionTier && userData.subscriptionTier !== 'free') {
-            console.log(`⚠️ Skipping ${userId}: Has active subscription tier ${userData.subscriptionTier}`);
-            skippedCount++;
-            continue;
-          }
-
-          // SAFETY CHECK 4: Must not own any rooms
-          if (userData.ownedRooms && Array.isArray(userData.ownedRooms) && userData.ownedRooms.length > 0) {
-            console.log(`⚠️ Skipping ${userId}: Owns ${userData.ownedRooms.length} rooms`);
-            skippedCount++;
-            continue;
-          }
-
-          // SAFETY CHECK 5: Must not be currently in any rooms
-          if (userData.rooms && Object.keys(userData.rooms).length > 0) {
-            console.log(`⚠️ Skipping ${userId}: Currently in ${Object.keys(userData.rooms).length} rooms`);
-            skippedCount++;
-            continue;
-          }
-
-          // SAFETY CHECK 6: Verify in Firebase Auth that user is anonymous
-          let authUserIsAnonymous = false;
-          try {
-            const authUser = await auth.getUser(userId);
-            authUserIsAnonymous = authUser.providerData.length === 0;
-          } catch (authError) {
-            console.log(`⚠️ User ${userId} not found in Firebase Auth (will clean database only)`);
-            authUserIsAnonymous = true;
-          }
-
-          if (!authUserIsAnonymous) {
-            console.log(`⚠️ Skipping ${userId}: Firebase Auth shows user is NOT anonymous`);
-            skippedCount++;
-            continue;
-          }
-
-          // ALL CHECKS PASSED - DELETE
-          console.log(`✅ Deleting anonymous user ${userId}`);
-          deletedUsers.push(userId);
-
-          // Delete from Realtime Database
-          await db.ref(`users/${userId}`).remove();
-          deletedFromDatabase++;
-          console.log(`✅ Deleted ${userId} from DATABASE`);
-
-          // Delete from Firebase Auth
-          try {
-            await auth.deleteUser(userId);
-            deletedFromAuth++;
-            console.log(`✅ Deleted ${userId} from AUTHENTICATION`);
-          } catch (authError) {
-            if (authError.code === 'auth/user-not-found') {
-              console.log(`ℹ️ User ${userId} already deleted from Auth`);
-            } else {
-              console.error(`❌ Error deleting ${userId} from Auth:`, authError.message);
-              errors.push({ userId, error: authError.message, location: 'auth' });
-            }
-          }
-        } catch (error) {
-          console.error(`❌ Error processing ${userId}:`, error);
-          errors.push({ userId, error: error.message });
-        }
-      }
+        }),
+      );
 
       const result = {
         success: true,

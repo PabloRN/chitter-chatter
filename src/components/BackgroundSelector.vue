@@ -119,6 +119,7 @@ const roomsStore = useRoomsStore();
 // State
 const activeTab = ref(0);
 const fileInput = ref(null);
+const selectedBackground = ref(null);
 const uploadedFile = ref(null);
 const selectedPreloadedId = ref(null);
 const preloadedBackgrounds = ref([]);
@@ -130,24 +131,7 @@ const successMessage = ref('');
 const errorMessage = ref('');
 
 // Computed
-const selectedBackground = computed(() => {
-  if (activeTab.value === 0 && uploadedFile.value) {
-    return {
-      type: 'uploaded',
-      file: uploadedFile.value,
-      previewUrl: previewUrl.value,
-    };
-  } if (activeTab.value === 1 && selectedPreloadedId.value) {
-    const bg = preloadedBackgrounds.value.find((b) => b.id === selectedPreloadedId.value);
-    return {
-      type: 'preloaded',
-      id: bg.id,
-      url: bg.originalPath,
-      previewUrl: bg.thumbnailPath,
-    };
-  }
-  return null;
-});
+
 
 // Methods
 const loadPreloadedBackgrounds = async () => {
@@ -171,7 +155,6 @@ const onFileChange = (fileOrEvent) => {
   } else if (fileOrEvent && fileOrEvent.target && fileOrEvent.target.files) {
     file = fileOrEvent.target.files[0];
   }
-
   if (!file) {
     clearSelection();
     return;
@@ -185,14 +168,15 @@ const onFileChange = (fileOrEvent) => {
     return;
   }
 
-  // Validate file size (max 5MB)
+  // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
+    console.log('Image file is too large', file);
     showError.value = true;
     errorMessage.value = 'Image file is too large. Please select a file smaller than 10MB';
     uploadedFile.value = null;
     return;
   }
-
+  uploadedFile.value = file;
   try {
     // Clear previous preview
     if (previewUrl.value) {
@@ -203,6 +187,26 @@ const onFileChange = (fileOrEvent) => {
     previewUrl.value = createPreviewURL(file);
     selectedPreloadedId.value = null; // Clear preloaded selection
 
+    // Set selected background
+    if (activeTab.value === 0 && uploadedFile.value) {
+      selectedBackground.value = {
+        type: 'uploaded',
+        file: uploadedFile.value,
+        previewUrl: previewUrl.value,
+      };
+    } if (activeTab.value === 1 && selectedPreloadedId.value) {
+      const bg = preloadedBackgrounds.value.find((b) => b.id === selectedPreloadedId.value);
+      selectedBackground.value = {
+        type: 'preloaded',
+        id: bg.id,
+        url: bg.originalPath,
+        previewUrl: bg.thumbnailPath,
+      };
+    }
+    if (!isUpdatingFromParent.value) {
+      emit('update:modelValue', selectedBackground.value);
+      console.log('background.value', selectedBackground.value);
+    }
     showSuccess.value = true;
     successMessage.value = 'Background ready to upload';
   } catch (error) {
