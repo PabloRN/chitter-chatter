@@ -1,8 +1,9 @@
 import { createVuetify } from 'vuetify';
 import 'vuetify/styles';
 import { aliases, mdi } from 'vuetify/iconsets/mdi';
-import en from '@/locales/en.json';
-import es from '@/locales/es.json';
+import { en, es } from 'vuetify/locale';
+import * as EN from '@/locales/en.json';
+import * as ES from '@/locales/es.json';
 
 export default createVuetify({
   icons: {
@@ -15,7 +16,9 @@ export default createVuetify({
   locale: {
     locale: 'en',
     fallback: 'en',
-    messages: { en, es },
+    messages: {
+      en, es, EN, ES,
+    },
   },
   display: {
     mobileBreakpoint: 'sm',

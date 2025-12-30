@@ -8,7 +8,7 @@
           <div class="gradient-overlay"></div>
           <v-chip v-if="room.isFanArt" class="fan-art-badge ma-2" color="pink" variant="flat">
             <v-icon start>mdi-heart</v-icon>
-            Fan Art Room
+            Fan Art
           </v-chip>
           <!-- Favorite button (top right) -->
           <v-btn @click.stop="toggleFavorite" class="favorite-btn" icon small :disabled="!isUserAuthenticated"

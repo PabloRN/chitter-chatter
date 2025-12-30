@@ -1,26 +1,26 @@
 <!-- eslint-disable max-len -->
 <template>
   <div :style="{ ...typeBoxPosition, textAlign: 'center' }" ref="buttonK">
-    <v-btn class="mx-2 manga-keyboard-icon" fab size="small" :ripple="false" @click="toggleKeyBoard"
+    <!-- Keyboard Toggle Button -->
+    <v-btn class="mx-2 manga-keyboard-icon" fab small :ripple="false" @click="toggleKeyBoard"
       @touchstart.stop="toggleKeyBoard">
-      <v-icon v-if="hideKeyboard" size="20">
-        mdi-keyboard
-      </v-icon>
-      <v-icon v-else size="20">
-        mdi-keyboard-off
-      </v-icon>
+      <v-icon v-if="hideKeyboard" size="20">mdi-keyboard</v-icon>
+      <v-icon v-else size="20">mdi-keyboard-off</v-icon>
     </v-btn>
+
     <v-expand-transition>
       <v-row v-if="!hideKeyboard" no-gutters class="manga-typebox mt-3">
+        <!-- Input Field -->
         <v-col cols="9" class="input-section">
-          <v-text-field @keydown.enter.prevent="enterPress" class="manga-input" rows="1" row-height="2" max="10"
-            :maxlength="61" ref="refDialog" v-model="message" hide-details variant="outlined"
-            placeholder="Type your message..." inputmode="text">
-          </v-text-field>
+          <v-text-field @keydown.enter.prevent="enterPress" class="manga-input" rows="1" row-height="2" :maxlength="61"
+            ref="refDialog" v-model="message" hide-details variant="outlined" placeholder="Type your message..."
+            inputmode="text"></v-text-field>
         </v-col>
+
+        <!-- Talk Button -->
         <v-col cols="3" class="button-section">
           <v-btn class="manga-talk-button" :disabled="message.length === 0" @click="talk"
-            @touchstart.native.prevent="talk" block style="height: 100%">
+            @touchstart.native.prevent="talk" block>
             <span class="talk-text">TALK</span>
           </v-btn>
         </v-col>
@@ -132,9 +132,9 @@ export default {
 };
 </script>
 <style lang="scss">
-@import url('https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-/* Circular Keyboard Button - Same style as menu items */
+/* Keyboard Button */
 .manga-keyboard-icon {
   background: var(--button-background) !important;
   border: var(--border-width) solid var(--button-border) !important;
@@ -145,144 +145,105 @@ export default {
   min-width: 40px !important;
 
   .v-icon {
-    color: var(--button-text) !important;
-    font-size: 18px !important;
+    color: #fff !important;
   }
 
   &:hover {
-    background: var(--button-background-hover) !important;
-    border: var(--border-width-hover) solid var(--button-border) !important;
-
-    .v-icon {
-      color: var(--button-text) !important;
-    }
+    transform: scale(1.1);
+    box-shadow: 0 0 18px rgba(255, 110, 196, 0.9), 0 0 18px rgba(120, 115, 245, 0.9);
   }
 }
 
-/* Glass Typebox Container */
+/* Typebox Container */
 .manga-typebox {
-  z-index: 1100;
-  -webkit-transform: translate3d(0, 0, 0);
   position: absolute;
-  color: #ffffff !important;
   width: 300px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 1px !important;
   right: -115%;
+  color: #ffffff;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 16px;
+  padding: 4px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+
 
   .input-section {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-right: 0;
+    background: rgba(255, 255, 255, 0.15);
+    border: 0px solid rgba(255, 255, 255, 0.3);
     border-radius: 12px 0 0 12px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: var(--shadow-medium);
-    pointer-events: auto !important;
+    box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.2);
   }
 
   .button-section {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-left: 0;
+    background: rgba(0, 0, 0, 0.5);
     border-radius: 0 12px 12px 0;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: var(--shadow-medium);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.2);
+
+    button: {
+      height: 100%;
+    }
   }
 }
 
-/* Manga Input Field */
-.manga-input {
-  pointer-events: auto !important;
-  user-select: text !important;
+/* Input Field */
+.manga-input :deep(.v-field__input) {
+  font-size: 0.9rem !important;
+  color: #fff !important;
+  text-shadow: 1px 1px 2px #000;
+  padding: 6px 10px !important;
 
-  :deep(.v-field) {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    pointer-events: auto !important;
-
-    .v-field__outline {
-      display: none !important;
-    }
-
-    .v-field__input {
-      font-size: 1.2rem !important;
-      font-weight: normal !important;
-      color: #ffffff !important;
-      padding: 8px 12px !important;
-      line-height: 1.3 !important;
-      pointer-events: auto !important;
-
-      input {
-        color: #ffffff !important;
-        pointer-events: auto !important;
-        cursor: text !important;
-        user-select: text !important;
-        -webkit-user-select: text !important;
-        -moz-user-select: text !important;
-      }
-
-      &::placeholder {
-        color: #cccccc !important;
-        opacity: 0.7;
-      }
-    }
-  }
-
-  :deep(.v-messages) {
-    display: none !important;
+  &::placeholder {
+    color: #ddd !important;
+    opacity: 0.8;
   }
 }
 
-/* Glass Talk Button */
+/* Talk Button */
 .manga-talk-button {
   background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.306) !important;
   border-radius: 0 12px 12px 0 !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  transition: all 0.2s ease;
   box-shadow: var(--shadow-medium) !important;
-  transition: all 0.2s ease !important;
+  height: 100% !important;
+
 
   &:hover {
-    background: rgba(0, 0, 0, 0.6) !important;
-    box-shadow: var(--shadow-heavy) !important;
+    transform: scale(1.05);
+    box-shadow: var(--shadow-medium) !important;
   }
 
   &:disabled {
     background: rgba(100, 100, 100, 0.3) !important;
 
     .talk-text {
-      color: #cccccc !important;
+      color: #bbb !important;
+      text-shadow: none;
     }
   }
 
   .talk-text {
-    font-size: 0.8rem !important;
-    font-weight: bold !important;
-    color: #ffffff !important;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-    letter-spacing: 1px;
+    font-size: 0.7rem;
   }
 }
 
-/* Mobile Responsive */
+/* Mobile tweaks */
 @media (max-width: 768px) {
   .manga-typebox {
     width: 280px;
-    left: -110px;
+    right: -110%;
 
     .manga-input :deep(.v-field__input) {
-      font-size: 1.1rem !important;
-      padding: 6px 10px !important;
+      font-size: 0.8rem !important;
+      padding: 4px 8px !important;
     }
 
     .talk-text {
-      font-size: 1rem !important;
+      font-size: 0.8rem !important;
     }
   }
 }

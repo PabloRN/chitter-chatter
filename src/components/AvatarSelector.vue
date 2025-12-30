@@ -128,19 +128,15 @@ onMounted(async () => {
 
 // Watchers
 watch(() => props.showAvatarSelector, (newVal) => {
-  console.log('newVal', newVal);
   sheet.value = newVal;
 });
 
 watch(signingInUpgraded, (newVal, oldVal) => {
-  console.log('🔍 AvatarSelector signingInUpgraded changed:', { newVal, oldVal, itemSelectedUrl: itemSelectedUrl.value });
   // Only trigger when signingInUpgraded changes from false to true
   if (newVal === true && oldVal === false && itemSelectedUrl.value !== '') {
-    console.log('🎨 User upgraded, applying selected avatar:', itemSelectedUrl.value);
     setTimeout(() => {
       userStore.changeAvatar(itemSelectedUrl.value);
       // Close the avatar selector after successful avatar change
-      console.log('🔄 Closing avatar selector');
       emit('onClose');
       // Reset the selected URL
       itemSelectedUrl.value = '';
@@ -224,7 +220,6 @@ function avatarSelected(e, item) {
   e.stopPropagation();
   e.preventDefault();
   if (!currentUser.value.isAnonymous) {
-    console.log('🎨 selected avatar:', item);
     userStore.changeAvatar(item.url);
     emit('onClose');
   } else {

@@ -5,6 +5,7 @@ This guide will walk you through setting up your three subscription tiers in Str
 ---
 
 ## Table of Contents
+
 1. [Prerequisites](#prerequisites)
 2. [Creating Products in Stripe Dashboard](#creating-products-in-stripe-dashboard)
 3. [Getting Your Price IDs](#getting-your-price-ids)
@@ -20,11 +21,13 @@ This guide will walk you through setting up your three subscription tiers in Str
 ## Prerequisites
 
 ### 1. Create/Access Your Stripe Account
+
 1. Go to https://stripe.com
 2. Sign up or log in
 3. Complete business verification (optional for testing, required for production)
 
 ### 2. Get Your API Keys
+
 1. In Stripe Dashboard, click **Developers** → **API keys**
 2. You'll see:
    - **Publishable key**: Starts with `pk_test_` (for frontend)
@@ -32,6 +35,7 @@ This guide will walk you through setting up your three subscription tiers in Str
 3. **IMPORTANT**: Keep secret keys secure, never commit to git
 
 ### 3. Install Stripe in Your Firebase Functions
+
 ```bash
 cd functions
 npm install stripe
@@ -44,6 +48,7 @@ npm install stripe
 ### Product 1: Landlord (Monthly & Annual)
 
 #### Step 1: Create the Product
+
 1. Go to **Products** → **Add Product**
 2. Fill in the details:
    - **Name**: `Landlord`
@@ -52,6 +57,7 @@ npm install stripe
    - **Statement descriptor**: `TOONSTALK LANDLORD` (what appears on credit card statements)
 
 #### Step 2: Set Up Monthly Pricing
+
 1. Under **Pricing**, click **Add pricing**
 2. Configure:
    - **Price**: `9.99`
@@ -62,9 +68,10 @@ npm install stripe
 4. **Important**: Copy the **Price ID** (starts with `price_...`) - you'll need this!
 
 #### Step 3: Set Up Annual Pricing
+
 1. Click **Add another price** on the same product
 2. Configure:
-   - **Price**: `95.88` (20% discount: $9.99 × 12 × 0.8)
+   - **Price**: `95.88` (20% discount: \$9.99 × 12 × 0.8)
    - **Billing period**: `Yearly`
    - **Currency**: `USD`
    - **Pricing model**: `Standard pricing`
@@ -72,6 +79,7 @@ npm install stripe
 4. **Important**: Copy this **Price ID** too
 
 #### Step 4: Add Product Metadata (Optional but Recommended)
+
 1. Scroll to **Product metadata** section
 2. Add key-value pairs:
    ```
@@ -86,6 +94,7 @@ npm install stripe
 ### Product 2: Creator (Monthly & Annual)
 
 #### Step 1: Create the Product
+
 1. Go to **Products** → **Add Product**
 2. Fill in:
    - **Name**: `Creator`
@@ -93,6 +102,7 @@ npm install stripe
    - **Statement descriptor**: `TOONSTALK CREATOR`
 
 #### Step 2: Set Up Monthly Pricing
+
 1. Click **Add pricing**
 2. Configure:
    - **Price**: `29.99`
@@ -101,14 +111,16 @@ npm install stripe
 3. **Copy the Price ID**
 
 #### Step 3: Set Up Annual Pricing
+
 1. Click **Add another price**
 2. Configure:
-   - **Price**: `287.88` (20% discount: $29.99 × 12 × 0.8)
+   - **Price**: `287.88` (20% discount: \$29.99 × 12 × 0.8)
    - **Billing period**: `Yearly`
    - **Currency**: `USD`
 3. **Copy the Price ID**
 
 #### Step 4: Add Product Metadata
+
 ```
 tier: creator
 features: all_landlord_features,custom_branding,api_access,white_label,revenue_sharing,account_manager,early_access,custom_domain
@@ -127,6 +139,7 @@ The Free tier doesn't require a Stripe product since it's not a paid subscriptio
 This is a **one-time purchase** option that allows users to buy individual extra room slots without subscribing.
 
 #### Step 1: Create the Product
+
 1. Go to **Products** → **Add Product**
 2. Fill in:
    - **Name**: `Extra Room Slot`
@@ -134,6 +147,7 @@ This is a **one-time purchase** option that allows users to buy individual extra
    - **Statement descriptor**: `TOONSTALK ROOM`
 
 #### Step 2: Set Up One-Time Pricing
+
 1. Click **Add pricing**
 2. Configure:
    - **Price**: `4.99`
@@ -144,6 +158,7 @@ This is a **one-time purchase** option that allows users to buy individual extra
 4. **Important**: Copy the **Price ID** - you'll need this!
 
 #### Step 3: Add Product Metadata
+
 ```
 type: room_slot
 purchase_type: one_time
@@ -158,15 +173,16 @@ rooms_granted: 1
 
 After creating products, you should have **5 Price IDs**:
 
-| Tier/Product | Period | Price | Price ID Example |
-|--------------|--------|-------|------------------|
-| Landlord | Monthly | $9.99 | `price_1ABCDefgh12345678` |
-| Landlord | Annual | $95.88 | `price_2XYZabcde87654321` |
-| Creator | Monthly | $29.99 | `price_3QRSTuvwx11223344` |
-| Creator | Annual | $287.88 | `price_4MNOPqrst55667788` |
-| Extra Room Slot | One-time | $4.99 | `price_5HIJKlmno99887766` |
+| Tier/Product    | Period   | Price    | Price ID Example          |
+| --------------- | -------- | -------- | ------------------------- |
+| Landlord        | Monthly  | \$9.99   | `price_1ABCDefgh12345678` |
+| Landlord        | Annual   | \$95.88  | `price_2XYZabcde87654321` |
+| Creator         | Monthly  | \$29.99  | `price_3QRSTuvwx11223344` |
+| Creator         | Annual   | \$287.88 | `price_4MNOPqrst55667788` |
+| Extra Room Slot | One-time | \$4.99   | `price_5HIJKlmno99887766` |
 
 ### How to Find Your Price IDs Later
+
 1. Go to **Products** in Stripe Dashboard
 2. Click on a product name
 3. Scroll to **Pricing** section
@@ -183,11 +199,11 @@ Open `src/services/subscriptionService.js` and replace the placeholder Price IDs
 ```javascript
 // Replace these with your actual Price IDs from Stripe Dashboard
 const STRIPE_PRICE_IDS = {
-  landlord_monthly: 'price_YOUR_LANDLORD_MONTHLY_ID',
-  landlord_annual: 'price_YOUR_LANDLORD_ANNUAL_ID',
-  creator_monthly: 'price_YOUR_CREATOR_MONTHLY_ID',
-  creator_annual: 'price_YOUR_CREATOR_ANNUAL_ID',
-  room_slot: 'price_YOUR_ROOM_SLOT_ID', // One-time purchase
+  landlord_monthly: "price_YOUR_LANDLORD_MONTHLY_ID",
+  landlord_annual: "price_YOUR_LANDLORD_ANNUAL_ID",
+  creator_monthly: "price_YOUR_CREATOR_MONTHLY_ID",
+  creator_annual: "price_YOUR_CREATOR_ANNUAL_ID",
+  room_slot: "price_YOUR_ROOM_SLOT_ID", // One-time purchase
 };
 ```
 
@@ -198,10 +214,10 @@ Open `src/views/Subscription.vue` and find the `getPriceId` function (around lin
 ```javascript
 function getPriceId(tier, period) {
   const STRIPE_PRICE_IDS = {
-    landlord_monthly: 'price_YOUR_LANDLORD_MONTHLY_ID',
-    landlord_annual: 'price_YOUR_LANDLORD_ANNUAL_ID',
-    creator_monthly: 'price_YOUR_CREATOR_MONTHLY_ID',
-    creator_annual: 'price_YOUR_CREATOR_ANNUAL_ID',
+    landlord_monthly: "price_YOUR_LANDLORD_MONTHLY_ID",
+    landlord_annual: "price_YOUR_LANDLORD_ANNUAL_ID",
+    creator_monthly: "price_YOUR_CREATOR_MONTHLY_ID",
+    creator_annual: "price_YOUR_CREATOR_ANNUAL_ID",
   };
 
   return STRIPE_PRICE_IDS[`${tier}_${period}`];
@@ -217,16 +233,16 @@ function getPriceId(tier, period) {
 Create or update `functions/src/stripe/stripe-config.js`:
 
 ```javascript
-const { defineString } = require('firebase-functions/params');
+const { defineString } = require("firebase-functions/params");
 
 // Define Stripe secret key parameter
-const stripeSecretKey = defineString('STRIPE_SECRET_KEY');
+const stripeSecretKey = defineString("STRIPE_SECRET_KEY");
 
 // Lazy-load Stripe only when needed
 let stripe;
 const getStripe = () => {
   if (!stripe) {
-    stripe = require('stripe')(stripeSecretKey.value());
+    stripe = require("stripe")(stripeSecretKey.value());
   }
   return stripe;
 };
@@ -252,19 +268,19 @@ STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET
 Create `functions/src/stripe/createCheckoutSession.js`:
 
 ```javascript
-const { onRequest } = require('firebase-functions/v2/https');
-const admin = require('firebase-admin');
-const getStripe = require('./stripe-config');
+const { onRequest } = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
+const getStripe = require("./stripe-config");
 
 exports.createCheckoutSession = onRequest(
   {
-    region: 'us-central1',
+    region: "us-central1",
     cors: true,
   },
   async (req, res) => {
     // Only allow POST requests
-    if (req.method !== 'POST') {
-      res.status(405).send('Method Not Allowed');
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
       return;
     }
 
@@ -273,26 +289,26 @@ exports.createCheckoutSession = onRequest(
 
       // Validate input
       if (!priceId || !userId || !email) {
-        res.status(400).json({ error: 'Missing required parameters' });
+        res.status(400).json({ error: "Missing required parameters" });
         return;
       }
 
       // Verify user authentication
-      const idToken = req.headers.authorization?.split('Bearer ')[1];
+      const idToken = req.headers.authorization?.split("Bearer ")[1];
       if (!idToken) {
-        res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: "Unauthorized" });
         return;
       }
 
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       if (decodedToken.uid !== userId) {
-        res.status(403).json({ error: 'Forbidden' });
+        res.status(403).json({ error: "Forbidden" });
         return;
       }
 
       // Check if user already has a Stripe customer ID
       const userRef = admin.database().ref(`users/${userId}`);
-      const userSnapshot = await userRef.once('value');
+      const userSnapshot = await userRef.once("value");
       const userData = userSnapshot.val();
 
       let customerId = userData?.subscription?.stripeCustomerId;
@@ -309,7 +325,7 @@ exports.createCheckoutSession = onRequest(
         customerId = customer.id;
 
         // Save customer ID to Firebase
-        await userRef.child('subscription').update({
+        await userRef.child("subscription").update({
           stripeCustomerId: customerId,
         });
       }
@@ -317,16 +333,16 @@ exports.createCheckoutSession = onRequest(
       // Create Checkout Session
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
-        payment_method_types: ['card'],
+        payment_method_types: ["card"],
         line_items: [
           {
             price: priceId,
             quantity: 1,
           },
         ],
-        mode: 'subscription',
-        success_url: `${req.headers.origin || 'http://localhost:8080'}/profile?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.origin || 'http://localhost:8080'}/pricing`,
+        mode: "subscription",
+        success_url: `${req.headers.origin || "http://localhost:8080"}/profile?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.origin || "http://localhost:8080"}/pricing`,
         metadata: {
           userId,
         },
@@ -337,10 +353,10 @@ exports.createCheckoutSession = onRequest(
         url: session.url,
       });
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error("Error creating checkout session:", error);
       res.status(500).json({ error: error.message });
     }
-  },
+  }
 );
 ```
 
@@ -349,19 +365,19 @@ exports.createCheckoutSession = onRequest(
 Create `functions/src/stripe/createPortalSession.js`:
 
 ```javascript
-const { onRequest } = require('firebase-functions/v2/https');
-const admin = require('firebase-admin');
-const getStripe = require('./stripe-config');
+const { onRequest } = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
+const getStripe = require("./stripe-config");
 
 exports.createPortalSession = onRequest(
   {
-    region: 'us-central1',
+    region: "us-central1",
     cors: true,
   },
   async (req, res) => {
     // Only allow POST requests
-    if (req.method !== 'POST') {
-      res.status(405).send('Method Not Allowed');
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
       return;
     }
 
@@ -370,30 +386,30 @@ exports.createPortalSession = onRequest(
 
       // Validate input
       if (!userId) {
-        res.status(400).json({ error: 'Missing userId' });
+        res.status(400).json({ error: "Missing userId" });
         return;
       }
 
       // Verify user authentication
-      const idToken = req.headers.authorization?.split('Bearer ')[1];
+      const idToken = req.headers.authorization?.split("Bearer ")[1];
       if (!idToken) {
-        res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: "Unauthorized" });
         return;
       }
 
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       if (decodedToken.uid !== userId) {
-        res.status(403).json({ error: 'Forbidden' });
+        res.status(403).json({ error: "Forbidden" });
         return;
       }
 
       // Get user's Stripe customer ID
-      const userSnapshot = await admin.database().ref(`users/${userId}`).once('value');
+      const userSnapshot = await admin.database().ref(`users/${userId}`).once("value");
       const userData = userSnapshot.val();
       const customerId = userData?.subscription?.stripeCustomerId;
 
       if (!customerId) {
-        res.status(404).json({ error: 'No Stripe customer found' });
+        res.status(404).json({ error: "No Stripe customer found" });
         return;
       }
 
@@ -401,15 +417,15 @@ exports.createPortalSession = onRequest(
       const stripe = getStripe();
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${req.headers.origin || 'http://localhost:8080'}/profile`,
+        return_url: `${req.headers.origin || "http://localhost:8080"}/profile`,
       });
 
       res.status(200).json({ url: session.url });
     } catch (error) {
-      console.error('Error creating portal session:', error);
+      console.error("Error creating portal session:", error);
       res.status(500).json({ error: error.message });
     }
-  },
+  }
 );
 ```
 
@@ -418,9 +434,9 @@ exports.createPortalSession = onRequest(
 Create `functions/src/stripe/purchaseRoomSlot.js`:
 
 ```javascript
-const { onRequest } = require('firebase-functions/v2/https');
-const admin = require('firebase-admin');
-const getStripe = require('./stripe-config');
+const { onRequest } = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
+const getStripe = require("./stripe-config");
 
 /**
  * Create Stripe Checkout Session for one-time room slot purchase
@@ -428,13 +444,13 @@ const getStripe = require('./stripe-config');
  */
 exports.purchaseRoomSlot = onRequest(
   {
-    region: 'us-central1',
+    region: "us-central1",
     cors: true,
   },
   async (req, res) => {
     // Only allow POST requests
-    if (req.method !== 'POST') {
-      res.status(405).send('Method Not Allowed');
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
       return;
     }
 
@@ -443,26 +459,26 @@ exports.purchaseRoomSlot = onRequest(
 
       // Validate input
       if (!priceId || !userId || !email) {
-        res.status(400).json({ error: 'Missing required parameters' });
+        res.status(400).json({ error: "Missing required parameters" });
         return;
       }
 
       // Verify user authentication
-      const idToken = req.headers.authorization?.split('Bearer ')[1];
+      const idToken = req.headers.authorization?.split("Bearer ")[1];
       if (!idToken) {
-        res.status(401).json({ error: 'Unauthorized' });
+        res.status(401).json({ error: "Unauthorized" });
         return;
       }
 
       const decodedToken = await admin.auth().verifyIdToken(idToken);
       if (decodedToken.uid !== userId) {
-        res.status(403).json({ error: 'Forbidden' });
+        res.status(403).json({ error: "Forbidden" });
         return;
       }
 
       // Check if user already has a Stripe customer ID
       const userRef = admin.database().ref(`users/${userId}`);
-      const userSnapshot = await userRef.once('value');
+      const userSnapshot = await userRef.once("value");
       const userData = userSnapshot.val();
 
       let customerId = userData?.subscription?.stripeCustomerId;
@@ -479,7 +495,7 @@ exports.purchaseRoomSlot = onRequest(
         customerId = customer.id;
 
         // Save customer ID to Firebase
-        await userRef.child('subscription').update({
+        await userRef.child("subscription").update({
           stripeCustomerId: customerId,
         });
       }
@@ -487,19 +503,19 @@ exports.purchaseRoomSlot = onRequest(
       // Create Checkout Session for one-time payment
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
-        payment_method_types: ['card'],
+        payment_method_types: ["card"],
         line_items: [
           {
             price: priceId,
             quantity: 1,
           },
         ],
-        mode: 'payment', // One-time payment instead of subscription
-        success_url: `${req.headers.origin || 'http://localhost:8080'}/profile?purchase=success`,
-        cancel_url: `${req.headers.origin || 'http://localhost:8080'}/profile?purchase=cancelled`,
+        mode: "payment", // One-time payment instead of subscription
+        success_url: `${req.headers.origin || "http://localhost:8080"}/profile?purchase=success`,
+        cancel_url: `${req.headers.origin || "http://localhost:8080"}/profile?purchase=cancelled`,
         metadata: {
           userId,
-          type: 'room_slot',
+          type: "room_slot",
         },
       });
 
@@ -508,10 +524,10 @@ exports.purchaseRoomSlot = onRequest(
         url: session.url,
       });
     } catch (error) {
-      console.error('Error creating room slot checkout session:', error);
+      console.error("Error creating room slot checkout session:", error);
       res.status(500).json({ error: error.message });
     }
-  },
+  }
 );
 ```
 
@@ -520,19 +536,19 @@ exports.purchaseRoomSlot = onRequest(
 Update `functions/index.js`:
 
 ```javascript
-const admin = require('firebase-admin');
+const admin = require("firebase-admin");
 admin.initializeApp();
 
 // Import Email functions
-const { sendFeedbackEmail } = require('./src/email/sendFeedbackEmail');
-const { sendWelcomeEmail } = require('./src/email/sendWelcomeEmail');
+const { sendFeedbackEmail } = require("./src/email/sendFeedbackEmail");
+const { sendWelcomeEmail } = require("./src/email/sendWelcomeEmail");
 // ... other email functions
 
 // Import Stripe functions
-const { createCheckoutSession } = require('./src/stripe/createCheckoutSession');
-const { createPortalSession } = require('./src/stripe/createPortalSession');
-const { handleStripeWebhook } = require('./src/stripe/handleStripeWebhook');
-const { purchaseRoomSlot } = require('./src/stripe/purchaseRoomSlot');
+const { createCheckoutSession } = require("./src/stripe/createCheckoutSession");
+const { createPortalSession } = require("./src/stripe/createPortalSession");
+const { handleStripeWebhook } = require("./src/stripe/handleStripeWebhook");
+const { purchaseRoomSlot } = require("./src/stripe/purchaseRoomSlot");
 
 // Export Email functions
 exports.sendFeedbackEmail = sendFeedbackEmail;
@@ -557,36 +573,32 @@ Webhooks notify your backend when subscription and payment events occur (payment
 Create `functions/src/stripe/handleStripeWebhook.js`:
 
 ```javascript
-const { onRequest } = require('firebase-functions/v2/https');
-const { defineString } = require('firebase-functions/params');
-const admin = require('firebase-admin');
-const getStripe = require('./stripe-config');
+const { onRequest } = require("firebase-functions/v2/https");
+const { defineString } = require("firebase-functions/params");
+const admin = require("firebase-admin");
+const getStripe = require("./stripe-config");
 
-const stripeWebhookSecret = defineString('STRIPE_WEBHOOK_SECRET');
+const stripeWebhookSecret = defineString("STRIPE_WEBHOOK_SECRET");
 
 exports.handleStripeWebhook = onRequest(
   {
-    region: 'us-central1',
+    region: "us-central1",
   },
   async (req, res) => {
     // Only allow POST requests
-    if (req.method !== 'POST') {
-      res.status(405).send('Method Not Allowed');
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
       return;
     }
 
-    const sig = req.headers['stripe-signature'];
+    const sig = req.headers["stripe-signature"];
     let event;
 
     try {
       const stripe = getStripe();
-      event = stripe.webhooks.constructEvent(
-        req.rawBody,
-        sig,
-        stripeWebhookSecret.value(),
-      );
+      event = stripe.webhooks.constructEvent(req.rawBody, sig, stripeWebhookSecret.value());
     } catch (err) {
-      console.error('Webhook signature verification failed:', err.message);
+      console.error("Webhook signature verification failed:", err.message);
       res.status(400).send(`Webhook Error: ${err.message}`);
       return;
     }
@@ -595,25 +607,25 @@ exports.handleStripeWebhook = onRequest(
     try {
       switch (event.type) {
         // Subscription events
-        case 'customer.subscription.created':
-        case 'customer.subscription.updated':
+        case "customer.subscription.created":
+        case "customer.subscription.updated":
           await handleSubscriptionUpdate(event.data.object);
           break;
 
-        case 'customer.subscription.deleted':
+        case "customer.subscription.deleted":
           await handleSubscriptionDeleted(event.data.object);
           break;
 
         // Checkout and payment events (for both subscriptions and one-time purchases)
-        case 'checkout.session.completed':
+        case "checkout.session.completed":
           await handleCheckoutCompleted(event.data.object);
           break;
 
-        case 'payment_intent.succeeded':
+        case "payment_intent.succeeded":
           await handlePaymentSucceeded(event.data.object);
           break;
 
-        case 'payment_intent.payment_failed':
+        case "payment_intent.payment_failed":
           await handlePaymentFailed(event.data.object);
           break;
 
@@ -623,48 +635,54 @@ exports.handleStripeWebhook = onRequest(
 
       res.status(200).json({ received: true });
     } catch (error) {
-      console.error('Error handling webhook event:', error);
-      res.status(500).json({ error: 'Webhook handler failed' });
+      console.error("Error handling webhook event:", error);
+      res.status(500).json({ error: "Webhook handler failed" });
     }
-  },
+  }
 );
 
 /**
  * Handle subscription creation/update
  */
 async function handleSubscriptionUpdate(subscription) {
-  const userId = subscription.metadata?.userId || await getUserIdFromCustomer(subscription.customer);
+  const userId = subscription.metadata?.userId || (await getUserIdFromCustomer(subscription.customer));
   if (!userId) {
-    console.error('No userId found for subscription:', subscription.id);
+    console.error("No userId found for subscription:", subscription.id);
     return;
   }
 
   // Determine tier from price ID
   const priceId = subscription.items.data[0].price.id;
-  let tier = 'free';
-  if (priceId.includes('landlord')) {
-    tier = 'landlord';
-  } else if (priceId.includes('creator')) {
-    tier = 'creator';
+  let tier = "free";
+  if (priceId.includes("landlord")) {
+    tier = "landlord";
+  } else if (priceId.includes("creator")) {
+    tier = "creator";
   }
 
   // Update user subscription in Firebase
-  await admin.database().ref(`users/${userId}/subscription`).update({
-    tier,
-    status: subscription.status,
-    stripeCustomerId: subscription.customer,
-    stripePriceId: priceId,
-    stripeSubscriptionId: subscription.id,
-    currentPeriodEnd: subscription.current_period_end * 1000,
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    updatedAt: admin.database.ServerValue.TIMESTAMP,
-  });
+  await admin
+    .database()
+    .ref(`users/${userId}/subscription`)
+    .update({
+      tier,
+      status: subscription.status,
+      stripeCustomerId: subscription.customer,
+      stripePriceId: priceId,
+      stripeSubscriptionId: subscription.id,
+      currentPeriodEnd: subscription.current_period_end * 1000,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      updatedAt: admin.database.ServerValue.TIMESTAMP,
+    });
 
   // Update top-level fields
-  await admin.database().ref(`users/${userId}`).update({
-    subscriptionTier: tier,
-    isCreator: tier === 'creator',
-  });
+  await admin
+    .database()
+    .ref(`users/${userId}`)
+    .update({
+      subscriptionTier: tier,
+      isCreator: tier === "creator",
+    });
 
   console.log(`Subscription updated for user ${userId}: ${tier}`);
 }
@@ -677,14 +695,14 @@ async function handleCheckoutCompleted(session) {
   const type = session.metadata?.type;
 
   if (!userId) {
-    console.error('No userId in checkout session metadata:', session.id);
+    console.error("No userId in checkout session metadata:", session.id);
     return;
   }
 
   // If it's a room slot purchase
-  if (type === 'room_slot' && session.mode === 'payment') {
+  if (type === "room_slot" && session.mode === "payment") {
     const userRef = admin.database().ref(`users/${userId}`);
-    const userSnapshot = await userRef.once('value');
+    const userSnapshot = await userRef.once("value");
     const userData = userSnapshot.val();
 
     const currentSlots = userData?.purchasedRoomSlots || 0;
@@ -697,15 +715,18 @@ async function handleCheckoutCompleted(session) {
 
     // Record the purchase
     const purchaseId = admin.database().ref().push().key;
-    await userRef.child('roomSlotPurchases').child(purchaseId).set({
-      purchaseId,
-      stripeSessionId: session.id,
-      stripePaymentIntent: session.payment_intent,
-      amount: session.amount_total / 100,
-      currency: session.currency,
-      purchasedAt: admin.database.ServerValue.TIMESTAMP,
-      status: 'completed',
-    });
+    await userRef
+      .child("roomSlotPurchases")
+      .child(purchaseId)
+      .set({
+        purchaseId,
+        stripeSessionId: session.id,
+        stripePaymentIntent: session.payment_intent,
+        amount: session.amount_total / 100,
+        currency: session.currency,
+        purchasedAt: admin.database.ServerValue.TIMESTAMP,
+        status: "completed",
+      });
 
     console.log(`Room slot purchased for user ${userId}. New total: ${newSlotCount}`);
   }
@@ -715,22 +736,22 @@ async function handleCheckoutCompleted(session) {
  * Handle subscription deletion
  */
 async function handleSubscriptionDeleted(subscription) {
-  const userId = subscription.metadata?.userId || await getUserIdFromCustomer(subscription.customer);
+  const userId = subscription.metadata?.userId || (await getUserIdFromCustomer(subscription.customer));
   if (!userId) {
-    console.error('No userId found for deleted subscription:', subscription.id);
+    console.error("No userId found for deleted subscription:", subscription.id);
     return;
   }
 
   // Revert to free tier
   await admin.database().ref(`users/${userId}/subscription`).update({
-    tier: 'free',
-    status: 'canceled',
+    tier: "free",
+    status: "canceled",
     cancelAtPeriodEnd: false,
     updatedAt: admin.database.ServerValue.TIMESTAMP,
   });
 
   await admin.database().ref(`users/${userId}`).update({
-    subscriptionTier: 'free',
+    subscriptionTier: "free",
     isCreator: false,
   });
 
@@ -741,7 +762,7 @@ async function handleSubscriptionDeleted(subscription) {
  * Handle successful payment intent
  */
 async function handlePaymentSucceeded(paymentIntent) {
-  console.log('Payment succeeded:', paymentIntent.id);
+  console.log("Payment succeeded:", paymentIntent.id);
   // Additional logging or processing if needed
 }
 
@@ -749,7 +770,7 @@ async function handlePaymentSucceeded(paymentIntent) {
  * Handle failed payment
  */
 async function handlePaymentFailed(paymentIntent) {
-  console.error('Payment failed:', paymentIntent.id);
+  console.error("Payment failed:", paymentIntent.id);
   // You might want to notify the user or log this for follow-up
 }
 
@@ -757,8 +778,8 @@ async function handlePaymentFailed(paymentIntent) {
  * Helper function to get userId from Stripe customer ID
  */
 async function getUserIdFromCustomer(customerId) {
-  const usersRef = admin.database().ref('users');
-  const snapshot = await usersRef.orderByChild('subscription/stripeCustomerId').equalTo(customerId).once('value');
+  const usersRef = admin.database().ref("users");
+  const snapshot = await usersRef.orderByChild("subscription/stripeCustomerId").equalTo(customerId).once("value");
 
   if (snapshot.exists()) {
     const users = snapshot.val();
@@ -787,6 +808,7 @@ First, you need to create a webhook endpoint in Stripe:
 5. **Copy the Signing Secret** (starts with `whsec_...`)
 
 Set the webhook secret in `functions/.env.chitter-chatter-f762a`:
+
 ```bash
 STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET
 ```
@@ -829,11 +851,13 @@ users/{userId}: {
 ### Room Limit Calculation
 
 The total room limit is calculated as:
+
 ```
 Base Limit (by tier) + Purchased Room Slots = Total Limit
 ```
 
 Examples:
+
 - Free user (1 room) + 3 purchased = 4 total rooms
 - Landlord user (10 rooms) + 2 purchased = 12 total rooms
 - Creator user (unlimited) = unlimited (purchases don't add to unlimited)
@@ -872,17 +896,17 @@ async function createPortalSession(userId) {
     const user = auth.currentUser;
 
     if (!user || user.uid !== userId) {
-      throw new Error('Unauthorized');
+      throw new Error("Unauthorized");
     }
 
     // Call Firebase Cloud Function
     const functions = getFunctions();
-    const createPortalSessionFunc = httpsCallable(functions, 'createPortalSession');
+    const createPortalSessionFunc = httpsCallable(functions, "createPortalSession");
     const result = await createPortalSessionFunc();
 
     return result.data.url;
   } catch (error) {
-    console.error('Error creating portal session:', error);
+    console.error("Error creating portal session:", error);
     throw error;
   }
 }
@@ -895,6 +919,7 @@ async function createPortalSession(userId) {
 ### 1. Use Stripe Test Mode
 
 Always test in **Test Mode** before going live:
+
 - Test mode uses `pk_test_...` and `sk_test_...` keys
 - No real money is charged
 - You can use test card numbers
@@ -903,13 +928,14 @@ Always test in **Test Mode** before going live:
 
 Use these test card numbers:
 
-| Card Number | Scenario |
-|-------------|----------|
-| 4242 4242 4242 4242 | Successful payment |
-| 4000 0000 0000 9995 | Declined card |
+| Card Number         | Scenario                            |
+| ------------------- | ----------------------------------- |
+| 4242 4242 4242 4242 | Successful payment                  |
+| 4000 0000 0000 9995 | Declined card                       |
 | 4000 0025 0000 3155 | Requires authentication (3D Secure) |
 
 **Other test details:**
+
 - Expiry: Any future date (e.g., 12/25)
 - CVC: Any 3 digits (e.g., 123)
 - ZIP: Any 5 digits (e.g., 12345)
@@ -917,6 +943,7 @@ Use these test card numbers:
 ### 3. Test the Flow
 
 1. **Test Checkout**:
+
    - Go to your pricing page
    - Click "Subscribe Now" on Landlord or Creator
    - Use test card: 4242 4242 4242 4242
@@ -924,6 +951,7 @@ Use these test card numbers:
    - Check Firebase Database for updated subscription data
 
 2. **Test Webhooks Locally** using Stripe CLI:
+
    ```bash
    # Install Stripe CLI
    brew install stripe/stripe-cli/stripe
@@ -939,6 +967,7 @@ Use these test card numbers:
    ```
 
 3. **Test Customer Portal**:
+
    - Subscribe to a plan
    - Navigate to profile
    - Click "Manage Subscription" button
@@ -948,7 +977,7 @@ Use these test card numbers:
    - Create rooms until you reach your limit (1 for free users)
    - Navigate to profile → "My Rooms"
    - Verify you see the "Room Limit Reached" card with purchase options
-   - Click "Buy 1 Extra Room" ($4.99)
+   - Click "Buy 1 Extra Room" (\$4.99)
    - Complete checkout with test card 4242 4242 4242 4242
    - Verify redirect to profile with success message
    - Check Firebase for updated `purchasedRoomSlots` count
@@ -971,7 +1000,7 @@ Toggle from **Test mode** to **Live mode** in the Stripe Dashboard.
 ### 3. Update Firebase Config with Live Keys
 
 ```bash
-firebase functions:config:set stripe.secret_key="sk_live_YOUR_LIVE_SECRET_KEY"
+firebase functions:config:set stripe.secret_key="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"
 firebase functions:config:set app.url="https://toonstalk.com"
 ```
 
@@ -982,15 +1011,16 @@ firebase functions:config:set app.url="https://toonstalk.com"
 3. Copy the new signing secret
 4. Update config:
    ```bash
-   firebase functions:config:set stripe.webhook_secret="whsec_YOUR_LIVE_WEBHOOK_SECRET"
+   firebase functions:config:set stripe.webhook_secret="whsec_r6b3qmQt36Fe7eaiRSFZubjEyuJxzuhX"
    ```
 
 ### 5. Update Frontend with Live Keys
 
 Update your frontend environment variables:
+
 ```javascript
 // .env or .env.production
-VITE_STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_LIVE_PUBLISHABLE_KEY
+VITE_STRIPE_PUBLISHABLE_KEY = pk_live_YOUR_LIVE_PUBLISHABLE_KEY;
 ```
 
 ### 6. Deploy Functions
@@ -1001,7 +1031,7 @@ firebase deploy --only functions
 
 ### 7. Final Tests
 
-1. Make a real $1 test subscription (you can refund it)
+1. Make a real \$1 test subscription (you can refund it)
 2. Verify webhooks are received
 3. Check subscription appears in Firebase
 4. Test cancellation flow
@@ -1012,24 +1042,28 @@ firebase deploy --only functions
 ## Troubleshooting
 
 ### Webhook Not Firing
+
 - Check webhook endpoint URL is correct
 - Verify webhook secret is set correctly
 - Check Cloud Functions logs: `firebase functions:log`
 - Use Stripe Dashboard → **Events** to see webhook attempts
 
 ### Checkout Session Fails
+
 - Verify Price IDs are correct
 - Check API keys are set properly
 - Look at browser console for errors
 - Check Firebase Functions logs
 
 ### Subscription Not Updating in Firebase
+
 - Verify webhook handler is processing events
 - Check webhook signature verification passes
 - Ensure metadata includes `firebaseUID`
 - Check Firebase Realtime Database rules allow writes
 
 ### Common Errors
+
 ```
 Error: No such price: 'price_...'
 → Price ID is wrong or doesn't exist in your Stripe account

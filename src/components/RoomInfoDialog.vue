@@ -1,9 +1,5 @@
 <template>
-  <v-dialog
-    v-model="show"
-    max-width="700"
-    scrollable
-  >
+  <v-dialog v-model="show" max-width="700" scrollable>
     <v-card class="room-info-dialog">
       <!-- Header -->
       <v-card-title class="dialog-header">
@@ -19,19 +15,10 @@
 
       <v-card-text class="dialog-content">
         <!-- Room Background Banner -->
-        <div
-          v-if="room.backgroundImage"
-          class="room-banner"
-          :style="{ backgroundImage: `url(${room.backgroundImage})` }"
-        >
-          <v-chip
-            v-if="room.isFanArt"
-            class="fan-art-badge"
-            color="pink"
-            variant="flat"
-          >
-            <v-icon start>mdi-heart</v-icon>
-            Fan Art Room
+        <div v-if="room.backgroundImage" class="room-banner"
+          :style="{ backgroundImage: `url(${room.backgroundImage})` }">
+          <v-chip prepend-icon="mdi-heart" v-if="room.isFanArt" class="fan-art-badge" color="pink" variant="flat">
+            Fan Art
           </v-chip>
         </div>
 
@@ -56,13 +43,8 @@
             <div class="info-item" v-if="room.topics?.length">
               <div class="info-label">Topics</div>
               <div class="topics-container">
-                <v-chip
-                  v-for="topic in room.topics"
-                  :key="topic.name"
-                  :color="topic.color"
-                  :prepend-icon="topic.icon"
-                  class="ma-2"
-                >
+                <v-chip v-for="topic in room.topics" :key="topic.name" :color="topic.color" :prepend-icon="topic.icon"
+                  class="ma-2">
                   {{ topic.name }}
                 </v-chip>
               </div>
@@ -99,11 +81,7 @@
           <div class="owner-card">
             <!-- Avatar -->
             <div class="owner-avatar-section">
-              <v-avatar
-                :color="getTierColor(ownerData?.subscriptionTier)"
-                size="80"
-                class="owner-avatar elevation-4"
-              >
+              <v-avatar :color="getTierColor(ownerData?.subscriptionTier)" size="80" class="owner-avatar elevation-4">
                 <span class="avatar-initials-large">
                   {{ getInitials(ownerData?.nickname || room?.createdBy) }}
                 </span>
@@ -111,21 +89,12 @@
 
               <!-- Creator badges -->
               <div v-if="ownerData" class="creator-badges">
-                <v-chip
-                  v-if="ownerData.isCreator || ownerData.subscriptionTier === 'creator'"
-                  color="purple"
-                  variant="flat"
-                  size="small"
-                >
+                <v-chip v-if="ownerData.isCreator || ownerData.subscriptionTier === 'creator'" color="purple"
+                  variant="flat" size="small">
                   <v-icon start size="small">mdi-star</v-icon>
                   Creator
                 </v-chip>
-                <v-chip
-                  v-if="ownerData.subscriptionTier === 'landlord'"
-                  color="blue"
-                  variant="flat"
-                  size="small"
-                >
+                <v-chip v-if="ownerData.subscriptionTier === 'landlord'" color="blue" variant="flat" size="small">
                   <v-icon start size="small">mdi-home-city</v-icon>
                   Landlord
                 </v-chip>
@@ -153,13 +122,9 @@
               <div v-if="showField('showHobbies') && ownerData.hobbies?.length" class="owner-hobbies">
                 <div class="info-label">Interests</div>
                 <div class="hobbies-chips">
-                  <v-chip
-                    v-for="hobby in ownerData.hobbies"
-                    :key="typeof hobby === 'string' ? hobby : hobby.name"
+                  <v-chip v-for="hobby in ownerData.hobbies" :key="typeof hobby === 'string' ? hobby : hobby.name"
                     :color="typeof hobby === 'string' ? 'grey' : hobby.color"
-                    :prepend-icon="typeof hobby === 'object' ? hobby.icon : undefined"
-                    class="ma-2"
-                  >
+                    :prepend-icon="typeof hobby === 'object' ? hobby.icon : undefined" class="ma-2">
                     {{ typeof hobby === 'string' ? hobby : hobby.name }}
                   </v-chip>
                 </div>
@@ -172,12 +137,7 @@
               </div>
 
               <!-- View Full Profile Button -->
-              <v-btn
-                variant="outlined"
-                color="primary"
-                size="small"
-                @click="viewOwnerProfile"
-              >
+              <v-btn variant="outlined" color="primary" size="small" @click="viewOwnerProfile">
                 <v-icon start>mdi-account-details</v-icon>
                 View Full Profile
               </v-btn>
@@ -293,14 +253,16 @@ const viewOwnerProfile = () => {
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.5));
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.5));
     }
 
-    .fan-art-badge {
-      position: relative;
-      z-index: 1;
-      font-weight: 600;
-    }
+
+  }
+
+  .fan-art-badge {
+    position: absolute;
+    z-index: 1;
+    font-weight: 600;
   }
 
   .info-section {

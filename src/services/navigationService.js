@@ -29,7 +29,6 @@ class NavigationService {
     this.tabCommunicationService.addAuthListener((message) => {
       this.handleNavigationMessage(message);
     });
-    console.log('tabCommunicationService methods:', Object.keys(tabCommunicationService));
     // Clean expired data on page load
     this.tabCommunicationService.cleanExpiredTabData();
   }

@@ -456,7 +456,6 @@ const useUserStore = defineStore('user', {
               }
 
               await update(userRef, updates);
-              console.log('✅ Updated existing authenticated user in database');
 
               // 🔍 FORCE DB CHECK: Verify isAnonymous was actually updated
               // This fixes race condition where DB might still show isAnonymous: true
@@ -464,9 +463,7 @@ const useUserStore = defineStore('user', {
               const verifiedData = verifySnapshot.val();
 
               if (verifiedData?.isAnonymous === true) {
-                console.warn('⚠️ RACE CONDITION DETECTED: DB still shows isAnonymous=true, forcing update...');
                 await update(userRef, { isAnonymous: false });
-                console.log('✅ Force updated isAnonymous to false');
               } else {
                 console.log('✅ Verified: isAnonymous correctly set to', verifiedData?.isAnonymous);
               }
@@ -1178,7 +1175,6 @@ const useUserStore = defineStore('user', {
         });
 
         this.friendsListeners.push(friendsUnsubscribe, requestsUnsubscribe);
-        console.log('✅ Friends listeners initialized');
       } catch (error) {
         console.error('Error initializing friends listeners:', error);
       }

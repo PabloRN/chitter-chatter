@@ -11,17 +11,20 @@ Under the General Data Protection Regulation (GDPR) and other privacy laws, you 
 When you request data deletion, we will remove:
 
 ### Personal Information
+
 - Email address and authentication credentials
 - Name and profile information from third-party providers
 - User ID and account details
 
 ### User-Generated Content
+
 - Chat messages sent in rooms
 - Custom avatars uploaded by you
 - Rooms you created (including names and descriptions)
 - Your user profile and preferences
 
 ### Analytics Data
+
 - Usage data associated with your account
 - Session history and engagement metrics
 
@@ -30,15 +33,18 @@ When you request data deletion, we will remove:
 Some data must be retained for legal or legitimate business purposes:
 
 ### Legal Obligations
+
 - Financial records (if applicable) - 7 years
 - Legal disputes or investigations - Until resolved
 - Data required by law or regulation
 
 ### Anonymized Data
+
 - Aggregated analytics that cannot identify you
 - Technical logs with personal identifiers removed
 
 ### Third-Party Data
+
 - Data stored by authentication providers (Google, Yahoo, Facebook)
 - You must contact them separately to delete their records
 
@@ -47,6 +53,7 @@ Some data must be retained for legal or legitimate business purposes:
 ### Option 1: Delete Your Account (Recommended)
 
 **Through the App:**
+
 1. Log in to your ToonsTalk account
 2. Go to Settings → Account Settings
 3. Click "Delete Account"
@@ -62,6 +69,7 @@ If you cannot access your account, send an email to:
 **To:** contact+privacy@toonstalk.com
 **Subject:** Data Deletion Request
 **Include:**
+
 - Your full name (if provided)
 - Email address used for registration
 - Username or User ID (if known)
@@ -82,29 +90,32 @@ To protect your privacy, we must verify your identity before deleting data:
 
 ## Timeline
 
-| Stage | Timeline |
-|-------|----------|
-| Request received | Acknowledged within 48 hours |
-| Identity verification | 3-7 business days |
-| Data deletion | Completed within 30 days |
-| Confirmation | Email sent when completed |
+| Stage                 | Timeline                     |
+| --------------------- | ---------------------------- |
+| Request received      | Acknowledged within 48 hours |
+| Identity verification | 3-7 business days            |
+| Data deletion         | Completed within 30 days     |
+| Confirmation          | Email sent when completed    |
 
 **Exceptions:** We may extend this timeline by up to 60 additional days if the request is complex. We will inform you of any delays.
 
 ## What Happens After Deletion
 
 ### Immediate Effects
+
 - You will be logged out of all devices
 - Your account becomes inaccessible
 - Chat messages no longer display your name (shown as "Deleted User")
 - Uploaded avatars are removed
 
 ### Permanent Effects
+
 - You cannot recover your account or data
 - You may create a new account with the same email after 30 days
 - Rooms you created may be deleted or transferred
 
 ### Backup Systems
+
 - Data is removed from active systems immediately
 - Backup systems purge data within 90 days
 - Technical logs (anonymized) may persist longer
@@ -114,16 +125,19 @@ To protect your privacy, we must verify your identity before deleting data:
 We may refuse or delay deletion if:
 
 ### Legal Holds
+
 - Your data is subject to legal proceedings
 - Required by court order or government request
 - Necessary to comply with legal obligations
 
 ### Security and Fraud
+
 - Your account is involved in ongoing fraud investigation
 - Deletion would compromise platform security
 - Required to protect the rights of others
 
 ### Incomplete Requests
+
 - Unable to verify your identity
 - Request is unclear or missing information
 
@@ -134,31 +148,41 @@ We may refuse or delay deletion if:
 If you don't want full deletion, consider these alternatives:
 
 ### Data Export (Data Portability)
+
 Request a copy of your data before deletion:
+
 - Email: contact+privacy@toonstalk.com
 - Subject: "Data Export Request"
 - Receive JSON file within 14 days
 
 ### Account Deactivation (Temporary)
+
 Temporarily disable your account without deletion:
+
 - Settings → Account Settings → Deactivate Account
 - Reactivate anytime by logging back in
 
 ### Restrict Processing
+
 Limit how we use your data without deleting it:
+
 - Email: contact+privacy@toonstalk.com
 - Subject: "Restrict Data Processing"
 
 ## Special Cases
 
 ### Deceased Users
+
 Family members or executors may request deletion by providing:
+
 - Proof of death (death certificate)
 - Proof of relationship or legal authority
 - Contact: contact+privacy@toonstalk.com
 
 ### Minors
+
 Parents/guardians may request deletion of their child's data:
+
 - Provide proof of guardianship
 - Confirm child's age and account details
 - Contact: contact+privacy@toonstalk.com
@@ -172,7 +196,7 @@ Email: contact+dpo@toonstalk.com
 Email: contact+privacy@toonstalk.com
 
 **Support Team**
-Email: contact+support@toonstalk.com
+Email: toonstalk.contact@gmail.com
 
 **Mailing Address**
 [Your business address for GDPR compliance]
@@ -182,6 +206,7 @@ Email: contact+support@toonstalk.com
 If your deletion request is denied:
 
 1. **Request Review**: Email contact+appeals@toonstalk.com with:
+
    - Original request details
    - Reason for denial
    - Additional information or clarification
@@ -206,7 +231,7 @@ A: Active systems: 30 days. Backups: 90 days. Anonymized logs may persist longer
 A: Contact contact+privacy@toonstalk.com to discuss selective deletion options.
 
 **Q: What if I can't access my email?**
-A: Contact contact+support@toonstalk.com. Additional verification will be required.
+A: Contact toonstalk.contact@gmail.com. Additional verification will be required.
 
 ---
 

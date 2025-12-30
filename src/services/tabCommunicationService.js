@@ -308,7 +308,7 @@ class TabCommunicationService {
             }
           } catch (parseError) {
             // Skip this key - it's not a JSON object (e.g., chitter_tab_id)
-            console.log(`Skipping non-JSON key: ${key}`);
+            console.log('Skipping');
           }
         }
       });

@@ -85,7 +85,6 @@ const useNotificationsStore = defineStore('notifications', {
       }
 
       if (this.isListening) {
-        console.log('🔔 Notifications already listening');
         return;
       }
 
@@ -107,7 +106,6 @@ const useNotificationsStore = defineStore('notifications', {
         });
 
         this.isListening = true;
-        console.log('✅ Notifications initialized for user:', userId);
       } catch (error) {
         console.error('Error initializing notifications:', error);
         this.error = error.message || 'Failed to initialize notifications';

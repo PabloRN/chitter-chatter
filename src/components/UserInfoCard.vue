@@ -197,7 +197,7 @@ watch(() => props.modelValue, (newValue) => {
   top: 12px;
   right: 12px;
   z-index: 10;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255);
   backdrop-filter: blur(10px);
 }
 

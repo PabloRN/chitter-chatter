@@ -6,8 +6,7 @@
         <div class="header-overlay">
 
           <!-- Fan Art Badge -->
-          <v-chip v-if="room.isFanArt" class="fan-art-badge" color="pink" variant="flat">
-            <v-icon start>mdi-heart</v-icon>
+          <v-chip prepend-icon="mdi-heart" v-if="room.isFanArt" class="fan-art-badge" color="pink" variant="flat">
             Fan Art
           </v-chip>
           <v-btn icon class="close-btn" @click="close">
@@ -150,7 +149,8 @@ const enterRoom = () => {
 }
 
 .header-overlay {
-  position: absolute;
+  position: relative;
+  height: 100%;
   top: 0;
   left: 0;
   right: 0;
@@ -171,6 +171,7 @@ const enterRoom = () => {
 }
 
 .fan-art-badge {
+  position: absolute;
   font-weight: 600;
 }
 

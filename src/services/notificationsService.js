@@ -263,8 +263,6 @@ class NotificationsService {
 
           // Sort by createdAt descending (newest first)
           notifications.sort((a, b) => b.createdAt - a.createdAt);
-
-          console.log(`🔔 Notifications updated: ${notifications.length} active`);
           callback(notifications);
         },
         (error) => {

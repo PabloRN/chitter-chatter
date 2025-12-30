@@ -426,7 +426,6 @@ class FriendsService {
             });
           }
 
-          console.log(`👥 Friends list updated: ${friends.length} friends`);
           callback(friends);
         },
         (error) => {
@@ -464,8 +463,6 @@ class FriendsService {
               .sort((a, b) => b.createdAt - a.createdAt)
               .forEach((req) => requests.push(req));
           }
-
-          console.log(`📬 Friend requests updated: ${requests.length} pending`);
           callback(requests);
         },
         (error) => {

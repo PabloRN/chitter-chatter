@@ -4,7 +4,7 @@
     :ref="actualUserId" @click="chatterClicked" tabindex="0" @keydown.enter="chatterClicked"
     @keydown.space="handleSpaceKey" role="button">
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
-      <div class="nickname">{{ nickname }}</div>
+      <div v-if="!isCurrentUser" class="nickname">{{ nickname }}</div>
     </div>
     <div class="avatar-with-bubble">
       <DialogBubble :ref="`$bubble_${actualUserId}`" :id="`$bubble_${actualUserId}`" :message="message"
@@ -660,8 +660,8 @@ watch(() => props.avatar, async (newAvatar) => {
 
 .nicknameWrapper {
   position: absolute;
-  top: -25px;
-  left: 0;
+  top: -35px;
+  left: -5px;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -674,6 +674,10 @@ watch(() => props.avatar, async (newAvatar) => {
   font-family: 'Nanum Pen Script', cursive !important;
   font-size: 1.5em;
   width: 120%;
+  border: 2px solid #ffffff;
+  background-color: rgba(0, 0, 0, 0.5);
+  text-align: center;
+  display: inline-block;
 }
 
 @media (max-width: 768px) {

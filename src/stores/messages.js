@@ -193,7 +193,6 @@ const useMessagesStore = defineStore('messages', {
     async getDialogs(roomId) {
       // Check if already listening to this room
       if (this.activeListeners[roomId]) {
-        console.log('Already listening to room:', roomId);
         return; // Prevent duplicate listeners
       }
 
@@ -230,8 +229,6 @@ const useMessagesStore = defineStore('messages', {
           unsubscribeRemove,
         };
         this.currentRoomId = roomId;
-
-        console.log('Started listening to room:', roomId);
       } catch (error) {
         this.setRoomsFail();
       }
@@ -248,8 +245,6 @@ const useMessagesStore = defineStore('messages', {
 
         // Remove from tracking
         delete this.activeListeners[roomId];
-
-        console.log('Unsubscribed from room:', roomId);
       }
 
       // Clear current room if it matches
@@ -265,8 +260,6 @@ const useMessagesStore = defineStore('messages', {
 
         // Clear local message state for this room
         this.removeDialogsSuccess();
-
-        console.log('Removed dialogs listener for room:', roomId);
       } catch (error) {
         console.error('Error removing dialogs:', error);
         this.setRoomsFail();
