@@ -1000,7 +1000,7 @@ Toggle from **Test mode** to **Live mode** in the Stripe Dashboard.
 ### 3. Update Firebase Config with Live Keys
 
 ```bash
-firebase functions:config:set stripe.secret_key="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"
+firebase functions:config:set stripe.secret_key="xxx"
 firebase functions:config:set app.url="https://toonstalk.com"
 ```
 
@@ -1011,7 +1011,7 @@ firebase functions:config:set app.url="https://toonstalk.com"
 3. Copy the new signing secret
 4. Update config:
    ```bash
-   firebase functions:config:set stripe.webhook_secret="whsec_r6b3qmQt36Fe7eaiRSFZubjEyuJxzuhX"
+   firebase functions:config:set stripe.webhook_secret="xxx"
    ```
 
 ### 5. Update Frontend with Live Keys
