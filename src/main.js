@@ -1,4 +1,6 @@
 import { createApp } from 'vue';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { createHead } from '@unhead/vue/client';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import { initializeApp } from 'firebase/app';
@@ -14,6 +16,7 @@ import useMainStore from './stores/main';
 import vuetify from './plugins/vuetify';
 import i18n from './i18n';
 import analyticsService from './services/analyticsService';
+
 // import './utils/vee-validate' // Removed for now
 import './assets/scss/main.scss';
 
@@ -64,6 +67,7 @@ const initFirebaseCompat = () => {
 initFirebaseCompat();
 
 const app = createApp(App);
+const head = createHead();
 
 // Global error handler to catch unhandled component errors
 app.config.errorHandler = (err, instance, info) => {
@@ -85,6 +89,7 @@ app.use(pinia);
 app.use(router);
 app.use(vuetify);
 app.use(i18n);
+app.use(head);
 app.use(Storage, storageOptions);
 
 // Configure reCAPTCHA v3

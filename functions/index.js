@@ -48,6 +48,15 @@ const { recreateUser } = require('./src/admin/recreateUser');
 const { getAllUsers } = require('./src/admin/getAllUsers');
 
 // ============================================================================
+// SITEMAP FUNCTIONS - Import from src/sitemap/
+// ============================================================================
+const {
+  generateSitemap,
+  scheduledSitemapUpdate,
+  serveSitemap,
+} = require('./src/sitemap/generateSitemap');
+
+// ============================================================================
 // EXPORTS - Export all functions
 // ============================================================================
 
@@ -82,3 +91,8 @@ exports.approvePendingDeletion = approvePendingDeletion;
 // Admin Functions
 exports.recreateUser = recreateUser;
 exports.getAllUsers = getAllUsers;
+
+// Sitemap Functions
+exports.generateSitemap = generateSitemap; // Manual trigger
+exports.scheduledSitemapUpdate = scheduledSitemapUpdate; // Runs daily at 3 AM
+exports.serveSitemap = serveSitemap; // Serves sitemap.xml

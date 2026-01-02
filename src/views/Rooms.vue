@@ -159,6 +159,7 @@ import FeedbackDialog from '@/components/FeedbackDialog';
 import NotificationBell from '@/components/NotificationBell';
 import FriendRequestsDialog from '@/components/FriendRequestsDialog';
 import ProfileMenu from '@/components/ProfileMenu.vue';
+import { useSeo } from '@/composables/useSeo';
 
 // ✅ stores
 const roomsStore = useRoomsStore();
@@ -299,6 +300,21 @@ onMounted(() => {
   authCheckInterval = setInterval(() => {
     checkAuthenticationStatus();
   }, 1000);
+
+  useSeo({
+    title: 'Browse Chat Rooms - Find Your Community on Toonstalk',
+    description:
+      'Discover thousands of animated chat rooms where people meet live as avatars. Join gaming communities, art collectives, study groups, and real-time friend hangouts on Toonstalk.',
+    url: 'https://toonstalk.com/rooms',
+    keywords: [
+      'chat rooms',
+      'online communities',
+      'animated chat',
+      'avatar chat rooms',
+      'real-time chat',
+      'browse rooms',
+    ],
+  });
 });
 
 onBeforeUnmount(() => {

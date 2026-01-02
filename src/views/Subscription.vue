@@ -285,7 +285,8 @@
           Confirm Subscription Change
         </v-card-title>
         <v-card-text v-if="pendingDowngrade">
-          <p><strong>You're about to downgrade from {{ pendingDowngrade.from }} to {{ pendingDowngrade.to }}.</strong></p>
+          <p><strong>You're about to downgrade from {{ pendingDowngrade.from }} to {{ pendingDowngrade.to }}.</strong>
+          </p>
 
           <v-alert type="info" class="my-4">
             <strong>When does this take effect?</strong><br>
@@ -301,7 +302,9 @@
             <li>Unlimited custom avatars/backgrounds</li>
           </ul>
 
-          <p class="mt-4"><strong>Note:</strong> If you currently have more than 5 rooms, you'll need to delete or archive some before creating new ones after the downgrade.</p>
+          <p class="mt-4"><strong>Note:</strong> If you currently have more than 5 rooms, you'll need to delete or
+            archive
+            some before creating new ones after the downgrade.</p>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -334,7 +337,7 @@
 
 <script setup>
 import {
-  ref, computed, watch, nextTick,
+  ref, computed, watch, nextTick, onMounted
 } from 'vue';
 import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
@@ -342,6 +345,25 @@ import useMainStore from '@/stores/main';
 import subscriptionService from '@/services/subscriptionService';
 import { formatDate } from '@/utils/dateUtils';
 import { TIER_RANKS } from '@/constants/tiers';
+import { useSeo } from '@/composables/useSeo';
+
+//on mounted
+onMounted(() => {
+  useSeo({
+    title: 'Toonstalk Pricing - Free Chat Rooms, Unlimited Upgrades',
+    description:
+      'Start free with 1 live chat room. Upgrade to Owner for unlimited avatar customization, or go Landlord/Creator to host multiple animated rooms on Toonstalk.',
+    url: 'https://toonstalk.com/pricing',
+    keywords: [
+      'premium chat rooms',
+      'chat room pricing',
+      'avatar chat subscriptions',
+      'unlimited rooms',
+      'toonstalk pricing',
+    ],
+  });
+});
+
 
 const router = useRouter();
 const userStore = useUserStore();

@@ -73,7 +73,7 @@ class AnalyticsService {
    * Check if consent popup should be shown
    */
   shouldShowConsent() {
-    return !localStorage.getItem('analytics_consent');
+    return !localStorage.getItem('analytics_consent') && !this.consentGiven;
   }
 
   /**
@@ -158,6 +158,13 @@ class AnalyticsService {
    */
   trackAuthMethod(method) {
     this.logEvent('auth_method_used', { method });
+  }
+
+  /**
+   * Track custom event
+   */
+  trackCustomEvent(eventName, params = {}) {
+    this.logEvent(eventName, params);
   }
 }
 

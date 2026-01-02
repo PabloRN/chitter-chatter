@@ -6,7 +6,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <link rel="icon" href="/favicon.ico">
-  <title>Toonstalk</title>
+  <title>Toonstalk - Create Animated Chat Rooms for Your Community</title>
+  <meta name="description"
+    content="Join thousands creating real-time animated chat rooms.
+    Perfect for gamers, creators, educators, and friend groups. Customize avatars, backgrounds, and chat with unlimited users. Free to start!">
   <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css">
@@ -14,6 +17,28 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.css" />
+
+  <!-- Schema.org Organization structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Toonstalk",
+    "url": "https://toonstalk.com",
+    "logo": "https://toonstalk.com/logo.png",
+    "sameAs": [
+      "https://twitter.com/toonstalk",
+      "https://discord.gg/toonstalk",
+      "https://instagram.com/toonstalk"
+    ],
+    "description": "Create and join animated chat rooms with friends, gamers, and communities worldwide.",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "support@toonstalk.com",
+      "contactType": "Customer Support"
+    }
+  }
+  </script>
 </head>
 
 <body>
@@ -22,8 +47,8 @@
       continue.</strong>
   </noscript>
   <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
   <script src="https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>

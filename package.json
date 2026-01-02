@@ -13,6 +13,7 @@
     "release:hotfix": "node scripts/release.js --hotfix"
   },
   "dependencies": {
+    "@unhead/vue": "^2.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^10.7.1",
     "firebaseui": "^6.1.0",

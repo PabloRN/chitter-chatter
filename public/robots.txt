@@ -1,2 +1,19 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /profile
+Disallow: /user/
+Disallow: /acctmgmt/
+Disallow: /*?*session=
+Disallow: /*?*token=
+
+# Allow all other pages
+Allow: /
+Allow: /rooms
+Allow: /rooms/*
+Allow: /pricing
+
+# Sitemap
+Sitemap: https://toonstalk.com/sitemap.xml
+
+# Crawl delay for good behavior
+Crawl-delay: 1

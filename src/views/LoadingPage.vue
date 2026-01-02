@@ -10,17 +10,23 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'LoadingPage',
+<script setup>
+import { useSeo } from '@/composables/useSeo';
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
-  data: () => ({
+const router = useRouter();
 
-  }),
-  mounted() {
-    setTimeout(() => { this.$router.push({ name: 'rooms' }); }, 5000); // this.setDrawer(false);
-  },
-};
+onMounted(() => {
+  useSeo({
+    title: 'Toonstalk - Create Animated Chat Rooms for Your Community',
+    description: 'Join thousands creating real-time animated chat rooms. Perfect for gamers, creators, educators, and friend groups. Customize avatars, backgrounds, and chat with unlimited users. Free to start!',
+    url: 'https://toonstalk.com',
+    keywords: ['toonstalk', 'animated chat', 'online chat rooms', 'virtual communities', 'create chat room'],
+  });
+  setTimeout(() => { router.push({ name: 'rooms' }); }, 5000); // this.setDrawer(false);
+})
+
 </script>
 <style scoped>
 .slogan {

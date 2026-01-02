@@ -59,6 +59,14 @@
 
           <v-tooltip left>
             <template v-slot:activator="{ props }">
+              <ShareButton :url="`https://toonstalk.com/rooms/${roomId}`" :title="currentRoom.name"
+                :description="currentRoom.description" variant="text" size="small" />
+            </template>
+            <span>Exit Room</span>
+          </v-tooltip>
+
+          <v-tooltip left>
+            <template v-slot:activator="{ props }">
               <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
                 @click.prevent.stop="handleEmit('reportRoom')" @touchstart.native.prevent="handleEmit('reportRoom')">
                 <div>
@@ -154,9 +162,11 @@ import useRoomsStore from '@/stores/rooms';
 import useMessagesStore from '@/stores/messages';
 import useMainStore from '@/stores/main';
 import useTheme from '@/composables/useTheme';
+import { useSeo, createRoomSchema } from '@/composables/useSeo';
 import ReportRoomDialog from '@/components/ReportRoomDialog.vue';
 import RoomInfoDialog from '@/components/RoomInfoDialog.vue';
 import LoginDialogBubble from '@/components/LoginDialogBubble';
+import ShareButton from '@/components/ShareButton.vue';
 
 // Props
 const props = defineProps({
@@ -219,6 +229,36 @@ const chattersArray = computed(() => {
   return (avatarTrigger || dataTrigger || chattersCounter.value > 0) ? Array.from(chatters.value) : [];
 });
 const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms?.some((room) => room === props.roomId));
+
+// SEO - Dynamic meta tags for this room
+watch(currentRoom, (room) => {
+  if (room && room.name) {
+    const roomUrl = `https://toonstalk.com/rooms/${props.roomId || route.params.roomId}`;
+    const roomTitle = `${room.name} - Join This Chat Room on Toonstalk`;
+    const roomDescription = room.description
+      ? `Join ${room.name}, an animated chat room on Toonstalk. ${room.description}`
+      : `Join ${room.name}, an animated chat room on Toonstalk. Chat with others in real-time with custom avatars and backgrounds.`;
+
+    useSeo({
+      title: roomTitle,
+      description: roomDescription,
+      image: room.backgroundImage || room.thumbnail || 'https://toonstalk.com/og-default.png',
+      url: roomUrl,
+      type: 'website',
+      schema: createRoomSchema({
+        id: props.roomId || route.params.roomId,
+        name: room.name,
+        description: room.description || roomDescription,
+        thumbnail: room.backgroundImage || room.thumbnail,
+        ownerName: room.owner?.nickname || room.ownerName || 'Toonstalk User',
+        createdAt: room.createdAt,
+        userCount: room.users ? Object.keys(room.users).length : 0,
+      }),
+      keywords: ['chat room', 'animated chat', 'online community', room.name, 'toonstalk'],
+    });
+  }
+}, { immediate: true });
+
 // Methods
 function handleReportRoom(roomId, roomName) {
   reportTargetRoomId.value = roomId;
