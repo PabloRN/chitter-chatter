@@ -25,7 +25,6 @@ const router = useRouter();
 //   keywords: [],
 //   schema: null,
 // });
-useSeo(seoConfig);
 onMounted(() => {
   useSeo({
     title: 'Toonstalk - Create Animated Chat Rooms for Your Community',

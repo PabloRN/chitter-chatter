@@ -1,8 +1,8 @@
-## [1.4.0] - 2026-01-02
+## [1.4.1] - 2026-01-04
 
 ### 📦 Other Changes
 
-- Add SEO improvements ([dcd623c])
-- Merge branch 'development' of https://github.com/PabloRN/chitter-chatter into development ([36f9a0e])
-- release notes 1.3.0 ([b9453e5])
-- release notes 1.3.0 ([1fa83d3])
+- add slug to url and improvements ([27ca24e])
+- release notes 1.4.0 ([5f59844])
+- fix generate site map from rooms ([d86187d])
+- delay survey to 7 min ([3597bf8])
