@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-01-04
+
+### 📦 Other Changes
+
+- add slug to url and improvements ([27ca24e])
+- release notes 1.4.0 ([5f59844])
+- fix generate site map from rooms ([d86187d])
+- delay survey to 7 min ([3597bf8])
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [1.4.0] - 2026-01-02
 
 ### 📦 Other Changes
