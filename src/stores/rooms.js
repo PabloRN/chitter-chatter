@@ -9,21 +9,11 @@ import { createRoom, validateRoom, USER_ROOM_LIMITS } from '@/utils/roomTypes';
 import analyticsService from '@/services/analyticsService';
 import { onIdTokenChanged } from 'firebase/auth';
 import { auth } from '@/main';
+import slugify from '@/utils/slugify';
 import useUserStore from './user';
 
 let activeRoom = null;
 // { roomId, roomUsersKey }
-
-export function initRoomAuthListener() {
-  onIdTokenChanged(auth, async (user) => {
-    if (!user && activeRoom) {
-      const { roomId, roomUsersKey } = activeRoom;
-      console.log('Removing user from room', roomId, roomUsersKey);
-      await remove(ref(getDatabase(), `rooms/${roomId}/users/${roomUsersKey}`));
-      activeRoom = null;
-    }
-  });
-}
 
 const useRoomsStore = defineStore('rooms', {
   state: () => ({
@@ -81,6 +71,17 @@ const useRoomsStore = defineStore('rooms', {
   },
 
   actions: {
+    async initRoomAuthListener() {
+      onIdTokenChanged(auth, async (user) => {
+        if (!user && activeRoom) {
+          const { roomId, roomUsersKey } = activeRoom;
+          console.log('Removing user from room', roomId, roomUsersKey);
+          await remove(ref(getDatabase(), `rooms/${roomId}/users/${roomUsersKey}`));
+          activeRoom = null;
+        }
+      });
+    },
+
     async getRooms() {
       this.getRoomsLoading();
       const db = getDatabase();
@@ -465,13 +466,27 @@ const useRoomsStore = defineStore('rooms', {
         const roomRef = push(ref(db, 'rooms'));
         const roomId = roomRef.key;
 
+        const baseSlug = slugify(roomData.name);
+        let finalSlug = baseSlug;
+
+        // Check if slug already exists
+        const slugCheckRef = ref(db, `roomSlugs/${baseSlug}`);
+        const slugExists = await get(slugCheckRef);
+
+        if (slugExists.exists()) {
+          // Collision! Append room ID to make unique
+          finalSlug = `${baseSlug}-${roomId.slice(-6)}`;
+        }
+
         const newRoom = createRoom({
           ...roomData,
           id: roomId,
+          slug: finalSlug,
           ownerId: currentUser.userId,
         });
 
         await set(roomRef, newRoom);
+        await set(ref(db, `roomSlugs/${finalSlug}`), roomId);
 
         // Add roomId to user's ownedRooms array
         const userRef = ref(db, `users/${currentUser.userId}/ownedRooms`);

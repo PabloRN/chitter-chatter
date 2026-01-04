@@ -135,7 +135,7 @@ watch(signingInUpgraded, (newVal, oldVal) => {
   // Only trigger when signingInUpgraded changes from false to true
   if (newVal === true && oldVal === false && itemSelectedUrl.value !== '') {
     setTimeout(() => {
-      userStore.changeAvatar(itemSelectedUrl.value);
+      userStore.changeAvatar(itemSelectedUrl.value, props.roomId);
       // Close the avatar selector after successful avatar change
       emit('onClose');
       // Reset the selected URL
@@ -220,7 +220,7 @@ function avatarSelected(e, item) {
   e.stopPropagation();
   e.preventDefault();
   if (!currentUser.value.isAnonymous) {
-    userStore.changeAvatar(item.url);
+    userStore.changeAvatar(item.url, props.roomId);
     emit('onClose');
   } else {
     itemSelectedUrl.value = item.url;

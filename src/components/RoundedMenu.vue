@@ -6,14 +6,14 @@
     </v-btn>
     <!-- Dummy buffer item to prevent accidental triggers when opening menu -->
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent.stop
-      @touchstart.native.prevent>
+      @touchstart.prevent>
       <div>
         <v-icon class="manga-icon" style="opacity: 0.3;"> mdi-circle-outline </v-icon>
       </div>
       <div class="icon-caption" style="opacity: 0.3;">Buffer</div>
     </v-btn>
     <v-btn :disabled="isBlockedBy" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="handleEmit('addFriend')" @touchstart.native.prevent="handleEmit('addFriend')">
+      @click.prevent="handleEmit('addFriend')" @touchstart.prevent="handleEmit('addFriend')">
       <div>
         <v-icon :disabled="isBlockedBy" class="manga-icon">
           mdi-account-plus </v-icon>
@@ -21,21 +21,21 @@
       <div :disabled="isBlockedBy" class="icon-caption">Add friend</div>
     </v-btn>
     <v-btn :disabled="isBlockedBy" class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
-      @click.prevent.stop="handleEmit('privateMessage')" @touchstart.native.prevent.stop="handleEmit('privateMessage')">
+      @click.prevent.stop="handleEmit('privateMessage')" @touchstart.prevent.stop="handleEmit('privateMessage')">
       <div>
         <v-icon :disabled="isBlockedBy" class="manga-icon"> mdi-forum-outline </v-icon>
       </div>
       <div :disabled="isBlockedBy" class="icon-caption">Talk privately</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="handleEmit('userInfo')" @touchstart.native.prevent="handleEmit('userInfo')">
+      @click.prevent="handleEmit('userInfo')" @touchstart.prevent="handleEmit('userInfo')">
       <div>
         <v-icon class="manga-icon"> mdi-information </v-icon>
       </div>
       <div class="icon-caption">Info</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="handleEmit('blockUser')" @touchstart.native.prevent="handleEmit('blockUser')">
+      @click.prevent="handleEmit('blockUser')" @touchstart.prevent="handleEmit('blockUser')">
 
       <div>
 
@@ -45,14 +45,14 @@
       <div class="icon-caption"> {{ isBlocked ? 'Unblock' : 'Block' }} </div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent="handleEmit('reportUser')" @touchstart.native.prevent="handleEmit('reportUser')">
+      @click.prevent="handleEmit('reportUser')" @touchstart.prevent="handleEmit('reportUser')">
       <div>
         <v-icon class="manga-icon"> mdi-car-emergency </v-icon>
       </div>
       <div class="icon-caption">Report</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="handleEmit('showUserMessages')" @touchstart.native.prevent="handleEmit('showUserMessages')">
+      @click.prevent.stop="handleEmit('showUserMessages')" @touchstart.prevent="handleEmit('showUserMessages')">
 
       <div>
         <v-icon class="manga-icon"> mdi-timeline-text-outline </v-icon>
@@ -96,7 +96,7 @@ const props = defineProps({
 });
 const userStore = useUserStore();
 // emits
-const emit = defineEmits(['showUserMessages', 'privateMessage', 'blockUser', 'showLoginDialog', 'userInfo']);
+const emit = defineEmits(['showUserMessages', 'privateMessage', 'blockUser', 'showLoginDialog', 'userInfo', 'addFriend']);
 const hideMenu = ref(true);
 const movingTouch = ref(false);
 const showReportDialog = ref(false);
@@ -113,14 +113,13 @@ const typeBoxPosition = computed(() => {
   const avatarHeight = props.avatarDimensions.height;
   const typeBoxHeight = window.innerWidth <= 768 ? 200 : 220;
   const bottomOffset = avatarHeight + typeBoxHeight;
-  console.log('avatar height', avatarHeight);
   return {
     left: `${0}px`,
     bottom: `${bottomOffset - typeBoxHeight + 100}px`,
   };
 });
 onMounted(() => {
-  console.log('RoundedMenu mounted props', props);
+  // console.log('RoundedMenu mounted props', props);
 });
 
 const toggleMenu = () => {

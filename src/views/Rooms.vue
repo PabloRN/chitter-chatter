@@ -146,7 +146,7 @@
 
 <script setup>
 import {
-  ref, computed, watch, onMounted, onBeforeUnmount, nextTick,
+  ref, computed, watch, onMounted, onBeforeUnmount, nextTick
 } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -283,10 +283,9 @@ function handleFeedbackError(error) {
 
 // ✅ lifecycle
 let authCheckInterval = null;
-
 onMounted(() => {
   roomsStore.getRooms();
-
+  roomsStore.initRoomAuthListener();
   // Fetch owned rooms if user is authenticated
   if (isUserAuthenticated.value) {
     roomsStore.fetchOwnedRooms(userStore.currentUser.userId);
@@ -402,10 +401,6 @@ watch(isUserAuthenticated, (newVal) => {
   position: relative;
 }
 
-.room-card-item:hover {
-  /* transform: scale(1.05) translateY(-4px); */
-  /* z-index: 2; */
-}
 
 .room-card-item:hover::after {
   content: '';

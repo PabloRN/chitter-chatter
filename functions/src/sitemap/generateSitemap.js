@@ -27,10 +27,11 @@ async function generateSitemapXml() {
 
     roomsSnapshot.forEach((child) => {
       const room = child.val();
-      // Only include non-private rooms
-      if (room && !room.private) {
+      if (room && !room.private && !room.isPrivate) {
+        const slug = room.slug || child.key;
+
         rooms.push({
-          url: `/rooms/${child.key}`,
+          url: `/rooms/${slug}`,
           changefreq: 'daily',
           priority: 0.7,
           lastmod: room.lastMessageAt || room.createdAt || null,

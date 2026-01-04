@@ -337,7 +337,7 @@
 
 <script setup>
 import {
-  ref, computed, watch, nextTick, onMounted
+  ref, computed, watch, nextTick, onMounted,
 } from 'vue';
 import { useRouter } from 'vue-router';
 import useUserStore from '@/stores/user';
@@ -346,6 +346,17 @@ import subscriptionService from '@/services/subscriptionService';
 import { formatDate } from '@/utils/dateUtils';
 import { TIER_RANKS } from '@/constants/tiers';
 import { useSeo } from '@/composables/useSeo';
+
+// const seoConfig = reactive({
+//   title: '',
+//   description: '',
+//   image: '',
+//   url: '',
+//   type: 'website',
+//   keywords: [],
+//   schema: null,
+// });
+// useSeo(seoConfig);
 
 //on mounted
 onMounted(() => {

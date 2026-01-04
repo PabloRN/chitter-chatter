@@ -13,21 +13,21 @@
     </v-btn>
     <!-- Dummy buffer item to prevent accidental triggers when opening menu -->
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small @click.prevent.stop
-      @touchstart.native.prevent>
+      @touchstart.prevent>
       <div>
         <v-icon class="manga-icon" style="opacity: 0.3;"> mdi-circle-outline </v-icon>
       </div>
       <div class="icon-caption" style="opacity: 0.3;">Buffer</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="handleEmit('showAvatarList')" @touchstart.native.prevent="handleEmit('showAvatarList')">
+      @click.prevent.stop="handleEmit('showAvatarList')" @touchstart.prevent="handleEmit('showAvatarList')">
       <div>
         <v-icon class="manga-icon"> mdi-cards </v-icon>
       </div>
       <div class="icon-caption">Switch Avatar</div>
     </v-btn>
     <v-btn class="mx-2 menu-item" :class="hideMenu ? 'hidden' : 'nothidden'" fab dark small
-      @click.prevent.stop="handleEmit('showProfile')" @touchstart.native.prevent="handleEmit('showProfile')">
+      @click.prevent.stop="handleEmit('showProfile')" @touchstart.prevent="handleEmit('showProfile')">
       <div>
         <v-icon class="manga-icon">mdi-account-cog</v-icon>
       </div>
@@ -35,14 +35,14 @@
 
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="handleEmit('exitRoom')" @touchstart.native.prevent="handleEmit('exitRoom')">
+      @click.prevent.stop="handleEmit('exitRoom')" @touchstart.prevent="handleEmit('exitRoom')">
       <div>
-        <v-icon class="manga-icon"> mdi-door-open </v-icon>
+        <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
       </div>
       <div class="icon-caption">Exit Room</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="toggleMenu" @touchstart.native.prevent="toggleMenu" v-touch="{
+      @click.prevent.stop="toggleMenu" @touchstart.prevent="toggleMenu" v-touch="{
         end: () => toggleMenu,
       }">
       <div>
@@ -51,7 +51,7 @@
       <div class="icon-caption">Hide</div>
     </v-btn>
     <v-btn v-if="!getCurrentUser.isAnonymous" :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark
-      small @click.prevent.stop="handleEmit('signOut')" @touchstart.native.prevent="handleEmit('signOut')" v-touch="{
+      small @click.prevent.stop="handleEmit('signOut')" @touchstart.prevent="handleEmit('signOut')" v-touch="{
         end: () => toggleMenu,
       }">
       <div>
@@ -62,8 +62,7 @@
       <div class="icon-caption">Logout</div>
     </v-btn>
     <v-btn v-else :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="handleEmit('showLoginDialog')" @touchstart.native.prevent="handleEmit('showLoginDialog')"
-      v-touch="{
+      @click.prevent.stop="handleEmit('showLoginDialog')" @touchstart.prevent="handleEmit('showLoginDialog')" v-touch="{
         end: () => toggleMenu,
       }">
       <div>
@@ -74,8 +73,7 @@
       <div class="icon-caption" :disabled="getCurrentUser.isAnonymous">Login</div>
     </v-btn>
     <v-btn :class="hideMenu ? 'hidden' : 'nothidden'" class="mx-2 menu-item" fab dark small
-      @click.prevent.stop="handleEmit('showNotifications')"
-      @touchstart.native.prevent="handleEmit('showNotifications')">
+      @click.prevent.stop="handleEmit('showNotifications')" @touchstart.prevent="handleEmit('showNotifications')">
       <div style="position: relative;">
         <v-icon class="manga-icon"> mdi-bell </v-icon>
         <v-badge v-if="hasUnreadNotifications" dot color="error" overlap
@@ -162,7 +160,6 @@ const typeBoxPosition = computed(() => {
   const avatarHeight = props.avatarDimensions.height;
   const typeBoxHeight = window.innerWidth <= 768 ? 200 : 220;
   const bottomOffset = avatarHeight + typeBoxHeight;
-  console.log('avatar height', avatarHeight);
   return {
     left: `${0}px`,
     bottom: `${bottomOffset - typeBoxHeight}px`,

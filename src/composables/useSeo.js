@@ -1,6 +1,6 @@
 import { useHead } from '@unhead/vue';
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+// import { useI18n } from 'vue-i18n';
 
 /**
  * SEO Composable for managing meta tags, Open Graph, Twitter Cards, and structured data
@@ -14,13 +14,14 @@ import { useI18n } from 'vue-i18n';
  * @param {Array} [config.keywords] - Meta keywords array
  */
 export function useSeo(config) {
-  const { locale } = useI18n();
+  // const { locale } = useI18n();
 
   // Default values
   const baseUrl = 'https://toonstalk.com';
   const defaultImage = `${baseUrl}/og-default.png`;
   const defaultTitle = 'Toonstalk - Create Animated Chat Rooms for Your Community';
-  const defaultDescription = 'Join thousands creating real-time animated chat rooms. Perfect for gamers, creators, educators, and friend groups. Customize avatars, backgrounds, and chat with unlimited users. Free to start!';
+  const defaultDescription = `'Join thousands creating real-time animated chat rooms. Perfect for gamers, creators,
+   educators, and friend groups. Customize avatars, backgrounds, and chat with unlimited users. Free to start!'`;
 
   // Compute final values
   const title = computed(() => config.title || defaultTitle);
@@ -75,7 +76,7 @@ export function useSeo(config) {
 
   // Set HTML lang attribute
   const htmlAttrs = {
-    lang: locale.value || 'en',
+    lang: 'en',
   };
 
   // Apply head tags

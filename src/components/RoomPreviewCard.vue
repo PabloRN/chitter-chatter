@@ -131,7 +131,9 @@ const close = () => {
 };
 
 const enterRoom = () => {
-  router.push(`/rooms/${props.room.id}`);
+  // ✅ Use slug if available
+  const slug = props.room.slug || props.room.id;
+  router.push(`/rooms/${slug}`);
   close();
 };
 </script>

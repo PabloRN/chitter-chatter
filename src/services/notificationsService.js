@@ -287,7 +287,6 @@ class NotificationsService {
     if (unsubscribe) {
       unsubscribe();
       this.listeners.delete(userId);
-      console.log('🔕 Stopped listening to notifications for user:', userId);
     }
   }
 

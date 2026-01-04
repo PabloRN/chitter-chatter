@@ -16,7 +16,16 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-
+// const seoConfig = reactive({
+//   title: '',
+//   description: '',
+//   image: '',
+//   url: '',
+//   type: 'website',
+//   keywords: [],
+//   schema: null,
+// });
+useSeo(seoConfig);
 onMounted(() => {
   useSeo({
     title: 'Toonstalk - Create Animated Chat Rooms for Your Community',

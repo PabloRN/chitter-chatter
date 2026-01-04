@@ -1,5 +1,12 @@
   {
     "rules": {
+      "roomSlugs": {
+        ".read": true,
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true && root.child('rooms').child(newData.val()).child('ownerId').val() === auth.uid",
+        "$slug": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        }
+      },
       "privateMessages": {
         ".read": true,
         ".write": false
@@ -18,14 +25,12 @@
         }
       },
       "rooms": {
-        ".read": true,
-        ".write": false
-      },
-      "roomMetadata": {
         "$roomId": {
           ".read": true,
           ".write": "auth != null && (data.child('ownerId').val() === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
-        }
+        },
+        ".read": true,
+        ".write": false
       },
       "preloadedBackgrounds": {
         ".read": "auth != null",

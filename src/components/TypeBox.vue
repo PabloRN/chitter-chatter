@@ -12,15 +12,15 @@
       <v-row v-if="!hideKeyboard" no-gutters class="manga-typebox mt-3">
         <!-- Input Field -->
         <v-col cols="9" class="input-section">
-          <v-text-field @keydown.enter.prevent="enterPress" class="manga-input" rows="1" row-height="2" :maxlength="61"
-            ref="refDialog" v-model="message" hide-details variant="outlined" placeholder="Type your message..."
-            inputmode="text"></v-text-field>
+          <v-text-field ref="refDialog" v-model="message" class="manga-input" rows="1" row-height="2" :maxlength="61"
+            hide-details variant="outlined" placeholder="Type your message..." inputmode="text"
+            @keydown.enter.prevent="enterPress" />
         </v-col>
 
         <!-- Talk Button -->
         <v-col cols="3" class="button-section">
-          <v-btn class="manga-talk-button" :disabled="message.length === 0" @click="talk"
-            @touchstart.native.prevent="talk" block>
+          <v-btn class="manga-talk-button" :disabled="message.length === 0" block @click="talk"
+            @touchstart.prevent="talk">
             <span class="talk-text">TALK</span>
           </v-btn>
         </v-col>
@@ -29,108 +29,121 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
+
 import isMobile from '@/utils/mobileDetection';
 import useUserStore from '@/stores/user';
 import useMessagesStore from '@/stores/messages';
 
-export default {
-  name: 'TypeBox',
-  props: {
-    moving: {
-      default: false,
-      type: Boolean,
-    },
-    avatarDimensions: {
-      type: Object,
-      default: () => ({ width: 80, height: 220 }),
-    },
+/* -----------------------------------
+ * Props & Emits
+ * ----------------------------------- */
+const props = defineProps({
+  moving: {
+    type: Boolean,
+    default: false,
   },
-  setup() {
-    const userStore = useUserStore();
-    const messagesStore = useMessagesStore();
-
-    return {
-      userStore,
-      messagesStore,
-    };
+  avatarDimensions: {
+    type: Object,
+    default: () => ({ width: 80, height: 220 }),
   },
-  data: () => ({
-    message: '',
-    hideKeyboard: false,
-    inputFocused: false,
-  }),
-  computed: {
-    getCurrentUser() {
-      return this.userStore.getCurrentUser;
-    },
-    typeBoxPosition() {
-      const avatarWidth = this.avatarDimensions.width;
-      const typeBoxWidth = window.innerWidth <= 768 ? 280 : 300;
-      const leftOffset = (avatarWidth - typeBoxWidth) / 2;
-
-      return {
-        left: `${leftOffset}px`,
-        bottom: '-70px',
-      };
-    },
+  roomId: {
+    type: String,
+    default: '',
   },
-  methods: {
-    enterPress(e) {
-      e.preventDefault();
-      this.talk(e);
-    },
-    talk(e) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+});
 
-      if (!this.message.trim()) {
-        return;
-      }
+const emit = defineEmits(['keyboard-clicked']);
 
-      this.messagesStore.sendMessage({
-        message: this.message,
-        userId: this.getCurrentUser.userId,
-        nickname: this.getCurrentUser.nickname,
-        roomId: this.$route.params.roomId,
-        miniAvatar: this.getCurrentUser.miniAvatar,
-      });
+/* -----------------------------------
+ * Stores & Router
+ * ----------------------------------- */
+const userStore = useUserStore();
+const messagesStore = useMessagesStore();
+const route = useRoute();
 
-      this.message = '';
+/* -----------------------------------
+ * Refs / State
+ * ----------------------------------- */
+const message = ref('');
+const hideKeyboard = ref(false);
+const inputFocused = ref(false);
 
-      // Hide keyboard on mobile/tablet after sending message
-      if (isMobile()) {
-        // Blur the input to hide the keyboard
-        if (this.$refs.refDialog && this.$refs.refDialog.$el) {
-          const input = this.$refs.refDialog.$el.querySelector('input');
-          if (input) {
-            input.blur();
-          }
-        }
+const refDialog = ref(null);
+const buttonK = ref(null);
 
-        // Also hide the typebox on mobile
-        this.$nextTick(() => {
-          this.hideKeyboard = true;
-        });
-      }
-    },
-    toggleKeyBoard(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (this.moving) return;
-      this.$emit('keyboard-clicked');
-      this.hideKeyboard = !this.hideKeyboard;
-      this.$nextTick(() => {
-        if (!this.hideKeyboard && this.$refs.refDialog) {
-          this.$refs.refDialog.focus();
-        }
-      });
-    },
-  },
-};
+/* -----------------------------------
+ * Computed
+ * ----------------------------------- */
+const getCurrentUser = computed(() => userStore.getCurrentUser);
+
+const typeBoxPosition = computed(() => {
+  const avatarWidth = props.avatarDimensions.width;
+  const typeBoxWidth = window.innerWidth <= 768 ? 280 : 300;
+  const leftOffset = (avatarWidth - typeBoxWidth) / 2;
+
+  return {
+    left: `${leftOffset}px`,
+    bottom: '-70px',
+  };
+});
+
+/* -----------------------------------
+ * Methods
+ * ----------------------------------- */
+function enterPress(e) {
+  e.preventDefault();
+  talk(e);
+}
+
+function talk(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  if (!message.value.trim()) return;
+
+  messagesStore.sendMessage({
+    message: message.value,
+    userId: getCurrentUser.value.userId,
+    nickname: getCurrentUser.value.nickname,
+    roomId: props.roomId,
+    miniAvatar: getCurrentUser.value.miniAvatar,
+  });
+
+  message.value = '';
+
+  // Hide keyboard on mobile
+  if (isMobile()) {
+    const input = refDialog.value?.$el?.querySelector('input');
+    input?.blur();
+
+    nextTick(() => {
+      hideKeyboard.value = true;
+    });
+  }
+}
+
+function toggleKeyBoard(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (props.moving) return;
+
+  emit('keyboard-clicked');
+  hideKeyboard.value = !hideKeyboard.value;
+
+  nextTick(() => {
+    if (!hideKeyboard.value && refDialog.value) {
+      refDialog.value.focus();
+    }
+  });
+}
 </script>
+
 <style lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 

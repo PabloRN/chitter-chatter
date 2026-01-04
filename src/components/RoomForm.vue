@@ -468,8 +468,8 @@ watch(() => userStore.getCurrentUser?.userId, (newUserId, oldUserId) => {
 });
 
 // Watch route changes
-watch(() => route.params.roomId, () => {
-  if (props.isEdit && route.params.roomId) {
+watch(() => route.params.roomIdOrSlug, () => {
+  if (props.isEdit && route.params.roomIdOrSlug) {
     loadRoomData();
   }
 });

@@ -32,9 +32,9 @@
 
 
     <TypeBox :ref="`keyboard_${actualUserId}`" :id="`keyboard_${actualUserId}`" v-if="isCurrentUser"
-      :moving="mouseMoved" :avatar-dimensions="avatarDimensions" />
+      :moving="mouseMoved" :avatar-dimensions="avatarDimensions" :roomId="props.roomId" />
     <AvatarSelector :ref="`avatar-selector_${actualUserId}`" :id="`avatar-selector_${actualUserId}`"
-      :showAvatarSelector="showAvatarSelector" :roomId="route.params.roomId" @onClose="closeAvatarSelector"
+      :showAvatarSelector="showAvatarSelector" :roomId="props.roomId" @onClose="closeAvatarSelector"
       @onShowLoginDialog="showLoginDialogHandler" />
     <v-dialog persistent scrollable v-model="showLoginDialog" width="600" min-height="80vh"
       class="pa-5 ma-5 private-dialog">
@@ -59,12 +59,14 @@ import UserInfoCard from '@/components/UserInfoCard';
 import useUserStore from '@/stores/user';
 import useMessagesStore from '@/stores/messages';
 import useRoomsStore from '@/stores/rooms';
+import { resolveRoomId } from '@/utils/slugResolver';
 
 const props = defineProps({
   userId: String,
   avatar: String,
   nickname: String,
-  room: String,
+  roomId: String,
+  roomIdOrSlug: String,
 });
 
 const route = useRoute();
@@ -72,7 +74,6 @@ const router = useRouter();
 const userStore = useUserStore();
 const messagesStore = useMessagesStore();
 const roomsStore = useRoomsStore();
-
 const showLoginDialog = ref(false);
 const showUserInfoDialog = ref(false);
 const chatterManager = ref({});
@@ -261,8 +262,8 @@ const leaveRoom = () => {
   mouseMoved.value = false;
   roomsStore.removeUser({
     userId: actualUserId.value,
-    roomId: route.params.roomId,
-    roomUsersKey: userVal.rooms[route.params.roomId].roomUsersKey,
+    roomId: props.roomId,
+    roomUsersKey: userVal.rooms[props.roomId].roomUsersKey,
     isAnonymous: getCurrentUser.value?.nickname === 'anonymous',
   });
   messagesStore.cleanMessages();
@@ -286,8 +287,8 @@ const userSignOutCall = () => {
   const userVal = userData.value[actualUserId.value];
   roomsStore.removeUser({
     userId: actualUserId.value,
-    roomId: route.params.roomId,
-    roomUsersKey: userVal.rooms[route.params.roomId].roomUsersKey,
+    roomId: props.roomId,
+    roomUsersKey: userVal.rooms[props.roomId].roomUsersKey,
     isAnonymous: getCurrentUser.value?.nickname === 'anonymous',
   });
   userStore.userSignOut(actualUserId.value);

@@ -145,7 +145,6 @@ const scrollToBottom = () => {
       const container = containerRef?.$el;
 
       if (container) {
-        console.log('Scrolling to bottom. Height:', container.scrollHeight); // Debug
         container.scrollTop = container.scrollHeight;
       } else {
         console.warn('Scroll container not found'); // Debug

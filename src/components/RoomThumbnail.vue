@@ -142,9 +142,11 @@ const enterRoom = (room, key) => {
     alert('This room is full. Please try again later.');
     return;
   }
+  const slug = room?.slug || key;  // ✅ Use slug if available, fallback to ID
+
   router.push({
     name: 'room',
-    params: { roomId: key },
+    params: { roomIdOrSlug: slug },  // ✅ Use slug
   });
 };
 
@@ -399,6 +401,7 @@ const toggleFavorite = async () => {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
 }
@@ -461,6 +464,7 @@ const toggleFavorite = async () => {
   .description-hover {
     font-size: 0.8rem;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .hover-actions {

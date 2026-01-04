@@ -5,8 +5,9 @@
       <v-card>
         <v-img v-if="background !== ''" :src="background !== '' ? background : ''" class="white--text align-end"
           height="100vh" cover>
-          <chatter-component v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
-            :avatar="avatar" :nickname="nickname" :room="roomId" v-show="true" />
+          <ChatterComponent v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
+            :avatar="avatar" :nickname="nickname" :roomId="resolvedRoomIdRef" :roomIdOrSlug="props.roomIdOrSlug"
+            v-show="true" />
         </v-img>
         {{ $route.params.id }}
       </v-card>
@@ -45,76 +46,90 @@
             <v-fab v-bind="activatorProps" color="black" variant="flat" icon="mdi-room-service-outline" fab dark small>
             </v-fab>
           </template>
-          <v-tooltip left>
-            <template v-slot:activator="{ props }">
-              <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
-                @click.prevent.stop="handleEmit('exitRoom')" @touchstart.native.prevent="handleEmit('exitRoom')">
-                <div>
-                  <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
-                </div>
-              </v-btn>
-            </template>
-            <span>Exit Room</span>
-          </v-tooltip>
+          <div key="4">
+            <v-tooltip left>
+              <template v-slot:activator="{ props }">
+                <v-btn class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                  @click.prevent.stop="handleEmit('exitRoom')" @touchstart.prevent="handleEmit('exitRoom')">
+                  <div>
+                    <v-icon class="manga-icon"> mdi-exit-to-app </v-icon>
+                  </div>
+                </v-btn>
+              </template>
+              <span>Exit Room</span>
+            </v-tooltip>
+          </div>
 
-          <v-tooltip left>
-            <template v-slot:activator="{ props }">
-              <ShareButton :url="`https://toonstalk.com/rooms/${roomId}`" :title="currentRoom.name"
-                :description="currentRoom.description" variant="text" size="small" />
-            </template>
-            <span>Exit Room</span>
-          </v-tooltip>
+          <div key="5">
+            <v-tooltip left>
+              <template v-slot:activator="{ props }">
+                <ShareButton :url="`https://toonstalk.com/rooms/${getRoomSlug(currentRoom)}`" :title="currentRoom.name"
+                  :description="currentRoom.description" variant="text" size="small" />
+              </template>
+              <span>Share</span>
+            </v-tooltip>
+          </div>
 
-          <v-tooltip left>
-            <template v-slot:activator="{ props }">
-              <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
-                @click.prevent.stop="handleEmit('reportRoom')" @touchstart.native.prevent="handleEmit('reportRoom')">
-                <div>
-                  <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
-                </div>
-              </v-btn>
-            </template>
-            <span>Report Room</span>
-          </v-tooltip>
+          <div key="6">
+            <v-tooltip left>
+              <template v-slot:activator="{ props }">
+                <v-btn class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                  @click.prevent.stop="handleEmit('reportRoom')" @touchstart.prevent="handleEmit('reportRoom')">
+                  <div>
+                    <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
+                  </div>
+                </v-btn>
+              </template>
+              <span>Report Room</span>
+            </v-tooltip>
+          </div>
 
-          <v-tooltip left>
-            <template v-slot:activator="{ props }">
-              <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
-                @click.prevent.stop="handleEmit('roomInfo')" @touchstart.native.prevent="handleEmit('roomInfo')">
-                <div>
-                  <v-icon class="manga-icon"> mdi-information </v-icon>
-                </div>
-              </v-btn>
-            </template>
-            <span>Room Info</span>
-          </v-tooltip>
-          <v-tooltip left>
-            <template v-slot:activator="{ props }">
-              <v-btn key="0" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
-                @click.prevent.stop="handleEmit('showMessages')" @touchstart.native.prevent="handleEmit('showProfile')">
-                <div>
-                  <v-icon class="manga-icon"> mdi-message-text-outline</v-icon>
-                </div>
-              </v-btn>
-            </template>
-            <span>Room Messages</span>
-          </v-tooltip>
+          <div key="7">
+            <v-tooltip left>
+              <template v-slot:activator="{ props }">
+                <v-btn class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                  @click.prevent.stop="handleEmit('roomInfo')" @touchstart.prevent="handleEmit('roomInfo')">
+                  <div>
+                    <v-icon class="manga-icon"> mdi-information </v-icon>
+                  </div>
+                </v-btn>
+              </template>
+              <span>Room Info</span>
+            </v-tooltip>
+          </div>
 
-          <v-tooltip left>
-            <template v-slot:activator="{ props }">
-              <v-btn key="0" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
-                @click.prevent.stop="handleEmit('toggleFavorite')"
-                @touchstart.native.prevent="handleEmit('toggleFavorite')">
-                <div>
-                  <v-icon v-if="isFavorite" class="manga-icon"> mdi-heart-minus </v-icon>
-                  <v-icon v-else class="manga-icon">
-                    mdi-heart-plus </v-icon>
-                </div>
-              </v-btn>
-            </template>
-            <span v-if="!isFavorite">Add to Favorites</span>
-            <span v-else>Remove from Favorites</span>
-          </v-tooltip>
+
+          <div key="8">
+            <v-tooltip left>
+              <template v-slot:activator="{ props }">
+                <v-btn class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                  @click.prevent.stop="handleEmit('showMessages')" @touchstart.prevent="handleEmit('showProfile')">
+                  <div>
+                    <v-icon class="manga-icon"> mdi-message-text-outline</v-icon>
+                  </div>
+                </v-btn>
+              </template>
+              <span>Room Messages</span>
+            </v-tooltip>
+          </div>
+
+          <div key="9">
+            <v-tooltip left>
+              <template v-slot:activator="{ props }">
+                <v-btn class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
+                  @click.prevent.stop="handleEmit('toggleFavorite')" @touchstart.prevent="handleEmit('toggleFavorite')">
+                  <div>
+                    <v-icon v-if="isFavorite" class="manga-icon"> mdi-heart-minus </v-icon>
+                    <v-icon v-else class="manga-icon">
+                      mdi-heart-plus </v-icon>
+                  </div>
+                </v-btn>
+              </template>
+              <span v-if="!isFavorite">Add to Favorites</span>
+              <span v-else>Remove from Favorites</span>
+            </v-tooltip>
+          </div>
+
         </v-speed-dial>
         <!-- <v-btn icon size="small" @click="showThemeSelector = !showThemeSelector" class="theme-toggle-btn">
           <v-icon>mdi-palette</v-icon>
@@ -150,7 +165,7 @@
 
 <script setup>
 import {
-  ref, computed, onMounted, onBeforeUnmount, onUnmounted, watch, nextTick,
+  ref, computed, onMounted, onBeforeUnmount, onUnmounted, watch, nextTick, reactive,
 } from 'vue';
 import { getDatabase, ref as dbRef, set } from 'firebase/database';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
@@ -167,12 +182,24 @@ import ReportRoomDialog from '@/components/ReportRoomDialog.vue';
 import RoomInfoDialog from '@/components/RoomInfoDialog.vue';
 import LoginDialogBubble from '@/components/LoginDialogBubble';
 import ShareButton from '@/components/ShareButton.vue';
+import { resolveRoomId, getRoomSlug } from '@/utils/slugResolver';
 
 // Props
 const props = defineProps({
-  roomId: String,
+  roomIdOrSlug: String,
   roomName: String,
 });
+
+const seoConfig = reactive({
+  title: '',
+  description: '',
+  image: '',
+  url: '',
+  type: 'website',
+  keywords: [],
+  schema: null,
+});
+useSeo(seoConfig);
 
 // Composables
 const route = useRoute();
@@ -203,6 +230,7 @@ const showAuthDialog = ref(false);
 const showRoomInfo = ref(false);
 const isHidden = ref(false);
 const isShown = ref(false);
+const resolvedRoomIdRef = ref(null);
 
 // Computed properties
 const userAdded = computed(() => roomsStore.userAdded);
@@ -228,34 +256,34 @@ const chattersArray = computed(() => {
   // Use the variables to avoid unused expression warnings
   return (avatarTrigger || dataTrigger || chattersCounter.value > 0) ? Array.from(chatters.value) : [];
 });
-const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms?.some((room) => room === props.roomId));
+const isFavorite = computed(() => getCurrentUser?.value?.favoriteRooms?.some((room) => room === resolvedRoomIdRef.value));
 
 // SEO - Dynamic meta tags for this room
 watch(currentRoom, (room) => {
   if (room && room.name) {
-    const roomUrl = `https://toonstalk.com/rooms/${props.roomId || route.params.roomId}`;
+
+    const slug = getRoomSlug(room);
+    const roomUrl = `https://toonstalk.com/rooms/${slug}`;
     const roomTitle = `${room.name} - Join This Chat Room on Toonstalk`;
     const roomDescription = room.description
       ? `Join ${room.name}, an animated chat room on Toonstalk. ${room.description}`
       : `Join ${room.name}, an animated chat room on Toonstalk. Chat with others in real-time with custom avatars and backgrounds.`;
 
-    useSeo({
-      title: roomTitle,
-      description: roomDescription,
-      image: room.backgroundImage || room.thumbnail || 'https://toonstalk.com/og-default.png',
-      url: roomUrl,
-      type: 'website',
-      schema: createRoomSchema({
-        id: props.roomId || route.params.roomId,
-        name: room.name,
-        description: room.description || roomDescription,
-        thumbnail: room.backgroundImage || room.thumbnail,
-        ownerName: room.owner?.nickname || room.ownerName || 'Toonstalk User',
-        createdAt: room.createdAt,
-        userCount: room.users ? Object.keys(room.users).length : 0,
-      }),
-      keywords: ['chat room', 'animated chat', 'online community', room.name, 'toonstalk'],
+    seoConfig.title = roomTitle;
+    seoConfig.description = roomDescription;
+    seoConfig.image = room.backgroundImage || room.thumbnail || 'https://toonstalk.com/og-default.png';
+    seoConfig.url = roomUrl;
+    seoConfig.keywords = ['chat room', 'animated chat', 'online community', room.name, 'toonstalk', Object.values(room.topics).map((topic) => topic.name).join(', ')];
+    seoConfig.schema = createRoomSchema({
+      id: resolvedRoomIdRef.value,
+      name: room.name,
+      description: room.description || roomDescription,
+      thumbnail: room.backgroundImage || room.thumbnail,
+      ownerName: room.owner?.nickname || room.ownerName || 'Toonstalk User',
+      createdAt: room.createdAt,
+      userCount: room.users ? Object.keys(room.users).length : 0,
     });
+    seoConfig.type = 'website';
   }
 }, { immediate: true });
 
@@ -322,7 +350,7 @@ const initUsers = async () => {
 
 const tryPushUser = () => {
   const user = getCurrentUser.value || currentUser.value;
-  const { roomId } = route.params;
+  const roomId = resolvedRoomIdRef.value
 
   if (!roomId || !user || !user.userId || userInitialized.value) {
     return;
@@ -391,7 +419,7 @@ const handleEmit = (item) => {
       break;
     case 'reportRoom':
       if (isUserAuthenticated.value) {
-        handleReportRoom(props.roomId, currentRoom.value?.name || 'Unknown Room');
+        handleReportRoom(resolvedRoomIdRef.value, currentRoom.value?.name || 'Unknown Room');
       } else {
         showAuthDialog.value = true;
       }
@@ -416,8 +444,8 @@ const leaveRoom = () => {
   const user = getCurrentUser.value || currentUser.value;
   roomsStore.removeUser({
     userId: user?.userId,
-    roomId: route.params.roomId,
-    roomUsersKey: user?.rooms[route.params.roomId]?.roomUsersKey,
+    roomId: resolvedRoomIdRef.value,
+    roomUsersKey: user?.rooms[resolvedRoomIdRef.value]?.roomUsersKey,
     isAnonymous: user?.isAnonymous,
   });
   messagesStore.cleanMessages();
@@ -428,7 +456,7 @@ const leaveRoom = () => {
 
 const toggleFavorite = async () => {
   if (isUserAuthenticated.value) {
-    await userStore.toggleFavorite(props.roomId);
+    await userStore.toggleFavorite(resolvedRoomIdRef.value);
   }
 };
 
@@ -455,8 +483,23 @@ onMounted(async () => {
   innerHeight.value = window.innerHeight;
   window.addEventListener('resize', updateWindowSize);
 
+
+  const roomId = await resolveRoomId(props.roomIdOrSlug);
+
+  if (!roomId) {
+    // Room not found - redirect to rooms list
+    mainStore.setSnackbar({
+      type: 'error',
+      msg: 'Room not found',
+    });
+    router.push({ name: 'rooms' });
+    return;
+  }
+
+  resolvedRoomIdRef.value = roomId;
+
   if (Object.keys(currentRoom.value).length === 0) {
-    await roomsStore.getRoomDetails(route.params.roomId);
+    await roomsStore.getRoomDetails(resolvedRoomIdRef.value);
     background.value = currentRoom.value.backgroundImage;
   } else {
     background.value = currentRoom.value.backgroundImage; // TODO: Add a default background toonstalk image if no image
@@ -494,7 +537,7 @@ onMounted(async () => {
     }, 500);
   }
 
-  messagesStore.getDialogs(route.params.roomId);
+  messagesStore.getDialogs(resolvedRoomIdRef.value);
 });
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateWindowSize);
@@ -502,8 +545,8 @@ onBeforeUnmount(() => {
 
 onUnmounted(() => {
   // Cleanup listener if component is unmounted unexpectedly
-  if (route.params.roomId) {
-    messagesStore.removeDialogs(route.params.roomId);
+  if (resolvedRoomIdRef.value) {
+    messagesStore.removeDialogs(resolvedRoomIdRef.value);
     messagesStore.cleanMessages();
   }
 });
@@ -512,8 +555,8 @@ onBeforeRouteLeave((from, to, next) => {
   console.log('BEFORE ROUTE LEAVE FROM ROOM');
 
   // Unsubscribe from Firebase listener FIRST
-  if (route.params.roomId) {
-    messagesStore.removeDialogs(route.params.roomId);
+  if (resolvedRoomIdRef.value) {
+    messagesStore.removeDialogs(resolvedRoomIdRef.value);
   }
 
   // Then clean local messages
@@ -540,7 +583,7 @@ onBeforeRouteLeave((from, to, next) => {
 
 // Watchers
 watch(userAdded, async (newUser) => {
-  if (newUser && newUser?.roomId === route.params.roomId) {
+  if (newUser && newUser?.roomId === resolvedRoomIdRef.value) {
     const userDataNew = await userStore.getUserData(newUser.userId);
     if (Object.keys(userDataNew).length > 0) {
       chatters.value.set(newUser.userId, userDataNew);
@@ -553,7 +596,7 @@ watch(signingInUpgraded, async (newVal) => {
   if (userData.value[usersSwitched.value.verifiedUser]) {
     const { rooms } = userData.value[usersSwitched.value.verifiedUser];
     if (newVal === true && Object.keys(rooms).length > 0) {
-      if (Object.keys(rooms)[0] === route.params.roomId) {
+      if (Object.keys(rooms)[0] === resolvedRoomIdRef.value) {
         const userDataNew = await userStore.getUserData(usersSwitched.value.verifiedUser);
         if (Object.keys(userDataNew).length > 0) {
           // Always update the chatters map for any user upgrade to show new avatar
@@ -579,19 +622,18 @@ watch(() => userStore.otherUserUpgraded, async (newVal) => {
   }
 });
 watch(() => messagesStore.showMessagesStatus, async (newVal) => {
-  console.log('showMessagesStatus', newVal);
   // Another user in the room has upgraded, update their data
   isHidden.value = newVal;
 });
 
 watch(userExit, ({ roomId, userId }) => {
-  if (roomId === route.params.roomId) {
+  if (roomId === resolvedRoomIdRef.value) {
     chatters.value.delete(userId);
     chattersCounter.value -= 1;
   }
 });
 watch(userExit, ({ roomId, userId }) => {
-  if (roomId === route.params.roomId) {
+  if (roomId === resolvedRoomIdRef.value) {
     chatters.value.delete(userId);
     chattersCounter.value -= 1;
   }

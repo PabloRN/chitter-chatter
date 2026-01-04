@@ -229,7 +229,7 @@
                     <div class="option-badge popular">Most Popular</div>
                     <div class="option-content">
                       <v-icon size="40" class="mb-2"
-                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
                         mdi-crown
                       </v-icon>
                       <h3 class="option-title">Upgrade to Landlord</h3>
@@ -365,7 +365,7 @@
 
                   <v-list class="profile-dropdown pa-0">
 
-                    <v-list-item @click="$router.push('rooms/' + room.id)" class="pl-1">
+                    <v-list-item @click="goToRoom(room)" class="pl-1">
                       <template #prepend>
                         <v-icon class="text-main">mdi-eye-outline</v-icon>
                       </template>
@@ -734,8 +734,8 @@ const loadOwnedRooms = async (forceRefresh = false) => {
   }
 };
 
-const goToRoom = (roomId) => {
-  router.push(`/rooms/${roomId}`);
+const goToRoom = (room) => {
+  router.push(`/rooms/${room.slug || room.id}`);
 };
 
 const editRoom = (roomId) => {

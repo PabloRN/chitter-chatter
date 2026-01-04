@@ -465,7 +465,7 @@ const useUserStore = defineStore('user', {
               if (verifiedData?.isAnonymous === true) {
                 await update(userRef, { isAnonymous: false });
               } else {
-                console.log('✅ Verified: isAnonymous correctly set to', verifiedData?.isAnonymous);
+                console.log('anonymous set to', verifiedData?.isAnonymous);
               }
             }
 
@@ -632,10 +632,10 @@ const useUserStore = defineStore('user', {
       }
     },
 
-    async changeAvatar(url) {
+    async changeAvatar(url, roomId) {
+      console.log('router.currentRoute.value.params', router.currentRoute.value.params);
       try {
         const { currentUser } = this;
-        const { roomId } = router.currentRoute.value.params;
 
         const avatarData = await avatarService.changeAvatar(currentUser.userId, url, roomId);
         this.setCurrentUserAvatar(avatarData);

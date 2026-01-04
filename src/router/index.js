@@ -71,10 +71,12 @@ const routes = [
     },
   },
   {
-    path: '/rooms/:roomId',
+    path: '/rooms/:roomIdOrSlug',
     name: 'room',
     component: Room,
-    props: true,
+    props: (route) => ({
+      roomIdOrSlug: route.params.roomIdOrSlug,
+    }),
   },
   {
     path: '/profile',

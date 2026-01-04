@@ -7,7 +7,6 @@ import { initializeApp } from 'firebase/app';
 import lodash from 'lodash';
 import Storage from 'vue-ls';
 import { VueReCaptcha } from 'vue-recaptcha-v3';
-import { initRoomAuthListener } from '@/stores/rooms';
 import App from './App';
 import './registerServiceWorker';
 import router from './router';
@@ -109,5 +108,3 @@ app.mount('#app');
 // Initialize connection monitoring
 const mainStore = useMainStore();
 mainStore.startConnectionMonitoring();
-
-initRoomAuthListener();

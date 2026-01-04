@@ -1,8 +1,7 @@
 <template>
   <v-menu offset-y>
     <template v-slot:activator="{ props: menuProps }">
-      <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="menuProps"
-        @click.prevent.stop="handleEmit('reportRoom')" @touchstart.native.prevent="handleEmit('reportRoom')">
+      <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="menuProps">
         <v-icon color="white">{{ iconName }}</v-icon>
         <v-tooltip activator="parent" location="left">
           Share
@@ -10,50 +9,32 @@
       </v-btn>
     </template>
 
-    <v-tooltip left>
-      <template v-slot:activator="{ props }">
-        <v-btn key="4" class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
-          @click.prevent.stop="handleEmit('reportRoom')" @touchstart.native.prevent="handleEmit('reportRoom')">
-          <div>
-            <v-icon class="manga-icon"> mdi-alarm-light </v-icon>
-          </div>
-        </v-btn>
-      </template>
-      <span>Report Room</span>
-    </v-tooltip>
-
     <v-list density="compact">
-      <!-- Native share (if available) -->
-      <v-list-item v-if="canShare" @click="shareNative" prepend-icon="mdi-share-variant">
+      <v-list-item v-if="canShare" key="native-share" @click="shareNative" prepend-icon="mdi-share-variant">
         <v-list-item-title>Share</v-list-item-title>
       </v-list-item>
 
-      <v-divider v-if="canShare" />
+      <v-divider v-if="canShare" key="divider-native" />
 
-      <!-- Twitter -->
-      <v-list-item @click="shareTwitter" prepend-icon="mdi-twitter">
+      <v-list-item key="twitter" @click="shareTwitter" prepend-icon="mdi-twitter">
         <v-list-item-title>Share on Twitter</v-list-item-title>
       </v-list-item>
 
-      <!-- Reddit -->
-      <v-list-item @click="shareReddit" prepend-icon="mdi-reddit">
+      <v-list-item key="reddit" @click="shareReddit" prepend-icon="mdi-reddit">
         <v-list-item-title>Share on Reddit</v-list-item-title>
       </v-list-item>
 
-      <!-- Facebook -->
-      <v-list-item @click="shareFacebook" prepend-icon="mdi-facebook">
+      <v-list-item key="facebook" @click="shareFacebook" prepend-icon="mdi-facebook">
         <v-list-item-title>Share on Facebook</v-list-item-title>
       </v-list-item>
 
-      <!-- Discord (Copy link optimized for Discord) -->
-      <v-list-item @click="shareDiscord" prepend-icon="mdi-discord">
+      <v-list-item key="discord" @click="shareDiscord" prepend-icon="mdi-discord">
         <v-list-item-title>Share on Discord</v-list-item-title>
       </v-list-item>
 
-      <v-divider />
+      <v-divider key="divider-copy" />
 
-      <!-- Copy Link -->
-      <v-list-item @click="copyLink" prepend-icon="mdi-content-copy">
+      <v-list-item key="copy" @click="copyLink" prepend-icon="mdi-content-copy">
         <v-list-item-title>Copy Link</v-list-item-title>
       </v-list-item>
     </v-list>
