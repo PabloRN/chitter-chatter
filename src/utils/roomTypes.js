@@ -47,6 +47,7 @@ export const DEFAULT_ROOM_VALUES = {
   publicAvatars: [],
   defaultAvatar: null, // Avatar that new users get when entering room
   createdBy: '',
+  slug: '',
 };
 
 // Room creation limits by tier
@@ -120,6 +121,7 @@ export function createRoom(data = {}) {
     usersOnline: data.usersOnline || 0,
     users: data.users || {},
     createdBy: data.createdBy || '',
+    slug: data.slug || '',
   };
 }
 
