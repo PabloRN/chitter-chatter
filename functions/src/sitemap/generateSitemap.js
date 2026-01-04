@@ -21,8 +21,8 @@ async function generateSitemapXml() {
   ];
 
   try {
-    // Fetch all public rooms from roomMetadata
-    const roomsSnapshot = await admin.database().ref('roomMetadata').once('value');
+    // Fetch all public rooms
+    const roomsSnapshot = await admin.database().ref('rooms').once('value');
     const rooms = [];
 
     roomsSnapshot.forEach((child) => {
@@ -53,7 +53,7 @@ async function generateSitemapXml() {
 
       if (page.lastmod) {
         const lastmodDate = new Date(page.lastmod);
-        if (!isNaN(lastmodDate.getTime())) {
+        if (!Number.isNaN(lastmodDate.getTime())) {
           xml += `    <lastmod>${lastmodDate.toISOString()}</lastmod>\n`;
         }
       }
@@ -128,7 +128,7 @@ exports.scheduledSitemapUpdate = onSchedule(
   async (event) => {
     try {
       const result = await generateSitemapXml();
-      console.log('Scheduled sitemap update completed:', result);
+      console.log('Scheduled sitemap update completed:', result, event);
       return result;
     } catch (error) {
       console.error('Error in scheduled sitemap update:', error);
