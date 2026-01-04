@@ -1,13 +1,8 @@
-## [1.3.0] - 2025-12-30
-
-### 🐛 Bug Fixes
-
-- background not updating, remove user after session expired, fan art, ([599239a])
+## [1.4.0] - 2026-01-02
 
 ### 📦 Other Changes
 
-- remove secrets ([972be80])
-- remove logs and improve styles ([ebb89bc])
-- improve avatar management and upload ([a9380c9])
-- image avatar relative ([349464c])
-- release note 1.2.1 ([d7ae374])
+- Add SEO improvements ([dcd623c])
+- Merge branch 'development' of https://github.com/PabloRN/chitter-chatter into development ([36f9a0e])
+- release notes 1.3.0 ([b9453e5])
+- release notes 1.3.0 ([1fa83d3])
