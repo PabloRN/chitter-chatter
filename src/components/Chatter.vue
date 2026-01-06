@@ -785,6 +785,11 @@ watch(() => props.avatar, async (newAvatar) => {
   transition: none;
 }
 
+/* Current user with tap-to-move: enable smooth transition */
+.current-user.tap-moving {
+  transition: left 0.5s ease-out, top 0.5s ease-out;
+}
+
 .avatar-image {
   filter: drop-shadow(0.1px 0.2px 0.1px #c1c0c0);
   position: relative;

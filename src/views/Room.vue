@@ -5,7 +5,7 @@
       <v-card>
         <!-- Pannable viewport for all devices -->
         <div class="room-viewport-container" @touchstart="handleTouchStart" @touchmove="handleTouchMove"
-          @touchend="handleTouchEnd">
+          @touchend="handleTouchEnd" @click="handleClick">
           <div class="room-canvas" :style="roomCanvasStyle">
             <v-img v-if="background !== ''" :src="background" class="white--text align-end" width="1500px"
               height="1500px" cover>
@@ -248,6 +248,7 @@ const {
   panLeft,
   panRight,
   centerHorizontally,
+  setTapMoveCallback,
 } = useRoomPan({
   roomWidth: 1500,
   roomHeight: 1500,
@@ -522,11 +523,73 @@ const checkAuthenticationStatus = () => {
   }
 };
 
+// Handle tap-to-move avatar
+const handleTapToMove = async ({ x, y }) => {
+  const user = getCurrentUser.value || currentUser.value;
+  if (!user || !user.userId) return;
+
+  // Avatar dimensions (approximate center point)
+  const avatarWidth = 100;
+  const avatarHeight = 240;
+
+  // Center avatar on tap point
+  let finalLeft = x - avatarWidth / 2;
+  let finalTop = y - avatarHeight / 2;
+
+  // Apply bounds
+  const ROOM_WIDTH = 1500;
+  const ROOM_HEIGHT = 1500;
+  finalLeft = Math.max(0, Math.min(finalLeft, ROOM_WIDTH - avatarWidth));
+  finalTop = Math.max(0, Math.min(finalTop, ROOM_HEIGHT - avatarHeight));
+
+  // Update DOM position with smooth transition for current user
+  const chatterElement = document.getElementById(user.userId);
+  if (chatterElement) {
+    // Add transition class for smooth movement
+    chatterElement.classList.add('tap-moving');
+
+    chatterElement.style.left = `${finalLeft}px`;
+    chatterElement.style.top = `${finalTop}px`;
+
+    // Remove transition class after animation completes (500ms)
+    setTimeout(() => {
+      chatterElement.classList.remove('tap-moving');
+    }, 500);
+  }
+
+  // Move avatar using same finalization logic as drag (updates DB)
+  await userStore.finalizeDragPosition({
+    left: `${finalLeft}px`,
+    top: `${finalTop}px`,
+    userId: user.userId,
+  });
+};
+
+// Handle click for desktop
+const handleClick = (e) => {
+  // Skip if clicking on avatar, buttons, or other interactive elements
+  const target = e.target;
+  if (target.closest('.current-user') || target.closest('.user') || target.closest('.arrow-btn') || target.closest('.v-btn')) {
+    return;
+  }
+
+  // Convert screen coordinates to room coordinates
+  const screenX = e.clientX;
+  const screenY = e.clientY;
+  const roomX = screenX - panOffset.value.x;
+  const roomY = screenY - panOffset.value.y;
+
+  // Move avatar
+  handleTapToMove({ x: roomX, y: roomY });
+};
+
 // Lifecycle hooks
 onMounted(async () => {
   innerHeight.value = window.innerHeight;
   window.addEventListener('resize', updateWindowSize);
 
+  // Set up tap-to-move callback
+  setTapMoveCallback(handleTapToMove);
 
   const roomId = await resolveRoomId(props.roomIdOrSlug);
 
