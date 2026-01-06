@@ -68,6 +68,7 @@ const props = defineProps({
   nickname: String,
   roomId: String,
   roomIdOrSlug: String,
+  isPanMode: Boolean, // True when room is being panned (mobile two-finger gesture)
 });
 
 const route = useRoute();
@@ -137,6 +138,10 @@ const actualUserId = ref('');
 const lastPosition = ref({ left: '', top: '' });
 const avatarDimensions = ref({ width: 100, height: 240 });
 
+// Virtual room dimensions (for mobile pan mode)
+const ROOM_WIDTH = 2000;
+const ROOM_HEIGHT = 2000;
+
 // NEW: Drag optimization state
 const dragVisualTransform = ref({ x: 0, y: 0 });
 const isDraggingLocally = ref(false);
@@ -151,6 +156,13 @@ const userData = computed(() => userStore.userData);
 const currentUser = computed(() => userStore.currentUser);
 // const isCurrentUser = computed(() => actualUserId.value === getCurrentUser.value?.userId);
 const isCurrentUser = computed(() => props.userId === getCurrentUser.value?.userId);
+
+// Check if mobile (simple detection)
+const isMobile = computed(() => window.innerWidth <= 768);
+
+// Max bounds for position (virtual room on mobile, viewport on desktop)
+const maxWidth = computed(() => (isMobile.value ? ROOM_WIDTH : windowWidth.value));
+const maxHeight = computed(() => (isMobile.value ? ROOM_HEIGHT : windowHeight.value));
 
 // NEW: Computed style for drag transform
 const chatterTransformStyle = computed(() => {
@@ -435,11 +447,11 @@ const addEventListeners = () => {
 
         const boundedFinalLeft = Math.max(0, Math.min(
           tentativeFinalLeft,
-          windowWidth.value - avatarWidth,
+          maxWidth.value - avatarWidth,
         ));
         const boundedFinalTop = Math.max(0, Math.min(
           tentativeFinalTop,
-          windowHeight.value - avatarHeight,
+          maxHeight.value - avatarHeight,
         ));
 
         // Calculate bounded delta
@@ -498,6 +510,9 @@ const addEventListeners = () => {
   chatterManager.value.addEventListener(
     'touchstart',
     (e) => {
+      // Skip if room is being panned or multi-finger touch
+      if (props.isPanMode || e.touches.length !== 1) return;
+
       touchstart.value = usersPosition.value;
       isDown.value = true;
       mouseMoved.value = false;
@@ -537,6 +552,9 @@ const addEventListeners = () => {
     true,
   );
   chatterManager.value.addEventListener('touchmove', (e) => {
+    // Skip if room is being panned or multi-finger touch
+    if (props.isPanMode || e.touches.length !== 1) return;
+
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
@@ -564,11 +582,11 @@ const addEventListeners = () => {
 
       const boundedFinalLeft = Math.max(0, Math.min(
         tentativeFinalLeft,
-        windowWidth.value - avatarWidth,
+        maxWidth.value - avatarWidth,
       ));
       const boundedFinalTop = Math.max(0, Math.min(
         tentativeFinalTop,
-        windowHeight.value - avatarHeight,
+        maxHeight.value - avatarHeight,
       ));
 
       // Calculate bounded delta
@@ -644,8 +662,8 @@ const updateWindowSize = () => {
 
     const avatarWidth = getAvatarWidth();
     const avatarHeight = getAvatarHeight();
-    const boundedLeft = Math.max(0, Math.min(currentLeft, windowWidth.value - avatarWidth));
-    const boundedTop = Math.max(0, Math.min(currentTop, windowHeight.value - avatarHeight));
+    const boundedLeft = Math.max(0, Math.min(currentLeft, maxWidth.value - avatarWidth));
+    const boundedTop = Math.max(0, Math.min(currentTop, maxHeight.value - avatarHeight));
 
     if (boundedLeft !== currentLeft || boundedTop !== currentTop) {
       userStore.changePosition({
@@ -842,27 +860,29 @@ watch(() => props.avatar, async (newAvatar) => {
 
 @media (max-width: 768px) {
   .nickname {
-    font-size: 1.2em;
+    font-size: 1.4em;
   }
 
   .avatar-image {
-    min-height: 100px;
-    max-height: 180px;
-    min-width: 40px;
-    max-width: 140px;
+    /* Keep normal size since we have virtual room (2000x2000px) */
+    min-height: 140px;
+    max-height: 240px;
+    min-width: 100px;
+    max-width: 180px;
   }
 }
 
 @media (max-width: 480px) {
   .nickname {
-    font-size: 1em;
+    font-size: 1.3em;
   }
 
   .avatar-image {
-    min-height: 80px;
-    max-height: 140px;
-    min-width: 30px;
-    max-width: 100px;
+    /* Keep normal size since we have virtual room (2000x2000px) */
+    min-height: 140px;
+    max-height: 240px;
+    min-width: 100px;
+    max-width: 180px;
   }
 }
 </style>

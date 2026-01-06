@@ -3,12 +3,42 @@
   <div class="room-wrapper">
     <div class="home" @dragover.prevent @dragenter.prevent>
       <v-card>
-        <v-img v-if="background !== ''" :src="background !== '' ? background : ''" class="white--text align-end"
-          height="100vh" cover>
+        <!-- Mobile: Pannable viewport -->
+        <div v-if="isMobile" class="room-viewport-container" @touchstart="handleTouchStart" @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd">
+          <div class="room-canvas" :style="roomCanvasStyle">
+            <v-img v-if="background !== ''" :src="background" class="white--text align-end" width="2000px"
+              height="2000px" cover>
+              <ChatterComponent v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
+                :avatar="avatar" :nickname="nickname" :roomId="resolvedRoomIdRef" :roomIdOrSlug="props.roomIdOrSlug"
+                :isPanMode="isPanning" v-show="true" />
+            </v-img>
+          </div>
+
+          <!-- Arrow Navigation Controls -->
+          <div class="pan-arrows">
+            <v-btn icon class="arrow-btn arrow-up" @click="panUp" size="small">
+              <v-icon>mdi-chevron-up</v-icon>
+            </v-btn>
+            <v-btn icon class="arrow-btn arrow-down" @click="panDown" size="small">
+              <v-icon>mdi-chevron-down</v-icon>
+            </v-btn>
+            <v-btn icon class="arrow-btn arrow-left" @click="panLeft" size="small">
+              <v-icon>mdi-chevron-left</v-icon>
+            </v-btn>
+            <v-btn icon class="arrow-btn arrow-right" @click="panRight" size="small">
+              <v-icon>mdi-chevron-right</v-icon>
+            </v-btn>
+          </div>
+        </div>
+
+        <!-- Desktop: Normal viewport -->
+        <v-img v-else-if="background !== ''" :src="background" class="white--text align-end" height="100vh" cover>
           <ChatterComponent v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
             :avatar="avatar" :nickname="nickname" :roomId="resolvedRoomIdRef" :roomIdOrSlug="props.roomIdOrSlug"
-            v-show="true" />
+            :isPanMode="false" v-show="true" />
         </v-img>
+
         {{ $route.params.id }}
       </v-card>
       <v-dialog v-if="privateRequestDialog" v-model="privateRequestDialog" persistent width="600"
@@ -178,6 +208,7 @@ import useMessagesStore from '@/stores/messages';
 import useMainStore from '@/stores/main';
 import useTheme from '@/composables/useTheme';
 import { useSeo, createRoomSchema } from '@/composables/useSeo';
+import useRoomPan from '@/composables/useRoomPan';
 import ReportRoomDialog from '@/components/ReportRoomDialog.vue';
 import RoomInfoDialog from '@/components/RoomInfoDialog.vue';
 import LoginDialogBubble from '@/components/LoginDialogBubble';
@@ -209,6 +240,24 @@ const roomsStore = useRoomsStore();
 const messagesStore = useMessagesStore();
 const mainStore = useMainStore();
 const { currentTheme, availableThemes, setTheme } = useTheme();
+
+// Mobile pan/scroll composable
+const {
+  panOffset,
+  isPanning,
+  isMobile,
+  roomCanvasStyle,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
+  panUp,
+  panDown,
+  panLeft,
+  panRight,
+} = useRoomPan({
+  roomWidth: 2000,
+  roomHeight: 2000,
+});
 
 // Reactive data
 const innerHeight = ref('');
@@ -826,5 +875,66 @@ watch(
 
 .hidden {
   display: none;
+}
+
+/* Mobile Pan/Scroll Styles */
+.room-viewport-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.room-canvas {
+  position: absolute;
+  will-change: transform;
+  transform-origin: top left;
+}
+
+/* Arrow Navigation Controls */
+.pan-arrows {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.arrow-btn {
+  pointer-events: auto;
+  background: var(--button-background) !important;
+  border: var(--border-width) solid var(--button-border) !important;
+  opacity: 0.8;
+  position: fixed;
+}
+
+.arrow-btn:hover {
+  opacity: 1;
+  background: var(--button-background-hover) !important;
+}
+
+.arrow-up {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.arrow-down {
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.arrow-left {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.arrow-right {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 </style>

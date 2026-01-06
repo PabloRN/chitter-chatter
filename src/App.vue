@@ -152,7 +152,8 @@ onUnmounted(() => {
 </script>
 
 <style>
-@media screen and (max-width: 768px) and (orientation: portrait) {
+/* TEMPORARILY DISABLED - Testing mobile pan/scroll feature */
+/* @media screen and (max-width: 768px) and (orientation: portrait) {
   .landscape-message {
     display: flex;
     position: fixed;
@@ -180,7 +181,7 @@ onUnmounted(() => {
     margin: 10px 0;
     font-size: 16px;
   }
-}
+} */
 
 @media screen and (min-width: 769px),
 screen and (max-width: 768px) and (orientation: landscape) {
