@@ -3,41 +3,34 @@
   <div class="room-wrapper">
     <div class="home" @dragover.prevent @dragenter.prevent>
       <v-card>
-        <!-- Mobile: Pannable viewport -->
-        <div v-if="isMobile" class="room-viewport-container" @touchstart="handleTouchStart" @touchmove="handleTouchMove"
+        <!-- Pannable viewport for all devices -->
+        <div class="room-viewport-container" @touchstart="handleTouchStart" @touchmove="handleTouchMove"
           @touchend="handleTouchEnd">
           <div class="room-canvas" :style="roomCanvasStyle">
-            <v-img v-if="background !== ''" :src="background" class="white--text align-end" width="2000px"
-              height="2000px" cover>
+            <v-img v-if="background !== ''" :src="background" class="white--text align-end" width="1500px"
+              height="1500px" cover>
               <ChatterComponent v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
                 :avatar="avatar" :nickname="nickname" :roomId="resolvedRoomIdRef" :roomIdOrSlug="props.roomIdOrSlug"
                 :isPanMode="isPanning" v-show="true" />
             </v-img>
           </div>
 
-          <!-- Arrow Navigation Controls -->
+          <!-- Arrow Navigation Controls (all devices) -->
           <div class="pan-arrows">
-            <v-btn icon class="arrow-btn arrow-up" @click="panUp" size="small">
+            <v-btn icon class="arrow-btn arrow-up text-white" @click="panUp" size="small">
               <v-icon>mdi-chevron-up</v-icon>
             </v-btn>
-            <v-btn icon class="arrow-btn arrow-down" @click="panDown" size="small">
+            <v-btn icon class="arrow-btn arrow-down text-white" @click="panDown" size="small">
               <v-icon>mdi-chevron-down</v-icon>
             </v-btn>
-            <v-btn icon class="arrow-btn arrow-left" @click="panLeft" size="small">
+            <v-btn icon class="arrow-btn arrow-left text-white" @click="panLeft" size="small">
               <v-icon>mdi-chevron-left</v-icon>
             </v-btn>
-            <v-btn icon class="arrow-btn arrow-right" @click="panRight" size="small">
+            <v-btn icon class="arrow-btn arrow-right text-white" @click="panRight" size="small">
               <v-icon>mdi-chevron-right</v-icon>
             </v-btn>
           </div>
         </div>
-
-        <!-- Desktop: Normal viewport -->
-        <v-img v-else-if="background !== ''" :src="background" class="white--text align-end" height="100vh" cover>
-          <ChatterComponent v-for="[key, { userId, avatar, nickname }] in chattersArray" :userId="userId" :key="key"
-            :avatar="avatar" :nickname="nickname" :roomId="resolvedRoomIdRef" :roomIdOrSlug="props.roomIdOrSlug"
-            :isPanMode="false" v-show="true" />
-        </v-img>
 
         {{ $route.params.id }}
       </v-card>
@@ -254,9 +247,10 @@ const {
   panDown,
   panLeft,
   panRight,
+  centerHorizontally,
 } = useRoomPan({
-  roomWidth: 2000,
-  roomHeight: 2000,
+  roomWidth: 1500,
+  roomHeight: 1500,
 });
 
 // Reactive data
@@ -385,6 +379,7 @@ const initUsers = async () => {
       && Object.keys(currentRoom.value.users).length > 0
     ) {
       const userIDs = Object.keys(currentRoom.value.users);
+      const currentUserId = getCurrentUser.value?.userId;
       for (const roomUserID of userIDs) {
         const { userId } = currentRoom.value.users[roomUserID];
         const userDataNew = await userStore.getUserData(userId);
@@ -585,6 +580,20 @@ onMounted(async () => {
       }
     }, 500);
   }
+  // ⬇️ Animate camera from top → bottom
+  await nextTick();
+  centerHorizontally();
+  // Enable easing
+  isPanning.value = false;
+
+  // Push camera down as far as allowed (constraint will clamp)
+  panOffset.value = {
+    x: panOffset.value.x,
+    y: -Infinity,
+  };
+  setTimeout(() => {
+    panDown();
+  }, 2000)
 
   messagesStore.getDialogs(resolvedRoomIdRef.value);
 });
@@ -675,12 +684,6 @@ watch(() => messagesStore.showMessagesStatus, async (newVal) => {
   isHidden.value = newVal;
 });
 
-watch(userExit, ({ roomId, userId }) => {
-  if (roomId === resolvedRoomIdRef.value) {
-    chatters.value.delete(userId);
-    chattersCounter.value -= 1;
-  }
-});
 watch(userExit, ({ roomId, userId }) => {
   if (roomId === resolvedRoomIdRef.value) {
     chatters.value.delete(userId);
@@ -877,7 +880,7 @@ watch(
   display: none;
 }
 
-/* Mobile Pan/Scroll Styles */
+/* Pan/Scroll Styles (all devices) */
 .room-viewport-container {
   position: fixed;
   top: 0;

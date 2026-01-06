@@ -4,8 +4,8 @@ import {
 
 export default function useRoomPan(options = {}) {
   const {
-    roomWidth = 2000,
-    roomHeight = 2000,
+    roomWidth = 1500,
+    roomHeight = 1500,
   } = options;
 
   // State
@@ -20,18 +20,13 @@ export default function useRoomPan(options = {}) {
   // Computed
   const isMobile = computed(() => window.innerWidth <= 768); // Simple mobile detection
 
-  const roomCanvasStyle = computed(() => {
-    if (!isMobile.value) {
-      return {}; // Desktop: no transform
-    }
-    return {
-      width: `${roomWidth}px`,
-      height: `${roomHeight}px`,
-      transform: `translate(${panOffset.value.x}px, ${panOffset.value.y}px)`,
-      transformOrigin: 'top left',
-      transition: isPanning.value ? 'none' : 'transform 0.3s ease-out',
-    };
-  });
+  const roomCanvasStyle = computed(() => ({
+    width: `${roomWidth}px`,
+    height: `${roomHeight}px`,
+    transform: `translate(${panOffset.value.x}px, ${panOffset.value.y}px)`,
+    transformOrigin: 'top left',
+    transition: isPanning.value ? 'none' : 'transform 0.3s ease-out',
+  }));
 
   const maxPanOffset = computed(() => ({
     x: Math.max(0, roomWidth - viewportSize.value.width),
@@ -116,6 +111,19 @@ export default function useRoomPan(options = {}) {
     panOffset.value = constrainPanOffset(newOffset);
   };
 
+  // Center viewport on a specific position (e.g., user's avatar)
+  const centerOnPosition = ({ x, y }) => {
+    const centerX = -(x - viewportSize.value.width / 2);
+    const centerY = -(y - viewportSize.value.height / 2);
+    panOffset.value = constrainPanOffset({ x: centerX, y: centerY });
+  };
+  const centerHorizontally = () => {
+    const centerX = -(roomWidth / 2 - viewportSize.value.width / 2);
+    panOffset.value = constrainPanOffset({
+      x: centerX,
+      y: panOffset.value.y,
+    });
+  };
   // Lifecycle
   onMounted(() => {
     updateViewportSize();
@@ -138,5 +146,7 @@ export default function useRoomPan(options = {}) {
     panDown,
     panLeft,
     panRight,
+    centerOnPosition,
+    centerHorizontally,
   };
 }

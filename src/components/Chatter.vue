@@ -1,9 +1,9 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div style="text-align: center" :class="[isCurrentUser ? 'current-user' : 'user', { 'dragging-locally': isDraggingLocally }]"
-    :id="actualUserId" :ref="actualUserId" @click="chatterClicked" tabindex="0"
-    @keydown.enter="chatterClicked" @keydown.space="handleSpaceKey" role="button"
-    :style="chatterTransformStyle">
+  <div style="text-align: center"
+    :class="[isCurrentUser ? 'current-user' : 'user', { 'dragging-locally': isDraggingLocally }]" :id="actualUserId"
+    :ref="actualUserId" @click="chatterClicked" tabindex="0" @keydown.enter="chatterClicked"
+    @keydown.space="handleSpaceKey" role="button" :style="chatterTransformStyle">
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
       <div v-if="!isCurrentUser" class="nickname">{{ nickname }}</div>
     </div>
@@ -139,8 +139,8 @@ const lastPosition = ref({ left: '', top: '' });
 const avatarDimensions = ref({ width: 100, height: 240 });
 
 // Virtual room dimensions (for mobile pan mode)
-const ROOM_WIDTH = 2000;
-const ROOM_HEIGHT = 2000;
+const ROOM_WIDTH = 1500;
+const ROOM_HEIGHT = 1500;
 
 // NEW: Drag optimization state
 const dragVisualTransform = ref({ x: 0, y: 0 });
@@ -160,9 +160,9 @@ const isCurrentUser = computed(() => props.userId === getCurrentUser.value?.user
 // Check if mobile (simple detection)
 const isMobile = computed(() => window.innerWidth <= 768);
 
-// Max bounds for position (virtual room on mobile, viewport on desktop)
-const maxWidth = computed(() => (isMobile.value ? ROOM_WIDTH : windowWidth.value));
-const maxHeight = computed(() => (isMobile.value ? ROOM_HEIGHT : windowHeight.value));
+// Max bounds for position (always use virtual room since we have pan/scroll on all devices)
+const maxWidth = computed(() => ROOM_WIDTH);
+const maxHeight = computed(() => ROOM_HEIGHT);
 
 // NEW: Computed style for drag transform
 const chatterTransformStyle = computed(() => {
@@ -351,9 +351,12 @@ const initUserData = (userId) => {
             userId,
           });
         } else {
+          // Position new users at center-bottom of the room
+          const centerX = ROOM_WIDTH / 2;
+          const bottomY = ROOM_HEIGHT - 350; // 350px from bottom for avatar space
           userStore.initPosition({
-            left: '50px',
-            top: '50px',
+            left: `${centerX}px`,
+            top: `${bottomY}px`,
             userId,
           });
         }

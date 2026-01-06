@@ -25,14 +25,14 @@
       </div>
     </div>
 
-    <!-- Landscape orientation message -->
+    <!-- Landscape orientation message
     <div class="landscape-message">
       <div>
         <h2>📱 Please rotate your device</h2>
         <p>This chat room works best in landscape mode</p>
         <p>Rotate your device for the optimal experience</p>
       </div>
-    </div>
+    </div> -->
 
     <!-- Survey Popup -->
     <survey-popup v-model="showSurveyPopup" @success="handleSurveySuccess" @dismissed="handleSurveyDismissed" />
