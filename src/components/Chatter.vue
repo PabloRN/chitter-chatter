@@ -1,8 +1,9 @@
 <!-- eslint-disable max-len -->
 <template>
-  <div style="text-align: center" :class="isCurrentUser ? 'current-user' : 'user'" :id="actualUserId"
-    :ref="actualUserId" @click="chatterClicked" tabindex="0" @keydown.enter="chatterClicked"
-    @keydown.space="handleSpaceKey" role="button">
+  <div style="text-align: center" :class="[isCurrentUser ? 'current-user' : 'user', { 'dragging-locally': isDraggingLocally }]"
+    :id="actualUserId" :ref="actualUserId" @click="chatterClicked" tabindex="0"
+    @keydown.enter="chatterClicked" @keydown.space="handleSpaceKey" role="button"
+    :style="chatterTransformStyle">
     <div v-if="!isCurrentUser && actualUserId !== 'default_avatar_character_12345'" class="nicknameWrapper">
       <div v-if="!isCurrentUser" class="nickname">{{ nickname }}</div>
     </div>
@@ -136,6 +137,12 @@ const actualUserId = ref('');
 const lastPosition = ref({ left: '', top: '' });
 const avatarDimensions = ref({ width: 100, height: 240 });
 
+// NEW: Drag optimization state
+const dragVisualTransform = ref({ x: 0, y: 0 });
+const isDraggingLocally = ref(false);
+const initialMousePosition = ref({ x: 0, y: 0 });
+const basePositionOnDragStart = ref({ left: 0, top: 0 });
+
 const getCurrentUser = computed(() => userStore.getCurrentUser);
 const roomMessages = computed(() => messagesStore.roomMessages);
 const usersPosition = computed(() => userStore.usersPosition);
@@ -144,6 +151,17 @@ const userData = computed(() => userStore.userData);
 const currentUser = computed(() => userStore.currentUser);
 // const isCurrentUser = computed(() => actualUserId.value === getCurrentUser.value?.userId);
 const isCurrentUser = computed(() => props.userId === getCurrentUser.value?.userId);
+
+// NEW: Computed style for drag transform
+const chatterTransformStyle = computed(() => {
+  if (isDraggingLocally.value && isCurrentUser.value) {
+    return {
+      transform: `translate(${dragVisualTransform.value.x}px, ${dragVisualTransform.value.y}px)`,
+      willChange: 'transform',
+    };
+  }
+  return {};
+});
 
 const updateNickName = () => {
   userStore.updateUserNickName();
@@ -350,6 +368,34 @@ const addEventListeners = () => {
       e.stopPropagation();
       isDown.value = true;
       mouseMoved.value = false;
+
+      // NEW: Capture base position and start drag optimization
+      if (actualUserId.value === getCurrentUser.value.userId) {
+        const currentLeft = chatterManager.value.style.left || '0px';
+        const currentTop = chatterManager.value.style.top || '0px';
+
+        basePositionOnDragStart.value = {
+          left: parseInt(currentLeft, 10),
+          top: parseInt(currentTop, 10),
+        };
+
+        initialMousePosition.value = {
+          x: e.clientX,
+          y: e.clientY,
+        };
+
+        isDraggingLocally.value = true;
+        dragVisualTransform.value = { x: 0, y: 0 };
+
+        userStore.startDragging({
+          left: currentLeft,
+          top: currentTop,
+          userId: actualUserId.value,
+        });
+
+        console.log('🎯 Mouse down - Starting drag', { currentLeft, currentTop });
+      }
+
       offset.value = [
         chatterManager.value.offsetLeft - e.clientX,
         chatterManager.value.offsetTop - e.clientY,
@@ -370,30 +416,40 @@ const addEventListeners = () => {
         isActuallyMoving.value = true;
 
         // Clear existing timeout and set new one
+        // NOTE: Animation is 0.4s, so keep wobble for at least one full cycle
         if (movementTimeout) clearTimeout(movementTimeout);
         movementTimeout = setTimeout(() => {
           isActuallyMoving.value = false;
-        }, 50);
+        }, 400);
 
-        const mousePosition = {
-          x: e.clientX,
-          y: e.clientY,
-        };
+        // NEW: Calculate delta from initial mouse position
+        const deltaX = e.clientX - initialMousePosition.value.x;
+        const deltaY = e.clientY - initialMousePosition.value.y;
+
+        // Apply bounds to the FINAL position (base + delta)
         const avatarWidth = getAvatarWidth();
         const avatarHeight = getAvatarHeight();
-        const newLeft = Math.max(0, Math.min(
-          mousePosition.x + offset.value[0],
+
+        const tentativeFinalLeft = basePositionOnDragStart.value.left + deltaX;
+        const tentativeFinalTop = basePositionOnDragStart.value.top + deltaY;
+
+        const boundedFinalLeft = Math.max(0, Math.min(
+          tentativeFinalLeft,
           windowWidth.value - avatarWidth,
         ));
-        const newTop = Math.max(0, Math.min(
-          mousePosition.y + offset.value[1],
+        const boundedFinalTop = Math.max(0, Math.min(
+          tentativeFinalTop,
           windowHeight.value - avatarHeight,
         ));
-        userStore.changePosition({
-          left: `${newLeft}px`,
-          top: `${newTop}px`,
-          userId: actualUserId.value,
-        });
+
+        // Calculate bounded delta
+        const boundedDeltaX = boundedFinalLeft - basePositionOnDragStart.value.left;
+        const boundedDeltaY = boundedFinalTop - basePositionOnDragStart.value.top;
+
+        // NEW: Update transform only (NO DB write, NO style.left/top update)
+        dragVisualTransform.value = { x: boundedDeltaX, y: boundedDeltaY };
+
+        // REMOVED: userStore.changePosition() - NO DB WRITES during drag!
       }
     },
     true,
@@ -401,13 +457,38 @@ const addEventListeners = () => {
 
   chatterManager.value.addEventListener(
     'mouseup',
-    (e) => {
+    async (e) => {
       if (e.target.tagName === 'INPUT' || e.target.closest('.v-text-field') || e.target.closest('input')) {
         return;
       }
       e.preventDefault();
       e.stopPropagation();
       isDown.value = false;
+
+      // NEW: Finalize drag with single DB write
+      if (actualUserId.value === getCurrentUser.value.userId && isDraggingLocally.value) {
+        // Calculate final position (base + delta)
+        const finalLeft = basePositionOnDragStart.value.left + dragVisualTransform.value.x;
+        const finalTop = basePositionOnDragStart.value.top + dragVisualTransform.value.y;
+
+        // CRITICAL: Update DOM position BEFORE clearing transform to prevent jump
+        chatterManager.value.style.left = `${finalLeft}px`;
+        chatterManager.value.style.top = `${finalTop}px`;
+
+        // Clear drag state (transform is now redundant since DOM position is set)
+        isDraggingLocally.value = false;
+        dragVisualTransform.value = { x: 0, y: 0 };
+
+        // Write final position to DB (ONLY write during entire drag session)
+        await userStore.finalizeDragPosition({
+          left: `${finalLeft}px`,
+          top: `${finalTop}px`,
+          userId: actualUserId.value,
+        });
+
+        console.log('✅ Mouse up - Finalized drag', { finalLeft, finalTop });
+      }
+
       setTimeout(() => {
         mouseMoved.value = false;
       }, 100);
@@ -420,6 +501,34 @@ const addEventListeners = () => {
       touchstart.value = usersPosition.value;
       isDown.value = true;
       mouseMoved.value = false;
+
+      // NEW: Capture base position and start drag optimization (same as mousedown)
+      if (actualUserId.value === getCurrentUser.value.userId) {
+        const currentLeft = chatterManager.value.style.left || '0px';
+        const currentTop = chatterManager.value.style.top || '0px';
+
+        basePositionOnDragStart.value = {
+          left: parseInt(currentLeft, 10),
+          top: parseInt(currentTop, 10),
+        };
+
+        initialMousePosition.value = {
+          x: e.changedTouches[0].clientX,
+          y: e.changedTouches[0].clientY,
+        };
+
+        isDraggingLocally.value = true;
+        dragVisualTransform.value = { x: 0, y: 0 };
+
+        userStore.startDragging({
+          left: currentLeft,
+          top: currentTop,
+          userId: actualUserId.value,
+        });
+
+        console.log('🎯 Touch start - Starting drag', { currentLeft, currentTop });
+      }
+
       offset.value = [
         chatterManager.value.offsetLeft - e.changedTouches[0].clientX,
         chatterManager.value.offsetTop - e.changedTouches[0].clientY,
@@ -436,36 +545,71 @@ const addEventListeners = () => {
       isActuallyMoving.value = true;
 
       // Clear existing timeout and set new one
+      // NOTE: Animation is 0.4s, so keep wobble for at least one full cycle
       if (movementTimeout) clearTimeout(movementTimeout);
       movementTimeout = setTimeout(() => {
         isActuallyMoving.value = false;
-      }, 50);
+      }, 400);
 
-      const mousePosition = {
-        x: e.changedTouches[0].clientX,
-        y: e.changedTouches[0].clientY,
-      };
+      // NEW: Calculate delta from initial touch position (same as mousemove)
+      const deltaX = e.changedTouches[0].clientX - initialMousePosition.value.x;
+      const deltaY = e.changedTouches[0].clientY - initialMousePosition.value.y;
+
+      // Apply bounds to the FINAL position (base + delta)
       const avatarWidth = getAvatarWidth();
       const avatarHeight = getAvatarHeight();
-      const newLeft = Math.max(0, Math.min(
-        mousePosition.x + offset.value[0],
+
+      const tentativeFinalLeft = basePositionOnDragStart.value.left + deltaX;
+      const tentativeFinalTop = basePositionOnDragStart.value.top + deltaY;
+
+      const boundedFinalLeft = Math.max(0, Math.min(
+        tentativeFinalLeft,
         windowWidth.value - avatarWidth,
       ));
-      const newTop = Math.max(0, Math.min(
-        mousePosition.y + offset.value[1],
+      const boundedFinalTop = Math.max(0, Math.min(
+        tentativeFinalTop,
         windowHeight.value - avatarHeight,
       ));
-      userStore.changePosition({
-        left: `${newLeft}px`,
-        top: `${newTop}px`,
-        userId: actualUserId.value,
-      });
+
+      // Calculate bounded delta
+      const boundedDeltaX = boundedFinalLeft - basePositionOnDragStart.value.left;
+      const boundedDeltaY = boundedFinalTop - basePositionOnDragStart.value.top;
+
+      // NEW: Update transform only (NO DB write)
+      dragVisualTransform.value = { x: boundedDeltaX, y: boundedDeltaY };
+
+      // REMOVED: userStore.changePosition() - NO DB WRITES during drag!
     }
   });
   chatterManager.value.addEventListener(
     'touchend',
-    () => {
+    async () => {
       isDown.value = false;
+
+      // NEW: Finalize drag with single DB write (same as mouseup)
+      if (actualUserId.value === getCurrentUser.value.userId && isDraggingLocally.value) {
+        // Calculate final position (base + delta)
+        const finalLeft = basePositionOnDragStart.value.left + dragVisualTransform.value.x;
+        const finalTop = basePositionOnDragStart.value.top + dragVisualTransform.value.y;
+
+        // CRITICAL: Update DOM position BEFORE clearing transform to prevent jump
+        chatterManager.value.style.left = `${finalLeft}px`;
+        chatterManager.value.style.top = `${finalTop}px`;
+
+        // Clear drag state (transform is now redundant since DOM position is set)
+        isDraggingLocally.value = false;
+        dragVisualTransform.value = { x: 0, y: 0 };
+
+        // Write final position to DB (ONLY write during entire drag session)
+        await userStore.finalizeDragPosition({
+          left: `${finalLeft}px`,
+          top: `${finalTop}px`,
+          userId: actualUserId.value,
+        });
+
+        console.log('✅ Touch end - Finalized drag', { finalLeft, finalTop });
+      }
+
       setTimeout(() => {
         mouseMoved.value = false;
       }, 100);
@@ -550,17 +694,22 @@ watch(userPositionModified, () => {
       isActuallyMoving.value = true;
 
       // Clear existing timeout and set new one
+      // NOTE: Animation is 0.4s, transition is 0.3s, so keep wobble for full animation
       if (movementTimeout) clearTimeout(movementTimeout);
       movementTimeout = setTimeout(() => {
         isActuallyMoving.value = false;
-      }, 50);
+      }, 400);
 
       // Update last position
       lastPosition.value = { left, top };
     }
 
-    chatterManager.value.style.left = left;
-    chatterManager.value.style.top = top;
+    // CRITICAL: Skip DOM update for current user (already updated on mouseup/touchend)
+    if (!isCurrentUser.value) {
+      chatterManager.value.style.left = left;
+      chatterManager.value.style.top = top;
+    }
+
     dialogSide.value = actualUserId.value !== 'default_avatar_character_12345'
       ? findClosestDivPosition(actualUserId.value)
       : 'position-left';
@@ -603,6 +752,16 @@ watch(() => props.avatar, async (newAvatar) => {
   100% {
     transform: rotate(-3deg) scale(1.01);
   }
+}
+
+/* NEW: Smooth transitions for remote user movement ONLY */
+.user:not(.dragging-locally) {
+  transition: left 0.5s ease-out, top 0.5s ease-out;
+}
+
+/* Current user: no transition (already moved smoothly with transform) */
+.current-user {
+  transition: none;
 }
 
 .avatar-image {

@@ -100,6 +100,12 @@ const useUserStore = defineStore('user', {
         showDescription: true,
       },
     },
+    // Position drag optimization state
+    dragState: {
+      isDragging: false,
+      basePosition: { left: 0, top: 0 }, // Committed position when drag started
+      visualDelta: { x: 0, y: 0 }, // Transform offset during drag
+    },
   }),
 
   getters: {
@@ -514,6 +520,43 @@ const useUserStore = defineStore('user', {
       const db = getDatabase();
       const positionRef = ref(db, `users/${userId}/position`);
       await set(positionRef, { left, top });
+    },
+
+    // NEW: Optimized drag methods
+    startDragging({ left, top }) {
+      // Capture base position when drag starts
+      const baseLeft = parseInt(left, 10) || 0;
+      const baseTop = parseInt(top, 10) || 0;
+
+      this.dragState.isDragging = true;
+      this.dragState.basePosition = { left: baseLeft, top: baseTop };
+      this.dragState.visualDelta = { x: 0, y: 0 };
+    },
+
+    updateDragDelta({ deltaX, deltaY }) {
+      // Update visual delta for transform (no DB write)
+      this.dragState.visualDelta = { x: deltaX, y: deltaY };
+    },
+
+    async finalizeDragPosition({ left, top, userId }) {
+      // Final write on drag end
+      const db = getDatabase();
+      const positionRef = ref(db, `users/${userId}/position`);
+
+      try {
+        await set(positionRef, { left, top });
+        this.dragState.isDragging = false;
+        this.dragState.visualDelta = { x: 0, y: 0 };
+
+        // Update local state for consistency
+        this.setUserPosition({ position: { left, top }, userId });
+      } catch (error) {
+        console.error('❌ Failed to finalize position:', error);
+        // Retry once after 1 second
+        setTimeout(() => {
+          this.finalizeDragPosition({ left, top, userId });
+        }, 1000);
+      }
     },
 
     async getUserData(userId) {
