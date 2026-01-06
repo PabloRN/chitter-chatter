@@ -3,7 +3,8 @@
   <div class="home">
     <v-app-bar dense elevation="4" rounded shaped>
       <v-toolbar-title style="display: flex; justify-content: flex-start">
-        <v-img src="/logo-206-70.png" class="my-3" contain width="6em" height="40" />
+        <v-img v-if="name !== 'sm'" src="logo-206-70.png" class="my-3" contain width="6em" height="40" />
+        <v-img v-else src="android-chrome-512x512.png" class="my-3" contain width="6em" height="40" />
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
@@ -115,23 +116,21 @@
         </div>
       </div>
     </div>
-    <v-footer padless absolute class="footer">
-      <v-card flat tile width="100%" class="text-center">
+    <v-footer padless class="footer" height="40">
+      <v-card flat tile width="100%" class="text-center pa-2">
         <v-divider></v-divider>
-        <v-card-text>
-          <div class="footer-content">
-            <div class="footer-copyright">
-              Copyright © {{ new Date().getFullYear() }} — <strong>toonstalk</strong>
-            </div>
-            <div class="footer-links">
-              <router-link to="/privacy" class="footer-link">Privacy Policy</router-link>
-              <span class="footer-separator">•</span>
-              <router-link to="/terms" class="footer-link">Terms of Service</router-link>
-              <span class="footer-separator">•</span>
-              <router-link to="/cookies" class="footer-link">Cookie Policy</router-link>
-              <span class="footer-separator">•</span>
-              <router-link to="/acceptable-use" class="footer-link">Community Guidelines</router-link>
-            </div>
+        <v-card-text class="footer-content d-flex">
+          <div class="footer-copyright">
+            © {{ new Date().getFullYear() }} — <strong>toonstalk</strong>
+          </div>
+          <div v-if="name !== 'sm'" class="footer-links">
+            <router-link to="/privacy" class="footer-link">Privacy Policy</router-link>
+            <span class="footer-separator">•</span>
+            <router-link to="/terms" class="footer-link">Terms of Service</router-link>
+            <span class="footer-separator">•</span>
+            <router-link to="/cookies" class="footer-link">Cookie Policy</router-link>
+            <span class="footer-separator">•</span>
+            <router-link to="/acceptable-use" class="footer-link">Community Guidelines</router-link>
           </div>
         </v-card-text>
       </v-card>
@@ -160,12 +159,14 @@ import NotificationBell from '@/components/NotificationBell';
 import FriendRequestsDialog from '@/components/FriendRequestsDialog';
 import ProfileMenu from '@/components/ProfileMenu.vue';
 import { useSeo } from '@/composables/useSeo';
+import { useDisplay } from 'vuetify';
 
 // ✅ stores
 const roomsStore = useRoomsStore();
 const userStore = useUserStore();
 const mainStore = useMainStore();
 const router = useRouter();
+const { name } = useDisplay();
 
 // Store refs
 const { friendRequestsCount } = storeToRefs(userStore);
@@ -175,15 +176,6 @@ const showWelcomeDialog = ref(false);
 const showAuthDialog = ref(false);
 const showFeedbackDialog = ref(false);
 const showFriendRequestsDialog = ref(false);
-const usersOnline = ref(0);
-const flexBasisValues = ref(['25%']);
-const variant = ref('absolute');
-const nickname = ref('ttalker');
-const userId = ref('default_avatar_character_12345');
-const avatar = ref(
-  'https://firebasestorage.googleapis.com/v0/b/chitter-chatter-f762a.appspot.com/o/rooms%2Fkimetsu_1%2Favatars%2FL1%2Ftanjiro.png?alt=media&token=ebf9e68d-c0e2-4019-a201-24e6553aad0a',
-);
-
 // ✅ computed
 const getAllRooms = computed(() => roomsStore.getAllRooms);
 const roomList = computed(() => roomsStore.roomList);
@@ -506,7 +498,7 @@ div#default_avatar_character_12345 .avatar-image {
   width: 100%;
   /* background-color: #333; */
   color: #fff;
-  padding: 10px;
+  /* padding: 10px; */
   text-align: center;
 }
 
@@ -644,6 +636,29 @@ div#default_avatar_character_12345 .avatar-image {
 .footer-content {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  /* smaller on mobile */
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  /* spacing between links */
+}
+
+.footer-link {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* .footer-content {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   align-items: center;
 }
@@ -675,16 +690,26 @@ div#default_avatar_character_12345 .avatar-image {
 .footer-separator {
   color: var(--text-secondary);
   font-size: 13px;
-}
+} */
 
-@media (max-width: 768px) {
-  .footer-links {
+@media (max-width: 600px) {
+
+  /* .footer-links {
     flex-direction: column;
     gap: 4px;
   }
 
   .footer-separator {
     display: none;
+  } */
+  .footer-content {
+    flex-direction: row;
+    justify-content: center;
+    font-size: 0.875rem;
+  }
+
+  .footer-links {
+    gap: 1rem;
   }
 }
 </style>

@@ -14,6 +14,8 @@
 import { useSeo } from '@/composables/useSeo';
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useDisplay } from 'vuetify';
+const { name } = useDisplay();
 
 const router = useRouter();
 // const seoConfig = reactive({
@@ -59,6 +61,16 @@ onMounted(() => {
 
   100% {
     opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .logotype {
+    width: 45vw !important;
+  }
+
+  .slogan {
+    font-size: 1.5rem;
   }
 }
 </style>
