@@ -15,6 +15,12 @@
         Pricing
       </v-btn>
 
+      <!-- About Us Button -->
+      <v-btn variant="text" size="large" color="primary" prepend-icon="mdi-information-outline" to="/about-us"
+        class="mr-2">
+        About Us
+      </v-btn>
+
       <!-- Notification Bell -->
       <NotificationBell v-if="!getCurrentUser?.isAnonymous" class="mr-2" />
 

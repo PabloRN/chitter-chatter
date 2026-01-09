@@ -62,7 +62,7 @@
         class="pa-5 ma-5 private-dialog">
         <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
       </v-dialog>
-      <TimeMachine v-model="isShown" style="position: fixed; bottom: 0; right: 0; overflow-y: scroll;height: 100%;" />
+      <TimeMachine v-model="isShown" style="position: fixed; bottom: 0; right: 0; overflow-y: scroll;" />
       <div class="room-menu-container" :class="{ 'hidden': isHidden }">
         <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
           <template v-slot:activator="{ props: activatorProps }">

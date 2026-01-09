@@ -27,6 +27,11 @@ const routes = [
     component: Subscription,
   },
   {
+    path: '/about-us',
+    name: 'about-us',
+    component: () => import('@/views/AboutUs'),
+  },
+  {
     path: '/acctmgmt/__/auth/action',
     name: 'auth-action',
     component: AuthAction,
