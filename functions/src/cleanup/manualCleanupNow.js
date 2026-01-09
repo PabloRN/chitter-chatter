@@ -118,10 +118,10 @@ exports.manualCleanupNow = onRequest(
             }
 
             // SAFETY CHECK 5: Must not be currently in any rooms
+            // RELAXED FOR ANONYMOUS: If they are offline and anonymous, we clean them up even if
+            // they have residual room data. This covers cases where onDisconnect cleanup failed.
             if (userData.rooms && Object.keys(userData.rooms).length > 0) {
-              console.log(`⚠️ Skipping ${userId}: Currently in ${Object.keys(userData.rooms).length} rooms`);
-              skippedCount += 1;
-              return;
+              console.log(`ℹ️ User ${userId} has residual data for ${Object.keys(userData.rooms).length} rooms. Proceeding as user is anonymous and offline.`);
             }
 
             // SAFETY CHECK 6: Verify in Firebase Auth that user is anonymous

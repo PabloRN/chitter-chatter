@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 
 /**
  * Scheduled function to cleanup old anonymous users
- * Runs every 30 minutes to check for anonymous users that have been disconnected for 30+ minutes
+ * Runs once a week (Sunday @ Midnight) to check for anonymous users that have been disconnected for 30+ minutes
  *
  * Safety checks before deletion:
  * 1. User has isAnonymous: true in database
@@ -15,7 +15,7 @@ const admin = require('firebase-admin');
  */
 exports.cleanupAnonymousUsers = onSchedule(
   {
-    schedule: 'every 30 minutes',
+    schedule: 'every sunday 00:00',
     region: 'us-central1',
     timeZone: 'America/New_York',
   },
@@ -121,10 +121,10 @@ exports.cleanupAnonymousUsers = onSchedule(
           }
 
           // ====== SAFETY CHECK 6: Must not be currently in any rooms ======
+          // RELAXED FOR ANONYMOUS: If they are offline and anonymous, we clean them up even if
+          // they have residual room data. This covers cases where onDisconnect cleanup failed.
           if (userData.rooms && Object.keys(userData.rooms).length > 0) {
-            console.log(`⚠️ Skipping ${userId}: Currently in ${Object.keys(userData.rooms).length} rooms`);
-            skippedCount++;
-            continue;
+            console.log(`ℹ️ User ${userId} has residual data for ${Object.keys(userData.rooms).length} rooms. Proceeding as user is anonymous and offline.`);
           }
 
           // ====== SAFETY CHECK 7: Verify in Firebase Auth that user is anonymous ======
