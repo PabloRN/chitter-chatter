@@ -6,7 +6,7 @@
       <v-card flat>
         <v-card-title class="d-flex justify-space-between align-center pa-4">
           <span>Message History</span>
-          <v-btn icon size="small" @click="hideRoomMessages">
+          <v-btn icon size="small" @click.prevent="hideRoomMessages" @touchstart.prevent="hideRoomMessages">
             <v-icon class="manga-icon">mdi-close</v-icon>
           </v-btn>
         </v-card-title>
@@ -43,17 +43,16 @@
     </v-navigation-drawer>
 
     <!-- Mobile: Dialog overlay -->
-    <v-dialog v-if="isMobileDevice" v-model="showHistory" max-width="500" scrollable
-      @update:model-value="onTransitionend">
+    <v-dialog v-if="isMobileDevice" v-model="showHistory" fullscreen scrollable @update:model-value="onTransitionend">
       <v-card>
         <v-card-title class="d-flex justify-space-between align-center">
           <span>Message History</span>
-          <v-btn icon @click="showHistory = false">
+          <v-btn icon @click="hideRoomMessages">
             <v-icon class="manga-icon">mdi-close</v-icon>
           </v-btn>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text ref="scrollContainerMobile" style="height: 400px;">
+        <v-card-text ref="scrollContainerMobile" style="height: calc(100vh - 70px); overflow-y: auto;">
           <v-list density="compact">
             <v-list-item v-for="(item, index) in getText" :key="index">
               <template v-slot:prepend v-if="index % 2 === 0">
@@ -98,17 +97,16 @@ const props = defineProps({
   message: {
     type: Array,
     default: () => [],
-    modelValue: {
-      type: Boolean,
-      default: false,
-    },
+  },
+  modelValue: {
+    type: Boolean,
+    default: false,
   },
 });
 const emit = defineEmits(['update:modelValue']);
 
 const messagesStore = useMessagesStore();
 const showHistory = ref(false);
-const text = ref([]);
 
 // Refs for scrollable containers
 const scrollContainer = ref(null);
@@ -116,7 +114,6 @@ const scrollContainerMobile = ref(null);
 
 // lifecycle
 onMounted(() => {
-  text.value = props.message;
 });
 
 // computed

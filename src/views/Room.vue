@@ -62,7 +62,7 @@
         class="pa-5 ma-5 private-dialog">
         <PrivateDialogBubble @privateMessageClosed="privateMessageClosed" :message="pMessage" />
       </v-dialog>
-      <TimeMachine v-model="isShown" style="position: fixed; bottom: 0; right: 0; overflow-y: scroll" />
+      <TimeMachine v-model="isShown" style="position: fixed; bottom: 0; right: 0; overflow-y: scroll;height: 100%;" />
       <div class="room-menu-container" :class="{ 'hidden': isHidden }">
         <v-speed-dial v-model="isOpen" location="top center" transition="fade-transition">
           <template v-slot:activator="{ props: activatorProps }">
@@ -126,7 +126,7 @@
             <v-tooltip left>
               <template v-slot:activator="{ props }">
                 <v-btn class="mx-2 speed-dial-menu-item" fab dark small v-bind="props"
-                  @click.prevent.stop="handleEmit('showMessages')" @touchstart.prevent="handleEmit('showProfile')">
+                  @click.prevent.stop="handleEmit('showMessages')" @touchstart.prevent="handleEmit('showMessages')">
                   <div>
                     <v-icon class="manga-icon"> mdi-message-text-outline</v-icon>
                   </div>
@@ -272,7 +272,7 @@ const reportTargetRoomId = ref('');
 const reportTargetRoomName = ref('');
 const showAuthDialog = ref(false);
 const showRoomInfo = ref(false);
-const isHidden = ref(false);
+const isHidden = computed(() => messagesStore.showMessagesStatus);
 const isShown = ref(false);
 const resolvedRoomIdRef = ref(null);
 
@@ -742,11 +742,6 @@ watch(() => userStore.otherUserUpgraded, async (newVal) => {
     }
   }
 });
-watch(() => messagesStore.showMessagesStatus, async (newVal) => {
-  // Another user in the room has upgraded, update their data
-  isHidden.value = newVal;
-});
-
 watch(userExit, ({ roomId, userId }) => {
   if (roomId === resolvedRoomIdRef.value) {
     chatters.value.delete(userId);
