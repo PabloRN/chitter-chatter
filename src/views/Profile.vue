@@ -189,7 +189,7 @@
                   <div class="tier-badge-container">
                     <v-chip :color="subscriptionTierColor" size="large" class="tier-badge"
                       prepend-icon="mdi-star-circle">
-                      {{ subscriptionTierName }}
+                      {{ (getCurrentUser?.isEarlyCreator) ? 'Early Creator' : subscriptionTierName }}
                     </v-chip>
                     <!-- Recently Upgraded Indicator -->
                     <v-chip v-if="isRecentlyUpgraded" color="success" size="small" class="upgrade-badge ml-2"
@@ -218,12 +218,16 @@
                     Manage Subscription
                   </v-btn>
 
-                  <!-- Upgrade Button (for free or landlord) -->
-                  <v-btn v-if="subscriptionData.tier === 'free' || subscriptionData.tier === 'landlord'"
-                    :color="subscriptionData.tier === 'free' ? 'success' : 'purple'" variant="outlined" size="large"
-                    :prepend-icon="subscriptionData.tier === 'free' ? 'mdi-rocket-launch' : 'mdi-arrow-up-bold'"
+                  <!-- Upgrade Button (for free, earlyCreator or landlord) -->
+                  <v-btn
+                    v-if="subscriptionData.tier === 'free' || subscriptionData.tier === 'earlyCreator' || subscriptionData.tier === 'landlord'"
+                    :color="(subscriptionData.tier === 'free' || subscriptionData.tier === 'earlyCreator') ? 'success' : 'purple'"
+                    variant="outlined" size="large"
+                    :prepend-icon="(subscriptionData.tier === 'free' || subscriptionData.tier === 'earlyCreator') ? 'mdi-rocket-launch' : 'mdi-arrow-up-bold'"
                     @click="goToSubscription" block>
-                    {{ subscriptionData.tier === 'free' ? 'Upgrade to Premium' : 'Upgrade to Creator' }}
+                    {{ (subscriptionData.tier === 'free'
+                      || subscriptionData.tier === 'earlyCreator') ? 'Upgrade to Premium' :
+                      'Upgrade to Creator' }}
                   </v-btn>
                 </div>
 
@@ -665,8 +669,21 @@ const nicknameCooldownMessage = computed(() => {
 // Subscription computed properties
 const subscriptionData = computed(() => {
   const user = getCurrentUser.value;
+
+  let tier = 'free';
+
+  if (user?.isEarlyCreator) {
+    tier = 'earlyCreator';
+  } else if (user?.isOwner) {
+    tier = 'owner';
+  } else if (user?.subscription?.tier) {
+    tier = user.subscription.tier;
+  } else if (user?.subscriptionTier) {
+    tier = user.subscriptionTier;
+  }
+
   return {
-    tier: user?.subscription?.tier || user?.subscriptionTier || 'free',
+    tier,
     status: user?.subscription?.status || 'active',
     stripeCustomerId: user?.subscription?.stripeCustomerId || null,
     currentPeriodEnd: user?.subscription?.currentPeriodEnd || null,
@@ -678,6 +695,7 @@ const subscriptionData = computed(() => {
 
 const subscriptionTierName = computed(() => {
   const { tier } = subscriptionData.value;
+  if (tier === 'earlyCreator') return 'Early Creator';
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 });
 
@@ -685,6 +703,7 @@ const subscriptionTierColor = computed(() => {
   const { tier } = subscriptionData.value;
   if (tier === 'creator') return 'purple';
   if (tier === 'landlord') return 'primary';
+  if (tier === 'earlyCreator') return 'success';
   return 'grey';
 });
 
