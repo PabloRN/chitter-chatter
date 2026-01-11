@@ -180,14 +180,12 @@ const useUserStore = defineStore('user', {
     handleCrossTabMessage(message) {
       // Ignore messages sent by this tab to prevent infinite loops
       if (tabCommunicationService.isOwnMessage(message)) {
-        console.log('🚫 Ignoring own message');
         return;
       }
 
       switch (message.type) {
         case 'AUTH_SUCCESS':
           if (message.isUpgrade) {
-            console.log('🔄 Received upgrade notification from other tab:', message);
             // Trigger user upgrade for this tab (isCurrent: false since it's from another tab)
             this.userUpgraded({
               verifiedUser: message.verifiedUser,
@@ -197,7 +195,6 @@ const useUserStore = defineStore('user', {
           }
           break;
         case 'FOCUS_REQUEST':
-          console.log('🏠 Received focus request from auth tab');
           // This is the original tab - gain focus and stay here
           try {
             window.focus();
@@ -205,9 +202,8 @@ const useUserStore = defineStore('user', {
             if (message.returnPath && window.location.pathname !== message.returnPath) {
               this.$router?.push(message.returnPath);
             }
-            console.log('✅ Original tab focused successfully');
           } catch (e) {
-            console.log('Could not focus original tab:', e);
+            // Silently ignore focus error
           }
           break;
         default:
@@ -380,7 +376,7 @@ const useUserStore = defineStore('user', {
     async getUser() {
       const auth = getAuth();
       const db = getDatabase();
-      const { currentUser: authCurrentUser } = auth;
+      // const { currentUser: authCurrentUser } = auth;
 
       // Initialize cross-tab communication
       this.initAuthUpgradeChannel();
@@ -428,7 +424,6 @@ const useUserStore = defineStore('user', {
               await onDisconnect(oldAnonRef).cancel();
               await set(oldAnonRef, null);
               // await deleteUser(authCurrentUser);
-              console.log('authCurrentUser', authCurrentUser);
             }
 
             // Step 2: check if real user already exists
@@ -446,7 +441,6 @@ const useUserStore = defineStore('user', {
                 currentSessionStart: serverTimestamp(),
               };
               await set(userRef, newUser);
-              console.log('✅ Created new authenticated user in database');
             } else {
               // 🔄 Existing real user → just update presence/status
               const updates = {
@@ -471,8 +465,6 @@ const useUserStore = defineStore('user', {
 
               if (verifiedData?.isAnonymous === true) {
                 await update(userRef, { isAnonymous: false });
-              } else {
-                console.log('anonymous set to', verifiedData?.isAnonymous);
               }
             }
 
@@ -677,7 +669,6 @@ const useUserStore = defineStore('user', {
     },
 
     async changeAvatar(url, roomId) {
-      console.log('router.currentRoute.value.params', router.currentRoute.value.params);
       try {
         const { currentUser } = this;
 
@@ -768,9 +759,6 @@ const useUserStore = defineStore('user', {
         const loggedUserSnapshot = await get(ref(db, `users/${loggedUser.uid}`));
         const existingUserData = loggedUserSnapshot.val();
 
-        console.log('🔄 Upgrading anonymous user:', anonymousUser.uid, 'to user:', loggedUser.uid);
-        console.log('📊 Existing user data found:', !!existingUserData);
-
         if (existingUserData) {
           // User already exists - preserve ALL existing data, only update specific fields
           const updatesToExistingUser = {
@@ -834,15 +822,11 @@ const useUserStore = defineStore('user', {
           // This prevents creating ghost users when disconnect fires after deletion
           const anonymousUserRef = ref(db, `users/${anonymousUser.uid}`);
           await onDisconnect(anonymousUserRef).cancel();
-          console.log('✅ Cancelled onDisconnect handler for anonymous user');
 
           await set(anonymousUserRef, null);
-          console.log('✅ Deleted anonymous user from database');
         } catch (cleanupError) {
           console.warn('Anonymous user database cleanup failed, but upgrade completed:', cleanupError);
         }
-
-        console.log('✅ Anonymous user upgrade completed successfully');
 
         // 🔄 FORCE REFRESH: Re-read user data to ensure UI updates immediately
         // This prevents race conditions where onValue listener might fire before upgrade completes
@@ -851,13 +835,8 @@ const useUserStore = defineStore('user', {
           const refreshedData = refreshSnapshot.val();
 
           if (refreshedData) {
-            console.log('🔄 Force refreshing user data from database...');
-            console.log('   - isAnonymous:', refreshedData.isAnonymous);
-            console.log('   - userId:', refreshedData.userId);
-
             // Force update store with refreshed data
             this.setCurrentUser({ data: refreshedData, userId: loggedUser.uid });
-            console.log('✅ Store updated with refreshed user data');
           } else {
             console.warn('⚠️ Could not refresh user data - user not found in database');
           }
@@ -872,13 +851,8 @@ const useUserStore = defineStore('user', {
     },
 
     async setFirebaseUiInstance(roomId) {
-      console.log('🚀 [INIT] setFirebaseUiInstance called with roomId:', roomId);
-
       const auth = getAuth();
       const anonymousUser = auth.currentUser;
-
-      console.log('👤 [INIT] Current anonymous user:', anonymousUser?.uid);
-      console.log('🔒 [INIT] Is anonymous:', anonymousUser?.isAnonymous);
 
       // Reset the signingInUpgraded state to ensure watchers can detect the change
       this.signingInUpgraded = false;
@@ -886,12 +860,9 @@ const useUserStore = defineStore('user', {
       const ui = window.firebaseui.auth.AuthUI.getInstance()
         || new window.firebaseui.auth.AuthUI(window.firebase.auth());
 
-      console.log('🎨 [INIT] FirebaseUI instance created/retrieved');
-
       // Store anonymous user ID for potential cross-tab communication
       if (anonymousUser?.uid) {
         window.localStorage.setItem('anonymousUserForUpgrade', anonymousUser.uid);
-        console.log('💾 [INIT] Stored anonymous user ID for upgrade:', anonymousUser.uid);
       }
 
       // Store original tab context for return navigation
@@ -907,37 +878,28 @@ const useUserStore = defineStore('user', {
 
       window.localStorage.setItem('authOriginalTabContext', JSON.stringify(originalTabContext));
       window.sessionStorage.setItem('authOriginalTabContext', JSON.stringify(originalTabContext));
-      console.log('🏠 Stored original tab context:', originalTabContext);
 
       // Override sendSignInLinkToEmail on the Firebase Auth prototype
       // This ensures ALL instances will use our override
       const firebaseAuthPrototype = Object.getPrototypeOf(window.firebase.auth());
       if (!firebaseAuthPrototype._originalSendSignInLinkToEmail) {
-        console.log('🔧 Installing sendSignInLinkToEmail prototype override...');
-
         // Store original method
         firebaseAuthPrototype._originalSendSignInLinkToEmail = firebaseAuthPrototype.sendSignInLinkToEmail;
 
         // Override the method
         firebaseAuthPrototype.sendSignInLinkToEmail = function (email, actionCodeSettings) {
-          console.log('🔐 [PROTOTYPE OVERRIDE] sendSignInLinkToEmail called with email:', email);
-
           try {
             // Store email in localStorage for cross-tab access
             window.localStorage.setItem('emailForSignIn', email);
-            console.log('✅ [PROTOTYPE OVERRIDE] Email stored in localStorage:', window.localStorage.getItem('emailForSignIn'));
           } catch (error) {
             console.error('❌ [PROTOTYPE OVERRIDE] Error storing email in localStorage:', error);
           }
 
           // Call the original method
-          console.log('📤 [PROTOTYPE OVERRIDE] Calling original sendSignInLinkToEmail');
           return firebaseAuthPrototype._originalSendSignInLinkToEmail.call(this, email, actionCodeSettings);
         };
-
-        console.log('✅ sendSignInLinkToEmail prototype override installed');
       } else {
-        console.log('ℹ️ sendSignInLinkToEmail prototype override already installed');
+        // Prototype already installed
       }
 
       const uiConfig = {
@@ -948,8 +910,6 @@ const useUserStore = defineStore('user', {
             // Only upgrade if the previous user was anonymous
             if (anonymousUser && anonymousUser.isAnonymous && user.uid !== anonymousUser.uid) {
               try {
-                console.log('🔄 Starting anonymous user upgrade in FirebaseUI callback...');
-
                 // Wait for upgrade to complete (replaced setTimeout with await)
                 await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
 
@@ -960,8 +920,6 @@ const useUserStore = defineStore('user', {
                     isCurrent: true,
                   });
                 }
-
-                console.log('✅ FirebaseUI callback: Upgrade completed successfully');
               } catch (error) {
                 console.error('❌ Error during anonymous user upgrade in FirebaseUI callback:', error);
               }
@@ -970,32 +928,20 @@ const useUserStore = defineStore('user', {
             return false; // prevent redirect - popup will close immediately
           },
           uiShown() {
-            console.log('👁️ [CALLBACK] FirebaseUI shown');
-            console.log('📦 [CALLBACK] Current localStorage emailForSignIn:', window.localStorage.getItem('emailForSignIn'));
-
             const loader = document.getElementById('loader');
             if (loader) {
               loader.style.display = 'none';
-              console.log('🔄 [CALLBACK] Loader hidden');
             }
           },
           signInFailure: async (error) => {
-            console.log('❌ [CALLBACK] signInFailure called');
-            console.log('🔍 [CALLBACK] Error code:', error.code);
-            console.log('🔍 [CALLBACK] Error message:', error.message);
-
             if (error.code !== 'firebaseui/anonymous-upgrade-merge-conflict') {
               return Promise.resolve();
             }
-
-            console.log('🔄 [CALLBACK] Handling anonymous upgrade merge conflict...');
 
             const cred = error.credential;
             try {
               const userCredential = await signInWithCredential(auth, cred);
               const { user } = userCredential;
-
-              console.log('✅ [CALLBACK] Successfully signed in with credential:', user.uid);
 
               // Call handleAnonymousUserUpgrade with the user
               await this.handleAnonymousUserUpgrade(anonymousUser, user, roomId);
@@ -1005,8 +951,6 @@ const useUserStore = defineStore('user', {
                 unverifiedUser: anonymousUser.uid,
                 isCurrent: true,
               });
-
-              console.log('✅ [CALLBACK] Merge conflict resolved successfully');
 
               return Promise.resolve();
             } catch (err) {
@@ -1041,31 +985,22 @@ const useUserStore = defineStore('user', {
         tosUrl: 'https://toonstalk.com/terms',
         privacyPolicyUrl: 'https://toonstalk.com/privacy',
       };
-
-      console.log('🎬 [INIT] Starting FirebaseUI with config...');
       ui.start('#firebaseui-auth-container', uiConfig);
-      console.log('✅ [INIT] FirebaseUI started successfully');
 
       // FALLBACK: Capture email from FirebaseUI DOM as backup
       // This ensures we catch the email even if the override doesn't work
       setTimeout(() => {
-        console.log('🔍 Setting up DOM-based email capture fallback...');
-
         const container = document.getElementById('firebaseui-auth-container');
         if (container) {
           // Monitor for form submissions using event delegation
           container.addEventListener('submit', () => {
-            console.log('📝 [DOM FALLBACK] Form submission detected');
-
             // Find email input in the form
             const emailInput = container.querySelector('input[type="email"]');
             if (emailInput && emailInput.value) {
               const email = emailInput.value.trim();
-              console.log('📧 [DOM FALLBACK] Captured email from input:', email);
 
               try {
                 window.localStorage.setItem('emailForSignIn', email);
-                console.log('✅ [DOM FALLBACK] Email stored in localStorage:', window.localStorage.getItem('emailForSignIn'));
               } catch (error) {
                 console.error('❌ [DOM FALLBACK] Error storing email:', error);
               }
@@ -1073,8 +1008,6 @@ const useUserStore = defineStore('user', {
               console.warn('⚠️ [DOM FALLBACK] No email input found or empty value');
             }
           }, true); // Use capture phase to ensure we catch it early
-
-          console.log('✅ DOM-based email capture fallback installed');
         } else {
           console.error('❌ Could not find firebaseui-auth-container for DOM fallback');
         }
@@ -1133,8 +1066,6 @@ const useUserStore = defineStore('user', {
     },
 
     userUpgraded({ verifiedUser, unverifiedUser, isCurrent }) {
-      console.log('🔄 userUpgraded called:', { verifiedUser, unverifiedUser, isCurrent });
-
       // Track user registration/upgrade
       if (isCurrent) {
         analyticsService.trackUserRegistered('anonymous_upgrade');
@@ -1327,8 +1258,6 @@ const useUserStore = defineStore('user', {
 
       // Cleanup friends service
       friendsService.cleanup();
-
-      console.log('🧹 Friends listeners cleaned up');
     },
 
     setUserSignedOut() {
