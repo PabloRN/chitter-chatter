@@ -83,6 +83,10 @@ export function calculateTotalRoomLimit(user) {
     baseLimit = USER_ROOM_LIMITS.landlord;
   }
 
+  if (user.isEarlyCreator) {
+    baseLimit = 1; // Same as owner base
+  }
+
   // Add purchased room slots
   const purchasedSlots = user.purchasedRoomSlots || 0;
 

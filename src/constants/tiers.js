@@ -10,6 +10,7 @@
 export const TIER_RANKS = {
   free: 0,
   owner: 1,
+  earlyCreator: 1,
   landlord: 2,
   creator: 3,
 };

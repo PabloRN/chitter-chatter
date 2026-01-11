@@ -5,6 +5,7 @@
 export const AVATAR_LIMITS = {
   free: 10,
   owner: 20,
+  earlyCreator: 20,
   landlord: 30,
   creator: 50,
 };
@@ -19,6 +20,7 @@ export function getAvatarLimit(user) {
 
   if (user.isCreator) return AVATAR_LIMITS.creator;
   if (user.isLandlord) return AVATAR_LIMITS.landlord;
+  if (user.isEarlyCreator) return AVATAR_LIMITS.earlyCreator;
   if (user.isOwner) return AVATAR_LIMITS.owner;
 
   return AVATAR_LIMITS.free;

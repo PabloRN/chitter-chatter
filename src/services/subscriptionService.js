@@ -456,7 +456,7 @@ async function purchaseOwnerUpgrade() {
  */
 function hasPremiumAccess(user) {
   if (!user) return false;
-  return user.isOwner || user.isLandlord || user.isCreator || user.isAdmin || false;
+  return user.isOwner || user.isLandlord || user.isCreator || user.isEarlyCreator || user.isAdmin || false;
 }
 
 /**
@@ -467,7 +467,7 @@ function hasPremiumAccess(user) {
 function getMaxUsersForRoom(user) {
   if (!user) return 10;
   if (user.isCreator) return 30;
-  if (user.isLandlord || user.isOwner) return 20;
+  if (user.isLandlord || user.isOwner || user.isEarlyCreator) return 20;
   return 10; // free tier
 }
 
@@ -484,7 +484,7 @@ function getRoomLimit(user) {
   if (user.isAdmin) return 100;
   if (user.isCreator) return -1; // unlimited (purchased slots don't matter)
   if (user.isLandlord) return 5 + purchasedSlots; // Landlord base + purchased slots
-  if (user.isOwner) return 1 + purchasedSlots; // Owner base + purchased slots
+  if (user.isOwner || user.isEarlyCreator) return 1 + purchasedSlots; // Owner base + purchased slots
   return 1; // free tier
 }
 

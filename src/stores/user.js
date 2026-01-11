@@ -130,14 +130,15 @@ const useUserStore = defineStore('user', {
     },
     isPremiumUser: (state) => {
       const user = state.currentUser;
-      return user?.isOwner || user?.isLandlord || user?.isCreator || false;
+      return user?.isOwner || user?.isLandlord || user?.isCreator || user?.isEarlyCreator || false;
     },
     isCreatorUser: (state) => state.currentUser?.isCreator || false,
-    isOwner: (state) => state.currentUser?.isOwner || false,
+    isOwner: (state) => state.currentUser?.isOwner || state.currentUser?.isEarlyCreator || false,
     isLandlord: (state) => state.currentUser?.isLandlord || false,
+    isEarlyCreator: (state) => state.currentUser?.isEarlyCreator || false,
     canUpgradeToOwner: (state) => {
       const user = state.currentUser;
-      return !user?.isOwner && !user?.isLandlord && !user?.isCreator;
+      return !user?.isOwner && !user?.isLandlord && !user?.isCreator && !user?.isEarlyCreator;
     },
     // Friends getters
     friendsList: (state) => state.friends || [],
