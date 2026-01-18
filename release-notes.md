@@ -1,14 +1,8 @@
-## [2.0.2] - 2026-01-09
+## [2.0.3] - 2026-01-11
 
-### ✨ Features
+### 📦 Other Changes
 
-- update cleanup schedule for anonymous users to run weekly and relax room data checks ([ddc9acd])
-- add About Us page and navigation buttons in Profile and Rooms ([bda6c1b])
-
-### 🐛 Bug Fixes
-
-- enhance mobile interaction and layout in TimeMachine component ([74d3a32])
-
-### 🔧 Chore
-
-- update release notes for version 2.0.1 ([f97705c])
+- clean console.logs ([c68310d])
+- release notes 2.0.2 ([4a0deaa])
+- Adding new role earlyCreator ([868dde9])
+- update user type and subs ([13d6e58])
