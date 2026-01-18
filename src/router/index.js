@@ -32,6 +32,11 @@ const routes = [
     component: () => import('@/views/AboutUs'),
   },
   {
+    path: '/inside-the-art',
+    name: 'inside-the-art',
+    component: () => import('@/views/InsideTheArt'),
+  },
+  {
     path: '/acctmgmt/__/auth/action',
     name: 'auth-action',
     component: AuthAction,
