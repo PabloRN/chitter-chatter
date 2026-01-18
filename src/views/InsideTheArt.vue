@@ -59,7 +59,7 @@
                     <v-col cols="12" md="4">
                         <v-card class="feature-card h-100 step-card">
                             <div class="step-visual" :style="{ padding: '0 50px' }">
-                                <v-img src="public/room_example.png" cover class="image" />
+                                <v-img src="room_example.png" cover class="image" />
                             </div>
                             <h3>Create a room</h3>
                             <p>
@@ -72,7 +72,7 @@
                     <v-col cols="12" md="4">
                         <v-card class="feature-card h-100 step-card">
                             <div class="step-visual" :style="{ padding: '0 50px' }">
-                                <v-img src="public/join_example.png" cover class="image" />
+                                <v-img src="join_example.png" cover class="image" />
                             </div>
                             <h3>Invite people in</h3>
                             <p>
@@ -85,7 +85,7 @@
                     <v-col cols="12" md="4">
                         <v-card class="feature-card h-100 step-card">
                             <div class="step-visual" :style="{ padding: '0 50px' }">
-                                <v-img src="public/grow_example.png" cover class="image" />
+                                <v-img src="grow_example.png" cover class="image" />
                             </div>
                             <h3>See it grow</h3>
                             <p>
@@ -133,7 +133,7 @@
 
                     <v-col cols="12" md="6" class="text-center">
                         <div class="problem-visual" :style="{ padding: '0 60px' }">
-                            <v-img src="public/problem.png" cover class="image" />
+                            <v-img src="problem.png" cover class="image" />
                         </div>
                     </v-col>
                 </v-row>
